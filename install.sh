@@ -19,7 +19,7 @@ echo -e "${BLUE}${BOLD}║       🍽  KaiRest POS — Instalación     ║${NC}
 echo -e "${BLUE}${BOLD}╚════════════════════════════════════════╝${NC}"
 echo ""
 
-# ── Verificar Docker ──
+# ── Verify Docker ──
 if ! docker info &>/dev/null; then
   echo -e "${RED}❌ Docker no está corriendo.${NC}"
   echo -e "   Abre Docker Desktop primero y vuelve a ejecutar este script."
@@ -28,7 +28,7 @@ if ! docker info &>/dev/null; then
 fi
 echo -e "${GREEN}✓${NC} Docker está corriendo"
 
-# ── Verificar docker compose ──
+# ── Verify docker compose ──
 if docker compose version &>/dev/null; then
   COMPOSE_CMD="docker compose"
 elif command -v docker-compose &>/dev/null; then
@@ -39,31 +39,38 @@ else
 fi
 echo -e "${GREEN}✓${NC} Docker Compose disponible"
 
-# ── Crear directorio de la app ──
+# ── Verify git ──
+if ! command -v git &>/dev/null; then
+  echo -e "${RED}❌ Git no encontrado. Instala con: xcode-select --install${NC}"
+  exit 1
+fi
+echo -e "${GREEN}✓${NC} Git disponible"
+
+# ── Clone or update repo ──
 INSTALL_DIR="${HOME}/kairest"
 echo ""
 echo -e "${BLUE}📁 Instalando en: ${BOLD}${INSTALL_DIR}${NC}"
 
-mkdir -p "$INSTALL_DIR/backups"
-cd "$INSTALL_DIR"
+if [ -d "$INSTALL_DIR/.git" ]; then
+  echo -e "${BLUE}ℹ${NC}  Actualizando código existente..."
+  cd "$INSTALL_DIR"
+  git pull --rebase 2>/dev/null || echo "⚠️  No se pudo actualizar."
+else
+  echo -e "${BLUE}⬇️  Descargando KaiRest...${NC}"
+  git clone https://github.com/marqdomi/kairest.git "$INSTALL_DIR" 2>&1 | tail -2
+  cd "$INSTALL_DIR"
+fi
 
-# ── Descargar archivos necesarios ──
-REPO_RAW="https://raw.githubusercontent.com/marqdomi/kairest/main"
+mkdir -p backups
+echo -e "${GREEN}✓${NC} Código descargado"
 
-echo -e "${BLUE}⬇️  Descargando archivos de configuración...${NC}"
-curl -sfL "${REPO_RAW}/docker-compose.prod.yml" -o docker-compose.prod.yml 2>/dev/null \
-  || curl -sfL "${REPO_RAW}/docker-compose.prod.yml" -o docker-compose.prod.yml
-curl -sfL "${REPO_RAW}/update.sh" -o update.sh 2>/dev/null || true
-chmod +x update.sh 2>/dev/null || true
-
-echo -e "${GREEN}✓${NC} Archivos descargados"
-
-# ── Configurar .env ──
+# ── Configure .env ──
 if [ ! -f .env ]; then
   SECRET=$(python3 -c "import secrets; print(secrets.token_hex(32))" 2>/dev/null || openssl rand -hex 32)
+  PG_PASS="kairest_$(openssl rand -hex 8 2>/dev/null || echo 'secret2026')"
   cat > .env << EOF
 SECRET_KEY=${SECRET}
-POSTGRES_PASSWORD=kairest_$(openssl rand -hex 8 2>/dev/null || echo "secret2026")
+POSTGRES_PASSWORD=${PG_PASS}
 APP_PORT=5005
 CORS_ORIGINS=http://localhost:5005
 EOF
@@ -72,15 +79,16 @@ else
   echo -e "${YELLOW}ℹ${NC}  .env ya existe — no se modificó"
 fi
 
-# ── Levantar servicios ──
+# ── Start services ──
 echo ""
 echo -e "${BLUE}🚀 Iniciando KaiRest POS...${NC}"
-echo -e "   (primera vez puede tardar 1-2 min descargando imágenes)"
+echo -e "   (primera vez puede tardar 2-5 min compilando la imagen)"
 echo ""
 
-$COMPOSE_CMD -f docker-compose.prod.yml up -d 2>&1 | tail -5
+# Use docker-compose.yml (builds locally — works on any architecture)
+$COMPOSE_CMD up -d --build 2>&1 | tail -8
 
-# ── Esperar a que la app esté lista ──
+# ── Wait for health ──
 echo -e "${BLUE}⏳ Esperando a que la aplicación inicie...${NC}"
 PORT="${APP_PORT:-5005}"
 for i in $(seq 1 90); do
@@ -96,9 +104,9 @@ for i in $(seq 1 90); do
     echo -e "   Verás el asistente de configuración para"
     echo -e "   registrar tu restaurante y crear tu usuario."
     echo ""
-    echo -e "   ${YELLOW}Para actualizar:${NC} cd ~/kairest && ./update.sh"
-    echo -e "   ${YELLOW}Para detener:${NC}    cd ~/kairest && docker compose -f docker-compose.prod.yml down"
-    echo -e "   ${YELLOW}Para reiniciar:${NC}  cd ~/kairest && docker compose -f docker-compose.prod.yml restart"
+    echo -e "   ${YELLOW}Para actualizar:${NC}  cd ~/kairest && ./update.sh"
+    echo -e "   ${YELLOW}Para detener:${NC}     cd ~/kairest && docker compose down"
+    echo -e "   ${YELLOW}Para reiniciar:${NC}   cd ~/kairest && docker compose restart"
     echo ""
     exit 0
   fi
@@ -108,5 +116,5 @@ done
 
 echo ""
 echo -e "${RED}⚠️  La app no respondió en 3 minutos.${NC}"
-echo -e "   Revisa los logs con: $COMPOSE_CMD -f docker-compose.prod.yml logs web"
+echo -e "   Revisa los logs con: $COMPOSE_CMD logs web"
 exit 1
