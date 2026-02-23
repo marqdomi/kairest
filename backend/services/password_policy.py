@@ -11,7 +11,7 @@ _COMMON_PASSWORDS = frozenset([
     'password1', 'password123', 'admin', 'admin123', 'root',
     'toor', 'pass', 'test', 'guest', 'welcome',
     'login', 'changeme', 'abc123456', 'p@ssw0rd', 'qwer1234',
-    'casaleones', 'restaurante', 'mesero', 'cocina', 'tacos',
+    'kairest', 'restaurante', 'mesero', 'cocina', 'tacos',
 ])
 
 # Requisitos mínimos

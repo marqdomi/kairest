@@ -1,55 +1,149 @@
 {% extends 'layouts/_layout_admin.html' %}
 {% block page_title %}Productos{% endblock %}
 
+{% block admin_breadcrumb %}
+<div class="cl-breadcrumb">
+  <span>Catálogo</span>
+  <i data-lucide="chevron-right" style="width:13px;height:13px;"></i>
+  <span class="cl-breadcrumb__current">Productos</span>
+</div>
+{% endblock %}
+
 {% block admin_content %}
-{% from 'components/_page_header.html' import page_header %}
-{% from 'components/_data_table.html' import data_table %}
 {% from 'components/_modal.html' import confirm_modal %}
 
-{% call page_header('Productos', breadcrumb=[('Catálogo', ''), ('Productos', '')]) %}
-  <a href="{{ url_for('admin.producto_nuevo') }}" class="cl-btn cl-btn--primary">
-    <i data-lucide="plus" class="icon-sm"></i> Nuevo Producto
-  </a>
-{% endcall %}
-
-{% call(row) data_table(
-    items=productos,
-    columns=[
-      ('Nombre', 'nombre', true),
-      ('Precio', 'precio', true),
-      ('Unidad', 'unidad', false),
-      ('Categoría', none, false),
-      ('Estación', none, false),
-      ('', none, false)
-    ],
-    empty_text='No hay productos registrados',
-    empty_icon='package',
-    search_placeholder='Buscar producto…',
-    id='tblProductos'
-) %}
-  <td>{{ row.nombre }}</td>
-  <td>${{ '%.2f'|format(row.precio) }}</td>
-  <td>{{ row.unidad or '—' }}</td>
-  <td>{{ row.categoria.nombre if row.categoria else '—' }}</td>
-  <td>{{ row.estacion.nombre if row.estacion else '—' }}</td>
-  <td class="text-end">
-    <a href="{{ url_for('admin.producto_editar', id=row.id) }}" class="cl-btn cl-btn--sm cl-btn--ghost" title="Editar">
-      <i data-lucide="pencil" class="icon-sm"></i>
+{# ── Page Header ── #}
+<div class="cl-page-hdr">
+  <div>
+    <h1>Productos</h1>
+    <p>{{ productos|length }} producto{{ 's' if productos|length != 1 else '' }} registrado{{ 's' if productos|length !=
+      1 else '' }}</p>
+  </div>
+  <div class="cl-page-hdr__right">
+    <a href="{{ url_for('admin.producto_nuevo') }}" class="cl-btn--v7-primary">
+      <i data-lucide="plus" class="icon-sm"></i> Nuevo Producto
     </a>
-    <button class="cl-btn cl-btn--sm cl-btn--ghost cl-btn--danger"
-            data-bs-toggle="modal" data-bs-target="#deleteModal"
-            data-action="{{ url_for('admin.producto_eliminar', id=row.id) }}"
-            title="Eliminar">
-      <i data-lucide="trash-2" class="icon-sm"></i>
-    </button>
-  </td>
-{% endcall %}
+  </div>
+</div>
 
-{{ confirm_modal(id='deleteModal', title='¿Eliminar producto?', body='Esta acción no se puede deshacer.', confirm_text='Eliminar', form_action='#') }}
+{# ── Table Card ── #}
+<div class="cl-card">
+  {# Toolbar #}
+  <div style="padding:16px 20px;border-bottom:1px solid var(--cl-border-color);">
+    <div class="cl-table-toolbar">
+      <div class="cl-table-search">
+        <i data-lucide="search" style="width:14px;height:14px;color:var(--cl-text-tertiary);flex-shrink:0;"></i>
+        <input type="text" id="searchProductos" placeholder="Buscar producto…" autocomplete="off"
+          aria-label="Buscar productos">
+      </div>
+      <div class="cl-filter-row" style="margin:0;" id="categoriaFilters">
+        <button class="cl-filter-pill active" data-filter="">Todos</button>
+        {% set categorias_vistas = [] %}
+        {% for p in productos %}{% if p.categoria and p.categoria.nombre not in categorias_vistas %}
+        {{ categorias_vistas.append(p.categoria.nombre) or '' }}
+        <button class="cl-filter-pill" data-filter="{{ p.categoria.nombre }}">{{ p.categoria.nombre }}</button>
+        {% endif %}{% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {# Table #}
+  {% if productos %}
+  <div style="overflow-x:auto;">
+    <table class="cl-table--v7" id="tblProductos" aria-label="Lista de productos">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Precio</th>
+          <th>Categoría</th>
+          <th>Estación</th>
+          <th>Unidad</th>
+          <th style="text-align:right;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in productos %}
+        <tr data-categoria="{{ p.categoria.nombre if p.categoria else '' }}">
+          <td>
+            <div style="font-weight:600;color:var(--cl-text-primary);">{{ p.nombre }}</div>
+            {% if p.descripcion %}<div style="font-size:11px;color:var(--cl-text-tertiary);margin-top:2px;">{{
+              p.descripcion[:50] }}{% if p.descripcion|length > 50 %}…{% endif %}</div>{% endif %}
+          </td>
+          <td style="font-family:var(--cl-font-mono);color:var(--cl-success-500);font-weight:600;">
+            ${{ '%.2f'|format(p.precio) }}
+          </td>
+          <td>
+            {% if p.categoria %}
+            <span class="cl-badge cl-badge--blue">{{ p.categoria.nombre }}</span>
+            {% else %}<span style="color:var(--cl-text-tertiary);">—</span>{% endif %}
+          </td>
+          <td>{{ p.estacion.nombre if p.estacion else '—' }}</td>
+          <td><span class="cl-badge cl-badge--gray">{{ p.unidad or '—' }}</span></td>
+          <td style="text-align:right;">
+            <div style="display:flex;justify-content:flex-end;gap:6px;">
+              <a href="{{ url_for('admin.producto_editar', id=p.id) }}" class="cl-btn--v7-outline cl-btn--sm"
+                title="Editar {{ p.nombre }}">
+                <i data-lucide="pencil" style="width:13px;height:13px;"></i>
+              </a>
+              <button class="cl-btn--v7-outline cl-btn--sm"
+                style="color:var(--cl-error-500);border-color:rgba(240,68,56,0.2);" data-bs-toggle="modal"
+                data-bs-target="#deleteModal" data-action="{{ url_for('admin.producto_eliminar', id=p.id) }}"
+                data-name="{{ p.nombre }}" title="Eliminar {{ p.nombre }}">
+                <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="display:flex;flex-direction:column;align-items:center;padding:48px;gap:12px;opacity:.45;">
+    <i data-lucide="package" style="width:40px;height:40px;color:var(--cl-text-tertiary);"></i>
+    <p style="font-size:14px;color:var(--cl-text-tertiary);margin:0;">No hay productos registrados</p>
+    <a href="{{ url_for('admin.producto_nuevo') }}" class="cl-btn--v7-primary" style="opacity:1;">
+      <i data-lucide="plus" class="icon-sm"></i> Crear primer producto
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+{# ── Delete Confirm Modal ── #}
+{{ confirm_modal(id='deleteModal', title='¿Eliminar producto?', body='Esta acción no se puede deshacer.',
+confirm_text='Eliminar', form_action='#') }}
 
 <script>
-document.getElementById('deleteModal').addEventListener('show.bs.modal', function(e){
-  this.querySelector('form').setAttribute('action', e.relatedTarget.getAttribute('data-action'));
-});
+  // Modal action
+  document.getElementById('deleteModal').addEventListener('show.bs.modal', function (e) {
+    this.querySelector('form').setAttribute('action', e.relatedTarget.getAttribute('data-action'));
+    const name = e.relatedTarget.getAttribute('data-name');
+    this.querySelector('.modal-body').textContent = `¿Eliminar "${name}"? Esta acción no se puede deshacer.`;
+  });
+
+  // Table search
+  const searchInput = document.getElementById('searchProductos');
+  const tbl = document.getElementById('tblProductos');
+  if (searchInput && tbl) {
+    searchInput.addEventListener('input', function () {
+      const q = this.value.toLowerCase();
+      tbl.querySelectorAll('tbody tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+    });
+  }
+
+  // Category filter
+  const filterBtns = document.querySelectorAll('#categoriaFilters .cl-filter-pill');
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', function () {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      const filter = this.dataset.filter;
+      tbl && tbl.querySelectorAll('tbody tr').forEach(row => {
+        row.style.display = !filter || row.dataset.categoria === filter ? '' : 'none';
+      });
+    });
+  });
 </script>
 {% endblock %}

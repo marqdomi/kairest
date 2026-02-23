@@ -1,0 +1,131 @@
+{% extends 'layouts/_layout_admin.html' %}
+
+{% block page_title %}Personalización{% endblock %}
+
+{% block content %}
+<div class="cl-content-header" style="margin-bottom:24px;">
+    <div>
+        <h1 class="cl-page-title">Personalización</h1>
+        <p class="cl-page-subtitle">Configura la identidad visual de tu restaurante</p>
+    </div>
+</div>
+
+<form method="POST" enctype="multipart/form-data" action="{{ url_for('admin.personalizacion') }}"
+    style="max-width:720px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {# ── Logo ── #}
+    <div class="cl-v7-card" style="padding:24px;margin-bottom:20px;">
+        <h3 style="margin:0 0 16px;font-size:15px;font-weight:700;color:var(--cl-text-primary,#F2F4F7);">
+            <i data-lucide="image" style="width:16px;height:16px;margin-right:6px;vertical-align:-2px;"></i>
+            Logo del Restaurante
+        </h3>
+        <div style="display:flex;align-items:center;gap:20px;">
+            <div id="logoPreview"
+                style="width:80px;height:80px;border-radius:16px;background:var(--cl-surface-2,#1A1D26);display:flex;align-items:center;justify-content:center;overflow:hidden;border:2px dashed var(--cl-border-color,rgba(255,255,255,.1));">
+                {% if sucursal.logo_url %}
+                <img src="{{ sucursal.logo_url }}" alt="Logo actual" style="width:100%;height:100%;object-fit:contain;">
+                {% else %}
+                <img src="{{ url_for('static', filename='img/kairest-logo.svg') }}" alt="Logo default"
+                    style="width:60%;height:60%;opacity:.5;">
+                {% endif %}
+            </div>
+            <div>
+                <label class="cl-btn cl-btn--outline" style="cursor:pointer;display:inline-block;margin-bottom:8px;">
+                    <i data-lucide="upload" style="width:14px;height:14px;margin-right:4px;vertical-align:-2px;"></i>
+                    Subir Logo
+                    <input type="file" name="logo" accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                        style="display:none;" onchange="previewLogo(this)">
+                </label>
+                <div style="font-size:11px;color:var(--cl-text-tertiary,#98A2B3);">PNG, JPG, SVG o WebP · Máx 2MB</div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Datos del Negocio ── #}
+    <div class="cl-v7-card" style="padding:24px;margin-bottom:20px;">
+        <h3 style="margin:0 0 16px;font-size:15px;font-weight:700;color:var(--cl-text-primary,#F2F4F7);">
+            <i data-lucide="store" style="width:16px;height:16px;margin-right:6px;vertical-align:-2px;"></i>
+            Datos del Negocio
+        </h3>
+
+        <div class="cl-form-group" style="margin-bottom:16px;">
+            <label class="cl-form-label" for="nombre">Nombre del restaurante</label>
+            <input type="text" class="cl-form-input" name="nombre" id="nombre" value="{{ sucursal.nombre }}"
+                maxlength="100" required>
+        </div>
+
+        <div class="cl-form-group" style="margin-bottom:16px;">
+            <label class="cl-form-label" for="slogan">Slogan <span
+                    style="color:var(--cl-text-tertiary);font-weight:400;">(opcional)</span></label>
+            <input type="text" class="cl-form-input" name="slogan" id="slogan" value="{{ sucursal.slogan or '' }}"
+                maxlength="200" placeholder="Ej: Los mejores tacos desde 1995">
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="cl-form-group">
+                <label class="cl-form-label" for="direccion">Dirección</label>
+                <input type="text" class="cl-form-input" name="direccion" id="direccion"
+                    value="{{ sucursal.direccion or '' }}" maxlength="300" placeholder="Calle, Número, Colonia">
+            </div>
+            <div class="cl-form-group">
+                <label class="cl-form-label" for="telefono">Teléfono</label>
+                <input type="text" class="cl-form-input" name="telefono" id="telefono"
+                    value="{{ sucursal.telefono or '' }}" maxlength="20" placeholder="55 1234 5678">
+            </div>
+        </div>
+
+        <div class="cl-form-group" style="margin-top:16px;">
+            <label class="cl-form-label" for="rfc">RFC <span
+                    style="color:var(--cl-text-tertiary);font-weight:400;">(para tickets y facturas)</span></label>
+            <input type="text" class="cl-form-input" name="rfc" id="rfc" value="{{ sucursal.rfc or '' }}" maxlength="13"
+                style="max-width:240px;" placeholder="XAXX010101000">
+        </div>
+    </div>
+
+    {# ── Color de Marca ── #}
+    <div class="cl-v7-card" style="padding:24px;margin-bottom:24px;">
+        <h3 style="margin:0 0 16px;font-size:15px;font-weight:700;color:var(--cl-text-primary,#F2F4F7);">
+            <i data-lucide="palette" style="width:16px;height:16px;margin-right:6px;vertical-align:-2px;"></i>
+            Color de Marca
+        </h3>
+        <div style="display:flex;align-items:center;gap:16px;">
+            <input type="color" name="color_primario" id="color_primario"
+                value="{{ sucursal.color_primario or '#C41E3A' }}"
+                style="width:48px;height:48px;border:none;border-radius:12px;cursor:pointer;background:transparent;">
+            <div>
+                <div style="font-size:13px;color:var(--cl-text-primary,#F2F4F7);font-weight:600;" id="colorHex">{{
+                    sucursal.color_primario or '#C41E3A' }}</div>
+                <div style="font-size:11px;color:var(--cl-text-tertiary,#98A2B3);">
+                    Se usa en botones, acentos y elementos interactivos
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Submit ── #}
+    <div style="display:flex;justify-content:flex-end;gap:12px;">
+        <a href="{{ url_for('admin.dashboard') }}" class="cl-btn cl-btn--outline">Cancelar</a>
+        <button type="submit" class="cl-btn cl-btn--primary">
+            <i data-lucide="save" style="width:16px;height:16px;margin-right:6px;vertical-align:-2px;"></i>
+            Guardar Cambios
+        </button>
+    </div>
+</form>
+
+<script>
+    function previewLogo(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const preview = document.getElementById('logoPreview');
+                preview.innerHTML = '<img src="' + e.target.result + '" alt="Preview" style="width:100%;height:100%;object-fit:contain;">';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    document.getElementById('color_primario').addEventListener('input', function () {
+        document.getElementById('colorHex').textContent = this.value;
+    });
+</script>
+{% endblock %}

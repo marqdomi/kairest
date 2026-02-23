@@ -3,6 +3,7 @@
 {% block head %}
 {{ super() }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 {% endblock %}
 
 {% block admin_content %}
@@ -40,7 +41,7 @@
 {# Chart (hidden by default) #}
 <div id="chartRentabilidadContainer" style="display:none;">
   <div class="cl-card mb-4">
-    <div class="cl-card__header"><strong>Precio Venta vs Margen %</strong></div>
+    <div class="cl-card__header"><strong>Ingreso Total vs Margen % (Top 20)</strong></div>
     <div class="cl-card__body"><div style="position:relative;height:400px;"><canvas id="chartRentabilidad"></canvas></div></div>
   </div>
 </div>
@@ -67,9 +68,9 @@
           <tr{% if row.margen_pct is not none and row.margen_pct < 30 %} style="background:var(--cl-danger-bg,rgba(220,53,69,.08));"{% endif %}>
             <td>{{ loop.index }}</td>
             <td>{{ row.nombre }}</td>
-            <td class="text-end">${{ '%.2f'|format(row.precio_venta) }}</td>
-            <td class="text-end">{% if row.costo is not none %}${{ '%.2f'|format(row.costo) }}{% else %}<span style="color:var(--cl-text-muted)">N/A</span>{% endif %}</td>
-            <td class="text-end">{% if row.margen_abs is not none %}${{ '%.2f'|format(row.margen_abs) }}{% else %}-{% endif %}</td>
+            <td class="text-end">{{ row.precio_venta|money }}</td>
+            <td class="text-end">{% if row.costo is not none %}{{ row.costo|money }}{% else %}<span style="color:var(--cl-text-muted)">N/A</span>{% endif %}</td>
+            <td class="text-end">{% if row.margen_abs is not none %}{{ row.margen_abs|money }}{% else %}-{% endif %}</td>
             <td class="text-end">
               {% if row.margen_pct is not none %}
                 <span class="cl-badge {% if row.margen_pct >= 50 %}cl-badge--success{% elif row.margen_pct >= 30 %}cl-badge--warning{% else %}cl-badge--danger{% endif %}">
@@ -78,7 +79,7 @@
               {% else %}-{% endif %}
             </td>
             <td class="text-end">{{ row.cantidad }}</td>
-            <td class="text-end">{% if row.utilidad_total is not none %}${{ '%.2f'|format(row.utilidad_total) }}{% else %}-{% endif %}</td>
+            <td class="text-end">{% if row.utilidad_total is not none %}{{ row.utilidad_total|money }}{% else %}-{% endif %}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -122,35 +123,86 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(r => r.json())
       .then(data => {
         const ctx = document.getElementById('chartRentabilidad').getContext('2d');
+        const labels = data.productos.map(p => p.nombre);
+        const ingresos = data.productos.map(p => p.ingreso);
+        const margenes = data.productos.map(p => p.margen);
+
         chartInstance = new Chart(ctx, {
-          type: 'scatter',
+          type: 'bar',
           data: {
-            datasets: [{
-              label: 'Productos',
-              data: data.productos.map(p => ({x: p.precio, y: p.margen, nombre: p.nombre})),
-              backgroundColor: data.productos.map(p => p.margen < 30 ? 'rgba(220,53,69,0.7)' : 'rgba(40,167,69,0.7)'),
-              pointRadius: 8,
-              pointHoverRadius: 12,
-            }]
+            labels: labels,
+            datasets: [
+              {
+                type: 'line',
+                label: 'Margen %',
+                data: margenes,
+                borderColor: '#F79009',
+                backgroundColor: '#F79009',
+                borderWidth: 3,
+                tension: 0.3,
+                yAxisID: 'y1',
+                pointRadius: 4,
+                pointHoverRadius: 6,
+              },
+              {
+                type: 'bar',
+                label: 'Ingreso Total ($)',
+                data: ingresos,
+                backgroundColor: 'rgba(166, 25, 46, 0.8)',
+                borderColor: '#A6192E',
+                borderWidth: 1,
+                borderRadius: 4,
+                yAxisID: 'y',
+              }
+            ]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
               tooltip: {
+                backgroundColor: 'rgba(16, 24, 40, 0.9)',
+                titleFont: { size: 14, weight: 'bold' },
+                bodyFont: { size: 13 },
+                padding: 12,
+                cornerRadius: 8,
                 callbacks: {
-                  label: ctx => `${ctx.raw.nombre}: Precio $${ctx.raw.x.toFixed(2)}, Margen ${ctx.raw.y.toFixed(1)}%`
+                  label: function(ctx) {
+                    if (ctx.datasetIndex === 0) return 'Margen: ' + ctx.parsed.y.toFixed(1) + '%';
+                    return 'Ingreso: $' + ctx.parsed.y.toLocaleString('es-MX', {minimumFractionDigits: 2});
+                  }
                 }
               },
               annotation: {
                 annotations: {
-                  line30: {type:'line', yMin:30, yMax:30, borderColor:'rgba(255,193,7,0.8)', borderDash:[6,6], label:{display:true, content:'30%', position:'end'}}
+                  line30: {
+                    type: 'line', 
+                    yMin: 30, 
+                    yMax: 30, 
+                    yScaleID: 'y1',
+                    borderColor: 'rgba(240, 68, 56, 0.8)', 
+                    borderDash: [6, 6], 
+                    label: {display: true, content: 'Umbral 30%', position: 'end'}
+                  }
                 }
               }
             },
             scales: {
-              x: {title: {display: true, text: 'Precio Venta ($)'}},
-              y: {title: {display: true, text: 'Margen (%)'}},
+              x: { grid: { display: false } },
+              y: {
+                type: 'linear',
+                position: 'left',
+                title: { display: true, text: 'Ingreso Total ($)' },
+                ticks: { callback: v => '$' + v.toLocaleString('es-MX') },
+                grid: { borderDash: [4, 4], color: 'rgba(0,0,0,0.05)' }
+              },
+              y1: {
+                type: 'linear',
+                position: 'right',
+                title: { display: true, text: 'Margen (%)' },
+                grid: { drawOnChartArea: false },
+                ticks: { callback: v => v + '%' }
+              }
             }
           }
         });

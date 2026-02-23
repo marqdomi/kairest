@@ -22,14 +22,17 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Connection pooling (Sprint 2 — 2.4)
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_size': int(os.getenv('DB_POOL_SIZE', '5')),
-        'max_overflow': int(os.getenv('DB_MAX_OVERFLOW', '10')),
-        'pool_recycle': int(os.getenv('DB_POOL_RECYCLE', '1800')),
-        'pool_pre_ping': True,
-        'pool_timeout': int(os.getenv('DB_POOL_TIMEOUT', '30')),
-    }
+    # Connection pooling (Sprint 2 — 2.4) — only for non-SQLite
+    if 'sqlite' not in SQLALCHEMY_DATABASE_URI:
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            'pool_size': int(os.getenv('DB_POOL_SIZE', '5')),
+            'max_overflow': int(os.getenv('DB_MAX_OVERFLOW', '10')),
+            'pool_recycle': int(os.getenv('DB_POOL_RECYCLE', '1800')),
+            'pool_pre_ping': True,
+            'pool_timeout': int(os.getenv('DB_POOL_TIMEOUT', '30')),
+        }
+    else:
+        SQLALCHEMY_ENGINE_OPTIONS = {}
 
     # Bump this whenever any static asset (CSS/JS) changes, to force browser reload
     VERSION = '5.5.0'
@@ -68,15 +71,27 @@ class Config:
     FACTURAPI_KEY = os.getenv('FACTURAPI_KEY', '')
     FACTURAPI_URL = os.getenv('FACTURAPI_URL', 'https://www.facturapi.io/v2')
 
+    # ── Modo sistema: módulos visibles por modo ──
+    # basico: solo lo esencial para operar un puesto pequeño
+    # avanzado: todas las funcionalidades habilitadas
+    MODULOS_BASICOS = {
+        'dashboard', 'operaciones', 'catalogo', 'ventas',
+    }
+    MODULOS_AVANZADOS = {
+        'dashboard', 'operaciones', 'catalogo', 'inventario',
+        'ventas', 'crm', 'fiscal', 'configuracion',
+    }
+
 
 class DevelopmentConfig(Config):
     """Configuración para desarrollo local."""
     DEBUG = True
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        **Config.SQLALCHEMY_ENGINE_OPTIONS,
-        'pool_size': 2,
-        'max_overflow': 3,
-    }
+    if 'sqlite' not in Config.SQLALCHEMY_DATABASE_URI:
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            **Config.SQLALCHEMY_ENGINE_OPTIONS,
+            'pool_size': 2,
+            'max_overflow': 3,
+        }
 
 
 class ProductionConfig(Config):
@@ -85,11 +100,12 @@ class ProductionConfig(Config):
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        **Config.SQLALCHEMY_ENGINE_OPTIONS,
-        'pool_size': int(os.getenv('DB_POOL_SIZE', '10')),
-        'max_overflow': int(os.getenv('DB_MAX_OVERFLOW', '20')),
-    }
+    if 'sqlite' not in Config.SQLALCHEMY_DATABASE_URI:
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            **Config.SQLALCHEMY_ENGINE_OPTIONS,
+            'pool_size': int(os.getenv('DB_POOL_SIZE', '10')),
+            'max_overflow': int(os.getenv('DB_MAX_OVERFLOW', '20')),
+        }
 
 
 config_by_name = {

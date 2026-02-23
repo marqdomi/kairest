@@ -9,6 +9,46 @@ from backend.extensions import db
 IVA_RATE = Decimal('0.16')  # 16% IVA México
 
 
+# -------------------- CONFIGURACIÓN DEL SISTEMA (Fase 7 - Onboarding) --------------------
+
+class ConfiguracionSistema(db.Model):
+    """Key-value store for system-wide configuration.
+    Used for onboarding state, system mode, and business settings."""
+    __tablename__ = 'configuracion_sistema'
+    id = db.Column(db.Integer, primary_key=True)
+    clave = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    valor = db.Column(db.Text, nullable=True)
+
+    @staticmethod
+    def get(clave, default=None):
+        """Get a config value by key."""
+        row = ConfiguracionSistema.query.filter_by(clave=clave).first()
+        return row.valor if row else default
+
+    @staticmethod
+    def set(clave, valor):
+        """Set a config value (upsert)."""
+        row = ConfiguracionSistema.query.filter_by(clave=clave).first()
+        if row:
+            row.valor = str(valor)
+        else:
+            row = ConfiguracionSistema(clave=clave, valor=str(valor))
+            db.session.add(row)
+        db.session.flush()
+        return row
+
+    @staticmethod
+    def get_bool(clave, default=False):
+        """Get a config value as boolean."""
+        val = ConfiguracionSistema.get(clave)
+        if val is None:
+            return default
+        return val.lower() in ('true', '1', 'yes', 'si')
+
+    def __repr__(self):
+        return f"<Config {self.clave}={self.valor}>"
+
+
 # -------------------- MULTI-SUCURSAL (Fase 4 - Item 23) --------------------
 
 class Sucursal(db.Model):
@@ -19,6 +59,12 @@ class Sucursal(db.Model):
     telefono = db.Column(db.String(20), nullable=True)
     activa = db.Column(db.Boolean, default=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # White-label customization (Fase 9)
+    logo_url = db.Column(db.String(500), nullable=True)       # Path to uploaded logo
+    color_primario = db.Column(db.String(7), default='#C41E3A')  # Hex color
+    slogan = db.Column(db.String(200), nullable=True)
+    rfc = db.Column(db.String(13), nullable=True)              # For tickets/facturas
 
     usuarios = db.relationship('Usuario', backref='sucursal', lazy=True)
     mesas = db.relationship('Mesa', backref='sucursal', lazy=True)

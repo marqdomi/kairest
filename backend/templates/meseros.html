@@ -1,216 +1,240 @@
 {# ═══════════════════════════════════════════════════════
-   Sprint 9 — 9.5: Meseros Dashboard
-   Cards grid, urgency borders, FAB, Socket.IO
-   ═══════════════════════════════════════════════════════ #}
+Meseros Dashboard — v7
+Order cards grid with urgency borders, FAB, Socket.IO
+═══════════════════════════════════════════════════════ #}
 {% extends 'layouts/_layout_operations.html' %}
 {% set active_op_tab = 'meseros' %}
-{% block page_title %}Meseros{% endblock %}
+{% block page_title %}Mis Órdenes{% endblock %}
 
 {% block ops_content %}
-{# ── Header with counters ── #}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-3" style="margin-bottom: var(--cl-space-4);">
-  <div>
-    <h1 style="font-size: var(--cl-text-2xl); font-weight: var(--cl-font-bold); color: var(--cl-text-primary); margin: 0;">
-      Mis Órdenes
-    </h1>
-  </div>
-  <div class="d-flex gap-2 align-items-center flex-wrap">
-    <span class="cl-badge cl-badge--pill" id="counterTotal" style="font-size: var(--cl-text-sm); padding: var(--cl-space-1) var(--cl-space-3);">
-      <i data-lucide="clipboard-list" class="icon-xs"></i>
-      <span>{{ ordenes_mesero|length }}</span> activas
-    </span>
-    {% set pendientes = ordenes_mesero|selectattr('estado','equalto','pendiente')|list|length + ordenes_mesero|selectattr('estado','equalto','enviado')|list|length + ordenes_mesero|selectattr('estado','equalto','en_preparacion')|list|length %}
-    {% set listas = ordenes_mesero|selectattr('estado','equalto','completada')|list|length + ordenes_mesero|selectattr('estado','equalto','lista_para_entregar')|list|length %}
-    {% if pendientes > 0 %}
-    <span class="cl-badge cl-badge--warning cl-badge--pill" style="font-size: var(--cl-text-sm); padding: var(--cl-space-1) var(--cl-space-3);">
-      <i data-lucide="clock" class="icon-xs"></i>
-      {{ pendientes }} en cocina
-    </span>
-    {% endif %}
-    {% if listas > 0 %}
-    <span class="cl-badge cl-badge--success cl-badge--pill" style="font-size: var(--cl-text-sm); padding: var(--cl-space-1) var(--cl-space-3);">
-      <i data-lucide="check-circle" class="icon-xs"></i>
-      {{ listas }} listas
-    </span>
-    {% endif %}
-  </div>
-</div>
+<div style="padding:20px 24px;min-height:calc(100vh - 56px);">
 
-{% if not ordenes_mesero %}
-{# ── Empty state ── #}
-<div style="padding: var(--cl-space-16) var(--cl-space-4); text-align: center;">
-  <div style="width: 80px; height: 80px; border-radius: var(--cl-radius-full); background: var(--cl-bg-tertiary); display: inline-flex; align-items: center; justify-content: center; margin-bottom: var(--cl-space-4);">
-    <i data-lucide="coffee" style="width: 40px; height: 40px; color: var(--cl-text-placeholder);"></i>
+  {# ── Page Header ── #}
+  <div class="cl-page-hdr" style="margin-bottom:20px;">
+    <div>
+      <h1 style="font-size:20px;">Mis Órdenes</h1>
+      <p style="margin-top:4px;">
+        {{ now_utc.strftime('%A %d de %B') if now_utc is defined else '' }}
+      </p>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span class="cl-chip cl-chip--neutral" id="counterTotal" aria-live="polite">
+        <i data-lucide="clipboard-list" style="width:12px;height:12px;"></i>
+        {{ ordenes_mesero|length }} activa{{ 's' if ordenes_mesero|length != 1 else '' }}
+      </span>
+      {% set pendientes = ordenes_mesero|selectattr('estado','equalto','pendiente')|list|length
+      + ordenes_mesero|selectattr('estado','equalto','enviado')|list|length
+      + ordenes_mesero|selectattr('estado','equalto','en_preparacion')|list|length %}
+      {% set listas = ordenes_mesero|selectattr('estado','equalto','completada')|list|length
+      + ordenes_mesero|selectattr('estado','equalto','lista_para_entregar')|list|length %}
+      {% if pendientes > 0 %}
+      <span class="cl-chip cl-chip--yellow">
+        <i data-lucide="clock" style="width:12px;height:12px;"></i>
+        {{ pendientes }} en cocina
+      </span>
+      {% endif %}
+      {% if listas > 0 %}
+      <span class="cl-chip cl-chip--green">
+        <i data-lucide="check-circle" style="width:12px;height:12px;"></i>
+        {{ listas }} {{ 'lista' if listas == 1 else 'listas' }}
+      </span>
+      {% endif %}
+    </div>
   </div>
-  <h3 style="font-size: var(--cl-text-xl); font-weight: var(--cl-font-semibold); color: var(--cl-text-primary); margin-bottom: var(--cl-space-2);">Sin órdenes activas</h3>
-  <p style="color: var(--cl-text-secondary); max-width: 400px; margin: 0 auto var(--cl-space-6);">
-    No tienes órdenes en este momento. ¡Crea una nueva para comenzar!
-  </p>
-  <div class="d-flex gap-2 justify-content-center flex-wrap">
-    <a href="{{ url_for('meseros.seleccionar_mesa') }}" class="cl-btn cl-btn--primary">
-      <i data-lucide="plus" class="icon-sm"></i> Nueva Orden Mesa
-    </a>
-    <a href="{{ url_for('meseros.crear_orden_para_llevar') }}" class="cl-btn cl-btn--outline">
-      <i data-lucide="package" class="icon-sm"></i> Para Llevar
-    </a>
+
+  {% if not ordenes_mesero %}
+  {# ── Empty state ── #}
+  <div
+    style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:55vh;gap:16px;text-align:center;">
+    <div
+      style="width:80px;height:80px;border-radius:20px;background:rgba(255,255,255,0.05);border:1px solid var(--cl-border-color);display:flex;align-items:center;justify-content:center;">
+      <i data-lucide="coffee" style="width:36px;height:36px;color:var(--cl-text-tertiary);"></i>
+    </div>
+    <div>
+      <h3 style="font-size:18px;font-weight:700;margin-bottom:6px;">Sin órdenes activas</h3>
+      <p style="color:var(--cl-text-tertiary);font-size:14px;max-width:340px;margin:0 auto;">
+        No tienes órdenes en este momento. ¡Crea una nueva para comenzar!
+      </p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+      <a href="{{ url_for('meseros.seleccionar_mesa') }}" class="cl-btn--v7-primary">
+        <i data-lucide="plus" class="icon-sm"></i> Nueva Orden Mesa
+      </a>
+      <a href="{{ url_for('meseros.crear_orden_para_llevar') }}" class="cl-btn--v7-outline">
+        <i data-lucide="package" class="icon-sm"></i> Para Llevar
+      </a>
+    </div>
   </div>
-</div>
-{% else %}
-{# ── Orders cards grid ── #}
-<div class="row g-3" id="ordenesGrid">
-  {% for orden in ordenes_mesero %}
-  {% set mins_elapsed = ((now_utc - orden.tiempo_registro).total_seconds() / 60)|int if now_utc is defined else 0 %}
-  <div class="col-12 col-sm-6 col-lg-4 col-xl-3" id="orden-card-{{ orden.id }}" data-orden-id="{{ orden.id }}">
-    <div class="cl-card cl-order-card" style="
-      border-radius: var(--cl-radius-lg);
-      border-left: 4px solid {% if orden.estado in ['completada','lista_para_entregar'] %}var(--cl-success-500){% elif mins_elapsed > 20 %}var(--cl-error-500){% elif mins_elapsed > 10 %}var(--cl-warning-500){% else %}var(--cl-success-500){% endif %};
-      transition: transform var(--cl-transition-fast), box-shadow var(--cl-transition-fast);
-      cursor: pointer;
-      height: 100%;
-    " onclick="window.location='{{ url_for('meseros.detalle_orden', orden_id=orden.id) }}'">
+
+  {% else %}
+  {# ── Orders cards grid ── #}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;" id="ordenesGrid">
+    {% for orden in ordenes_mesero %}
+    {% set mins = ((now_utc - orden.tiempo_registro).total_seconds() / 60)|int if now_utc is defined else 0 %}
+    {% if orden.estado in ['completada','lista_para_entregar'] %}
+    {% set urgency = 'fresh' %}
+    {% set status_class = 'cl-status--ready' %}
+    {% set status_label = 'Lista ✓' %}
+    {% elif mins > 20 %}
+    {% set urgency = 'urgent' %}
+    {% set status_class = 'cl-status--urgent' %}
+    {% set status_label = str(mins) ~ ' min' %}
+    {% elif mins > 10 %}
+    {% set urgency = 'warning' %}
+    {% set status_class = 'cl-status--pending' %}
+    {% set status_label = str(mins) ~ ' min' %}
+    {% else %}
+    {% set urgency = 'fresh' %}
+    {% set status_class = 'cl-status--kitchen' %}
+    {% set status_label = 'En cocina' %}
+    {% endif %}
+
+    <div class="cl-order-card cl-order-card--{{ urgency }}" id="orden-card-{{ orden.id }}"
+      data-orden-id="{{ orden.id }}"
+      onclick="window.location='{{ url_for('meseros.detalle_orden', orden_id=orden.id) }}'" role="button"
+      aria-label="Orden #{{ orden.id }}{% if orden.mesa %}, Mesa {{ orden.mesa.numero }}{% endif %}" tabindex="0">
+
       {# Card header #}
-      <div style="padding: var(--cl-space-3) var(--cl-space-4); border-bottom: 1px solid var(--cl-border-secondary); display: flex; justify-content: space-between; align-items: center;">
+      <div
+        style="padding:14px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:flex-start;justify-content:space-between;">
         <div>
-          <span style="font-weight: var(--cl-font-bold); font-size: var(--cl-text-lg); color: var(--cl-text-primary);">
+          <div
+            style="font-family:var(--cl-font-mono);font-size:20px;font-weight:900;letter-spacing:-0.02em;line-height:1;color:var(--cl-text-primary);">
             #{{ orden.id }}
-          </span>
-          <span style="color: var(--cl-text-secondary); font-size: var(--cl-text-sm); margin-left: var(--cl-space-2);">
+          </div>
+          <div
+            style="font-size:12px;color:var(--cl-text-tertiary);margin-top:4px;display:flex;align-items:center;gap:4px;">
             {% if orden.es_para_llevar %}
-              <i data-lucide="package" class="icon-xs"></i> Para llevar
+            <i data-lucide="package" style="width:11px;height:11px;"></i> Para llevar
             {% else %}
-              <i data-lucide="utensils-crossed" class="icon-xs"></i> Mesa {{ orden.mesa.numero if orden.mesa else 'N/A' }}
+            <i data-lucide="armchair" style="width:11px;height:11px;"></i> Mesa {{ orden.mesa.numero if orden.mesa else
+            '?' }}
             {% endif %}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+          {# Timer badge #}
+          {% if urgency == 'urgent' %}
+          <span class="cl-timer cl-timer--urgent">{{ mins }} min</span>
+          {% elif urgency == 'warning' %}
+          <span class="cl-timer cl-timer--warning">{{ mins }} min</span>
+          {% else %}
+          <span class="cl-timer cl-timer--fresh">{{ orden.tiempo_registro.strftime('%H:%M') }}</span>
+          {% endif %}
+          {# Status #}
+          <span class="cl-status {{ status_class }}" style="font-size:10px;padding:2px 8px;">
+            {% if orden.estado == 'pendiente' %}Pendiente
+            {% elif orden.estado in ['enviado','en_preparacion'] %}En cocina
+            {% elif orden.estado == 'lista_para_entregar' %}Lista ✓
+            {% elif orden.estado == 'completada' %}Completada
+            {% else %}{{ orden.estado|capitalize }}{% endif %}
           </span>
         </div>
-        {% if orden.estado == 'pendiente' %}
-          <span class="cl-badge cl-badge--warning" style="font-size: 11px;">Pendiente</span>
-        {% elif orden.estado == 'enviado' or orden.estado == 'en_preparacion' %}
-          <span class="cl-badge cl-badge--info" style="font-size: 11px;">En cocina</span>
-        {% elif orden.estado == 'lista_para_entregar' %}
-          <span class="cl-badge cl-badge--success" style="font-size: 11px;">Lista</span>
-        {% elif orden.estado == 'completada' %}
-          <span class="cl-badge cl-badge--success" style="font-size: 11px;">Completada</span>
-        {% else %}
-          <span class="cl-badge" style="font-size: 11px;">{{ orden.estado|capitalize }}</span>
-        {% endif %}
       </div>
 
-      {# Card body — items summary #}
-      <div style="padding: var(--cl-space-3) var(--cl-space-4);">
-        <div style="display: flex; flex-direction: column; gap: var(--cl-space-1); margin-bottom: var(--cl-space-3);">
-          {% for detalle in orden.detalles[:5] %}
-          <div style="display: flex; justify-content: space-between; align-items: center; font-size: var(--cl-text-sm);" id="product-item-{{ detalle.id }}">
-            <span style="color: var(--cl-text-primary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+      {# Card body — items #}
+      <div style="padding:12px 16px;">
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px;">
+          {% for detalle in orden.detalles[:4] %}
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;"
+            id="product-item-{{ detalle.id }}">
+            <span
+              style="color:var(--cl-text-primary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;">
               {{ detalle.producto.nombre }}
-              <span style="color: var(--cl-text-tertiary);">x{{ detalle.cantidad }}</span>
+              <span style="color:var(--cl-text-tertiary);font-size:11px;"> ×{{ detalle.cantidad }}</span>
             </span>
-            <span class="estado-producto-texto" style="flex-shrink: 0; margin-left: var(--cl-space-2);">
+            <span class="estado-producto-texto" style="flex-shrink:0;margin-left:8px;">
               {% if detalle.estado == 'listo' %}
-                <span class="cl-badge cl-badge--success cl-badge--pill" style="font-size: 10px;">Listo</span>
+              <span class="cl-badge cl-badge--green" style="font-size:9px;padding:1px 6px;">Listo</span>
               {% elif detalle.estado == 'entregado' %}
-                <span class="cl-badge cl-badge--pill" style="font-size: 10px; background: var(--cl-bg-tertiary); color: var(--cl-text-tertiary);">Entregado</span>
+              <span class="cl-badge cl-badge--gray" style="font-size:9px;padding:1px 6px;">✓</span>
               {% else %}
-                <span class="cl-badge cl-badge--warning cl-badge--pill" style="font-size: 10px;">{{ detalle.estado|capitalize }}</span>
+              <span class="cl-badge cl-badge--yellow" style="font-size:9px;padding:1px 6px;">{{
+                detalle.estado|capitalize }}</span>
               {% endif %}
             </span>
           </div>
           {% endfor %}
-          {% if orden.detalles|length > 5 %}
-          <span style="font-size: var(--cl-text-xs); color: var(--cl-text-tertiary);">+{{ orden.detalles|length - 5 }} más...</span>
+          {% if orden.detalles|length > 4 %}
+          <span style="font-size:11px;color:var(--cl-text-tertiary);">+{{ orden.detalles|length - 4 }} más...</span>
           {% endif %}
         </div>
 
-        {# Timer + items count #}
-        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: var(--cl-space-2); border-top: 1px solid var(--cl-border-secondary);">
-          <span style="font-size: var(--cl-text-xs); color: var(--cl-text-tertiary);">
-            <i data-lucide="clock" class="icon-xs"></i>
-            {{ orden.tiempo_registro.strftime('%H:%M') }}
-          </span>
-          <span style="font-size: var(--cl-text-xs); color: var(--cl-text-secondary);">
-            {{ orden.detalles|length }} item{{ 's' if orden.detalles|length != 1 else '' }}
+        <div
+          style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);font-size:11px;color:var(--cl-text-tertiary);">
+          <span>{{ orden.detalles|length }} ítem{{ 's' if orden.detalles|length != 1 else '' }}</span>
+          <span style="font-family:var(--cl-font-mono);color:var(--cl-success-500);font-weight:700;">
+            ${{ '%.2f'|format(orden.total) if orden.total else '—' }}
           </span>
         </div>
       </div>
 
       {# Card footer — actions #}
-      <div style="padding: var(--cl-space-2) var(--cl-space-4) var(--cl-space-3); display: flex; gap: var(--cl-space-2);" onclick="event.stopPropagation();">
-        <a href="{{ url_for('meseros.detalle_orden', orden_id=orden.id) }}"
-           class="cl-btn cl-btn--outline cl-btn--sm" style="flex: 1; justify-content: center;">
-          <i data-lucide="pencil" class="icon-xs"></i> Modificar
+      {% set all_entregados = orden.detalles|selectattr('estado','equalto','entregado')|list|length ==
+      orden.detalles|length and orden.detalles|length > 0 %}
+      <div style="padding:10px 14px 12px;display:flex;gap:8px;" onclick="event.stopPropagation();">
+        <a href="{{ url_for('meseros.detalle_orden', orden_id=orden.id) }}" class="cl-btn--v7-outline cl-btn--sm"
+          style="flex:1;justify-content:center;text-align:center;">
+          <i data-lucide="pencil" style="width:12px;height:12px;"></i> Modificar
         </a>
-        <button type="button"
-                class="cl-btn cl-btn--sm btn-cobrar-orden"
-                style="flex: 1; justify-content: center; background: var(--cl-gold, #D4A843); color: white; border: none;"
-                data-orden-id="{{ orden.id }}"
-                {% set all_entregados = orden.detalles|selectattr('estado','equalto','entregado')|list|length == orden.detalles|length and orden.detalles|length > 0 %}
-                {% if not all_entregados %}disabled{% endif %}>
-          <i data-lucide="credit-card" class="icon-xs"></i> Cobrar
+        <button type="button" class="cl-btn--v7-gold cl-btn--sm btn-cobrar-orden"
+          style="flex:1;justify-content:center;{% if not all_entregados %}opacity:.4;cursor:not-allowed;{% endif %}"
+          data-orden-id="{{ orden.id }}" {% if not all_entregados %}disabled{% endif %}
+          title="{% if not all_entregados %}Espera a que todos los ítems sean entregados{% else %}Cobrar orden{% endif %}">
+          <i data-lucide="credit-card" style="width:12px;height:12px;"></i> Cobrar
         </button>
       </div>
     </div>
+    {% endfor %}
   </div>
-  {% endfor %}
-</div>
-{% endif %}
+  {% endif %}
 
-{# ── FAB — Nueva Orden ── #}
-<div class="cl-fab-container" style="position: fixed; bottom: 80px; right: var(--cl-space-4); z-index: 1040; display: flex; flex-direction: column; gap: var(--cl-space-2); align-items: flex-end;">
-  <a href="{{ url_for('meseros.crear_orden_para_llevar') }}"
-     class="cl-btn cl-btn--outline cl-btn--sm"
-     style="border-radius: var(--cl-radius-full); padding: var(--cl-space-2) var(--cl-space-4); background: var(--cl-bg-primary); box-shadow: var(--cl-shadow-lg);"
-     id="fabParaLlevar" title="Orden para llevar">
-    <i data-lucide="package" class="icon-sm"></i>
-    <span class="d-none d-sm-inline">Para Llevar</span>
-  </a>
-  <a href="{{ url_for('meseros.seleccionar_mesa') }}"
-     class="cl-btn cl-btn--primary"
-     style="border-radius: var(--cl-radius-full); padding: var(--cl-space-3) var(--cl-space-5); box-shadow: var(--cl-shadow-xl); font-weight: var(--cl-font-semibold);"
-     id="fabNuevaOrden" title="Nueva orden">
-    <i data-lucide="plus" class="icon-sm"></i>
-    <span>Nueva Orden</span>
-  </a>
-</div>
+  {# ── FABs ── #}
+  <div class="cl-fab-container">
+    <a href="{{ url_for('meseros.crear_orden_para_llevar') }}" class="cl-fab--secondary" id="fabParaLlevar">
+      <i data-lucide="package" style="width:15px;height:15px;"></i>
+      <span>Para Llevar</span>
+    </a>
+    <a href="{{ url_for('meseros.seleccionar_mesa') }}" class="cl-fab" id="fabNuevaOrden">
+      <i data-lucide="plus" style="width:18px;height:18px;"></i>
+      <span>Nueva Orden</span>
+    </a>
+  </div>
 
-{# ── Cobro Modal ── #}
-<div class="modal fade" id="modalCobro" tabindex="-1" aria-labelledby="modalCobroLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="border-radius: var(--cl-radius-xl); border: none; overflow: hidden;">
-      <div class="modal-header" style="background: var(--cl-red-500); color: white; border: none;">
-        <h5 class="modal-title" id="modalCobroLabel" style="font-weight: var(--cl-font-semibold);">
-          <i data-lucide="credit-card" class="icon-sm" style="vertical-align: -2px;"></i>
-          Detalle de Cobro
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
-      <div class="modal-body" id="modalCobroBody" style="padding: var(--cl-space-6);">
-        <div class="text-center py-5">
-          <div class="spinner-border" style="color: var(--cl-red-500);" role="status">
-            <span class="visually-hidden">Cargando...</span>
+  {# ── Cobro Modal (dark v7) ── #}
+  <div class="modal fade" id="modalCobro" tabindex="-1" aria-labelledby="modalCobroLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content"
+        style="background:var(--cl-surface-2);border:1px solid var(--cl-border-color);border-radius:20px;overflow:hidden;">
+        <div class="modal-header"
+          style="background:linear-gradient(135deg,var(--cl-red-500),var(--cl-red-700));border:none;padding:16px 20px;">
+          <h5 class="modal-title" id="modalCobroLabel"
+            style="color:#fff;font-weight:700;display:flex;align-items:center;gap:8px;">
+            <i data-lucide="credit-card" style="width:17px;height:17px;"></i>
+            Detalle de Cobro
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body" id="modalCobroBody" style="padding:24px;">
+          <div style="display:flex;justify-content:center;padding:32px;">
+            <div class="spinner-border" style="color:var(--cl-red-500);" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-{# Toast container #}
-<div id="toast-container" style="position: fixed; top: 1rem; right: 1rem; z-index: 1200; min-width: 250px;" role="region" aria-label="Notificaciones"></div>
+  {# Toast container #}
+  <div id="toast-container"
+    style="position:fixed;top:70px;right:16px;z-index:1200;min-width:260px;display:flex;flex-direction:column;gap:8px;"
+    role="region" aria-label="Notificaciones"></div>
 
-<style>
-.cl-order-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--cl-shadow-lg) !important;
-}
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(40px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-.cl-order-card--new {
-  animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-</style>
+</div>{# end padding wrapper #}
 
 {# ── Scripts ── #}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js" integrity="sha512-11t8Q+vY9JlCrr+PveZKTYJq8n7O09Y5X/pk/aMd3vJugSvu4xOunGEUzaADqL3I8cZKE/pBwwCfXzDkRJh2sQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"
+  referrerpolicy="no-referrer"></script>
 <script src="{{ url_for('static', filename='js/meseros.js') }}?v={{ config.VERSION }}"></script>
 {% endblock %}

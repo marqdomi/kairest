@@ -603,3 +603,60 @@ def export_corte_pdf():
 
 from backend.routes.meseros import meseros_bp
 admin_bp.register_blueprint(meseros_bp, url_prefix="/meseros")
+
+
+# ── Modo Sistema toggle (superadmin only) ──
+@admin_bp.route('/toggle-modo', methods=['POST'])
+@login_required(roles=['superadmin'])
+def toggle_modo():
+    """Toggle between modo básico and avanzado."""
+    from backend.models.models import ConfiguracionSistema
+    current = ConfiguracionSistema.get('modo_sistema', 'basico')
+    nuevo = 'basico' if current == 'avanzado' else 'avanzado'
+    ConfiguracionSistema.set('modo_sistema', nuevo)
+    db.session.commit()
+    flash(f'Modo cambiado a {nuevo}.', 'success')
+    return redirect(request.referrer or url_for('admin.dashboard'))
+
+
+# ── Personalización white-label (Fase 9) ──
+@admin_bp.route('/personalizacion', methods=['GET', 'POST'])
+@login_required(roles=['admin', 'superadmin'])
+def personalizacion():
+    """Admin panel for restaurant branding customization."""
+    from backend.models.models import Sucursal
+    import os
+    from werkzeug.utils import secure_filename
+
+    sucursal = Sucursal.query.first()
+    if not sucursal:
+        flash('No hay sucursal configurada. Completa el setup primero.', 'warning')
+        return redirect(url_for('admin.dashboard'))
+
+    if request.method == 'POST':
+        sucursal.nombre = sanitizar_texto(request.form.get('nombre', '').strip(), 100)
+        sucursal.slogan = sanitizar_texto(request.form.get('slogan', '').strip(), 200) or None
+        sucursal.color_primario = request.form.get('color_primario', '#C41E3A').strip()
+        sucursal.rfc = request.form.get('rfc', '').strip() or None
+        sucursal.direccion = sanitizar_texto(request.form.get('direccion', '').strip(), 300) or None
+        sucursal.telefono = request.form.get('telefono', '').strip() or None
+
+        # Handle logo upload
+        logo = request.files.get('logo')
+        if logo and logo.filename:
+            ALLOWED = {'png', 'jpg', 'jpeg', 'svg', 'webp'}
+            ext = logo.filename.rsplit('.', 1)[-1].lower() if '.' in logo.filename else ''
+            if ext in ALLOWED:
+                upload_dir = os.path.join(current_app.static_folder, 'uploads', 'logos')
+                os.makedirs(upload_dir, exist_ok=True)
+                filename = secure_filename(f'logo_{sucursal.id}.{ext}')
+                logo.save(os.path.join(upload_dir, filename))
+                sucursal.logo_url = url_for('static', filename=f'uploads/logos/{filename}')
+            else:
+                flash('Formato de imagen no soportado. Usa PNG, JPG, SVG o WebP.', 'warning')
+
+        db.session.commit()
+        flash('Personalización guardada exitosamente.', 'success')
+        return redirect(url_for('admin.personalizacion'))
+
+    return render_template('admin/personalizacion.html', sucursal=sucursal)

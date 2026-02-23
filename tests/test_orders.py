@@ -6,7 +6,12 @@ from tests.conftest import login
 class TestOrderCreation:
     def test_create_order(self, client, mesero_user, sample_mesa, sample_producto, db):
         """Test creating an order via API."""
-        login(client, 'mesero_test', 'Test1234!')
+        from backend.models.models import ConfiguracionSistema
+        cfg = ConfiguracionSistema(clave='onboarding_completado', valor='true')
+        db.session.add(cfg)
+        db.session.commit()
+
+        login(client, 'mesero_test@test.com', 'Test1234!')
         resp = client.post('/api/ordenes', json={
             'mesa_id': sample_mesa.id,
             'items': [{'producto_id': sample_producto.id, 'cantidad': 2}],
@@ -67,6 +72,7 @@ class TestPayment:
             orden_id=orden.id,
             metodo='efectivo',
             monto=orden.total,
+            registrado_por=mesero_user.id,  # Required FK
         )
         db.session.add(pago)
         db.session.commit()

@@ -2,96 +2,84 @@
 {% block page_title %}Iniciar Sesión{% endblock %}
 
 {% block auth_content %}
-  <img src="{{ url_for('static', filename='img/logoCasaLeones.svg') }}"
-       alt="Logo CasaLeones" class="cl-auth__logo">
-  <h1 class="cl-auth__title">Bienvenido</h1>
-  <p class="cl-auth__subtitle">Inicia sesión para continuar</p>
+<img src="{{ url_for('static', filename='img/kairest-logo.svg') }}" alt="Logo KaiRest" class="cl-auth__logo">
+<h1 class="cl-auth__title">Bienvenido</h1>
+<p class="cl-auth__subtitle">Inicia sesión para continuar</p>
 
-  {# ── Flash messages ── #}
-  {% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    {% for category, message in messages %}
-    <div class="cl-toast cl-toast--{{ 'error' if category in ('danger','error') else category }}" role="alert"
-         style="position:relative;margin-bottom:var(--cl-space-3)">
-      <i data-lucide="{{ 'x-circle' if category in ('danger','error') else 'info' }}" class="icon-sm"></i>
-      <span>{{ message }}</span>
-    </div>
-    {% endfor %}
-  {% endif %}
-  {% endwith %}
+{# ── Flash messages ── #}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="cl-toast cl-toast--{{ 'error' if category in ('danger','error') else category }}" role="alert"
+  style="position:relative;margin-bottom:var(--cl-space-3)">
+  <i data-lucide="{{ 'x-circle' if category in ('danger','error') else 'info' }}" class="icon-sm"></i>
+  <span>{{ message }}</span>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
 
-  {# ── Login form ── #}
-  <form method="POST" action="{{ url_for('auth.login') }}" autocomplete="on" novalidate>
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{# ── Login form ── #}
+<form method="POST" action="{{ url_for('auth.login') }}" autocomplete="on" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    <div class="cl-auth__input-group">
-      <label class="cl-form-label" for="email">Correo electrónico</label>
-      <i data-lucide="mail" class="icon-sm cl-auth__input-icon"></i>
-      <input type="email"
-             class="cl-form-input"
-             name="email"
-             id="email"
-             placeholder="tu@correo.com"
-             autocomplete="email"
-             required
-             autofocus>
-    </div>
-
-    <div class="cl-auth__input-group">
-      <label class="cl-form-label" for="password">Contraseña</label>
-      <i data-lucide="lock" class="icon-sm cl-auth__input-icon"></i>
-      <input type="password"
-             class="cl-form-input"
-             name="password"
-             id="password"
-             placeholder="••••••••"
-             autocomplete="current-password"
-             required>
-      <button type="button" class="cl-auth__pw-toggle" id="pwToggle"
-              aria-label="Mostrar contraseña" title="Mostrar contraseña">
-        <i data-lucide="eye" class="icon-sm" id="pwToggleIcon"></i>
-      </button>
-    </div>
-
-    <button type="submit" class="cl-btn cl-btn--primary cl-auth__submit" id="btnLogin">
-      <i data-lucide="log-in" class="icon-sm"></i>
-      Ingresar
-    </button>
-  </form>
-
-  <div class="cl-auth__footer">
-    &copy; {{ now().year if now is defined else '2025' }} CasaLeones &mdash; Sistema POS
+  <div class="cl-auth__input-group">
+    <label class="cl-form-label" for="email">Correo electrónico</label>
+    <i data-lucide="mail" class="icon-sm cl-auth__input-icon"></i>
+    <input type="email" class="cl-form-input" name="email" id="email" placeholder="tu@correo.com" autocomplete="email"
+      required autofocus>
   </div>
+
+  <div class="cl-auth__input-group">
+    <label class="cl-form-label" for="password">Contraseña</label>
+    <i data-lucide="lock" class="icon-sm cl-auth__input-icon"></i>
+    <input type="password" class="cl-form-input" name="password" id="password" placeholder="••••••••"
+      autocomplete="current-password" required>
+    <button type="button" class="cl-auth__pw-toggle" id="pwToggle" aria-label="Mostrar contraseña"
+      title="Mostrar contraseña">
+      <i data-lucide="eye" class="icon-sm" id="pwToggleIcon"></i>
+    </button>
+  </div>
+
+  <button type="submit" class="cl-btn cl-btn--primary cl-auth__submit" id="btnLogin">
+    <i data-lucide="log-in" class="icon-sm"></i>
+    Ingresar
+  </button>
+</form>
+
+<div class="cl-auth__footer">
+  &copy; {{ now().year if now is defined else '2025' }} KaiRest &mdash; Sistema POS
+</div>
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script>
-(function(){
-  // Password show/hide toggle
-  var pwInput = document.getElementById('password');
-  var pwToggle = document.getElementById('pwToggle');
-  if(pwToggle && pwInput){
-    pwToggle.addEventListener('click', function(){
-      var isPassword = pwInput.type === 'password';
-      pwInput.type = isPassword ? 'text' : 'password';
-      // Swap icon
-      var icon = document.getElementById('pwToggleIcon');
-      if(icon) icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
-      if(window.lucide) lucide.createIcons();
-      pwToggle.setAttribute('aria-label', isPassword ? 'Ocultar contraseña' : 'Mostrar contraseña');
-    });
-  }
+  (function () {
+    // Password show/hide toggle
+    var pwInput = document.getElementById('password');
+    var pwToggle = document.getElementById('pwToggle');
+    if (pwToggle && pwInput) {
+      pwToggle.addEventListener('click', function () {
+        var isPassword = pwInput.type === 'password';
+        pwInput.type = isPassword ? 'text' : 'password';
+        // Swap icon
+        var icon = document.getElementById('pwToggleIcon');
+        if (icon) icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+        if (window.lucide) lucide.createIcons();
+        pwToggle.setAttribute('aria-label', isPassword ? 'Ocultar contraseña' : 'Mostrar contraseña');
+      });
+    }
 
-  // Submit loading state
-  var form = document.querySelector('form');
-  var btn  = document.getElementById('btnLogin');
-  if(form && btn){
-    form.addEventListener('submit', function(){
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Ingresando…';
-    });
-  }
-})();
+    // Submit loading state
+    var form = document.querySelector('form');
+    var btn = document.getElementById('btnLogin');
+    if (form && btn) {
+      form.addEventListener('submit', function () {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Ingresando…';
+      });
+    }
+  })();
 </script>
 {% endblock %}

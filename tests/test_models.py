@@ -6,31 +6,22 @@ from decimal import Decimal
 class TestUsuarioModel:
     def test_create_usuario(self, db):
         from backend.models.models import Usuario
-        from werkzeug.security import generate_password_hash
 
-        user = Usuario(
-            nombre='Test User',
-            username='test_user',
-            password=generate_password_hash('Pass1234!'),
-            rol='mesero',
-        )
+        user = Usuario(nombre='Test User', email='test_user@test.com', rol='mesero')
+        user.set_password('Pass1234!')
         db.session.add(user)
         db.session.commit()
         assert user.id is not None
         assert user.rol == 'mesero'
+        assert user.check_password('Pass1234!')
 
     def test_usuario_roles(self, db):
         from backend.models.models import Usuario
-        from werkzeug.security import generate_password_hash
 
         roles = ['superadmin', 'admin', 'mesero', 'taquero', 'comal', 'bebidas']
-        for rol in roles:
-            user = Usuario(
-                nombre=f'User {rol}',
-                username=f'user_{rol}',
-                password=generate_password_hash('Pass1234!'),
-                rol=rol,
-            )
+        for i, rol in enumerate(roles):
+            user = Usuario(nombre=f'User {rol}', email=f'user_{rol}@test.com', rol=rol)
+            user.set_password('Pass1234!')
             db.session.add(user)
         db.session.commit()
         assert Usuario.query.count() == len(roles)
@@ -42,22 +33,20 @@ class TestProductoModel:
         assert sample_producto.nombre == 'Taco al Pastor'
         assert float(sample_producto.precio) == 45.0
 
-    def test_producto_disponibilidad(self, db):
+    def test_producto_categoria_fk(self, db, sample_categoria):
+        """Test producto linked to categoria via FK."""
         from backend.models.models import Producto
 
-        prod = Producto(nombre='Quesadilla', precio=55.0, categoria='tacos', disponible=False)
+        prod = Producto(nombre='Quesadilla', precio=55.0, categoria_id=sample_categoria.id)
         db.session.add(prod)
         db.session.commit()
-
-        disponibles = Producto.query.filter_by(disponible=True).count()
-        no_disponibles = Producto.query.filter_by(disponible=False).count()
-        assert no_disponibles >= 1
+        assert prod.categoria.nombre == 'tacos'
 
 
 class TestMesaModel:
     def test_create_mesa(self, sample_mesa):
         assert sample_mesa.id is not None
-        assert sample_mesa.numero == 1
+        assert sample_mesa.numero == '1'  # Mesa.numero is String
         assert sample_mesa.estado == 'disponible'
 
     def test_mesa_estados(self, db):
@@ -65,7 +54,7 @@ class TestMesaModel:
 
         estados = ['disponible', 'ocupada', 'reservada', 'mantenimiento']
         for i, estado in enumerate(estados):
-            mesa = Mesa(numero=10 + i, capacidad=4, zona='test', estado=estado)
+            mesa = Mesa(numero=str(10 + i), capacidad=4, zona='test', estado=estado)
             db.session.add(mesa)
         db.session.commit()
         assert Mesa.query.count() >= len(estados)

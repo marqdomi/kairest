@@ -1,50 +1,59 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
-  <title>{% block title %}Reporte{% endblock %} — CasaLeones</title>
+  <title>{% block title %}Reporte{% endblock %} — {{ brand_name | default('KaiRest') }}</title>
   <style>
     @page {
       size: letter;
       margin: 2cm;
+
       @bottom-center {
         content: "Página " counter(page) " de " counter(pages);
         font-size: 9px;
         color: #666;
       }
     }
+
     body {
       font-family: 'Helvetica', 'Arial', sans-serif;
       font-size: 11px;
       color: #333;
       line-height: 1.4;
     }
+
     .header {
       text-align: center;
       border-bottom: 2px solid #A6192E;
       padding-bottom: 10px;
       margin-bottom: 20px;
     }
+
     .header h1 {
       color: #A6192E;
       font-size: 22px;
       margin: 0;
     }
+
     .header .subtitle {
       font-size: 14px;
       color: #666;
       margin-top: 4px;
     }
+
     .header .date-range {
       font-size: 10px;
       color: #999;
       margin-top: 2px;
     }
+
     .kpi-row {
       display: flex;
       justify-content: space-between;
       margin-bottom: 20px;
     }
+
     .kpi-box {
       border: 1px solid #ddd;
       border-radius: 4px;
@@ -53,15 +62,33 @@
       flex: 1;
       margin: 0 6px;
     }
-    .kpi-box:first-child { margin-left: 0; }
-    .kpi-box:last-child { margin-right: 0; }
-    .kpi-box .label { font-size: 9px; color: #888; text-transform: uppercase; }
-    .kpi-box .value { font-size: 18px; font-weight: bold; color: #A6192E; }
+
+    .kpi-box:first-child {
+      margin-left: 0;
+    }
+
+    .kpi-box:last-child {
+      margin-right: 0;
+    }
+
+    .kpi-box .label {
+      font-size: 9px;
+      color: #888;
+      text-transform: uppercase;
+    }
+
+    .kpi-box .value {
+      font-size: 18px;
+      font-weight: bold;
+      color: #A6192E;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 16px;
     }
+
     th {
       background: #A6192E;
       color: white;
@@ -70,14 +97,25 @@
       font-size: 10px;
       text-transform: uppercase;
     }
+
     td {
       padding: 5px 8px;
       border-bottom: 1px solid #eee;
       font-size: 10px;
     }
-    tr:nth-child(even) { background: #fafafa; }
-    .text-right { text-align: right; }
-    .text-center { text-align: center; }
+
+    tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
     .badge {
       display: inline-block;
       padding: 2px 6px;
@@ -85,9 +123,22 @@
       font-size: 9px;
       font-weight: bold;
     }
-    .badge-success { background: #d4edda; color: #155724; }
-    .badge-warning { background: #fff3cd; color: #856404; }
-    .badge-danger { background: #f8d7da; color: #721c24; }
+
+    .badge-success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .badge-warning {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .badge-danger {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
     .footer {
       margin-top: 30px;
       text-align: center;
@@ -96,12 +147,20 @@
       border-top: 1px solid #ddd;
       padding-top: 8px;
     }
-    {% block extra_css %}{% endblock %}
+
+      {
+      % block extra_css %
+    }
+
+      {
+      % endblock %
+    }
   </style>
 </head>
+
 <body>
   <div class="header">
-    <h1>CasaLeones</h1>
+    <h1>{{ brand_name | default('KaiRest') }}</h1>
     <div class="subtitle">{% block report_title %}Reporte{% endblock %}</div>
     {% block date_range %}{% endblock %}
   </div>
@@ -109,7 +168,9 @@
   {% block content %}{% endblock %}
 
   <div class="footer">
-    Generado automáticamente por CasaLeones POS — {{ now.strftime('%Y-%m-%d %H:%M') if now else '' }}
+    Generado automáticamente por {{ brand_name | default('KaiRest') }} POS — {{ now.strftime('%Y-%m-%d %H:%M') if now
+    else '' }}
   </div>
 </body>
+
 </html>

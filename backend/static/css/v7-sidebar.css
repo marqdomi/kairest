@@ -1,0 +1,417 @@
+/* ═══════════════════════════════════════════════════
+   CasaLeones POS — v7 Sidebar & Topbar
+   ═══════════════════════════════════════════════════ */
+
+/* ─── SIDEBAR ─── */
+.cl-sidebar {
+    width: var(--cl-sidebar-w, 240px);
+    min-height: 100vh;
+    background: var(--cl-surface-1, #0D0E14);
+    border-right: 1px solid var(--cl-border-color);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: var(--cl-z-fixed, 1030);
+    transition: width var(--cl-transition-base);
+    overflow: hidden;
+}
+
+/* Collapsed state */
+.cl-sidebar--collapsed {
+    width: var(--cl-sidebar-collapsed, 72px);
+}
+
+.cl-sidebar--collapsed .cl-sidebar__label,
+.cl-sidebar--collapsed .cl-sidebar__brand-text,
+.cl-sidebar--collapsed .cl-sidebar__group-label,
+.cl-sidebar--collapsed .cl-sidebar__chevron,
+.cl-sidebar--collapsed .cl-sidebar__sublink {
+    display: none;
+}
+
+.cl-sidebar--collapsed .cl-sidebar__link {
+    justify-content: center;
+    padding: 10px;
+}
+
+/* ─── BRAND ─── */
+.cl-sidebar__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 18px;
+    height: var(--cl-topbar-h, 60px);
+    border-bottom: 1px solid var(--cl-border-color);
+    flex-shrink: 0;
+    text-decoration: none;
+}
+
+.cl-sidebar__logo {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.cl-sidebar__brand-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    background: linear-gradient(135deg, var(--cl-red-500), var(--cl-red-700));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+.cl-sidebar__brand-text {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--cl-text-primary);
+    white-space: nowrap;
+}
+
+.cl-sidebar__brand-ver {
+    font-size: 10px;
+    color: var(--cl-text-tertiary);
+}
+
+/* ─── NAV ─── */
+.cl-sidebar__nav {
+    flex: 1;
+    padding: 10px 8px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.cl-sidebar__group-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--cl-text-tertiary);
+    text-transform: uppercase;
+    padding: 8px 10px 4px;
+    white-space: nowrap;
+}
+
+/* Regular nav link */
+.cl-sidebar__link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: var(--cl-radius-sm, 8px);
+    color: var(--cl-text-secondary);
+    cursor: pointer;
+    transition: all var(--cl-transition-fast);
+    font-weight: var(--cl-font-medium);
+    font-size: 13.5px;
+    text-decoration: none;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    margin-bottom: 2px;
+}
+
+.cl-sidebar__link:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--cl-text-primary);
+}
+
+.cl-sidebar__link.active {
+    background: var(--cl-red-glow);
+    color: var(--cl-red-400);
+    border-color: rgba(196, 30, 58, 0.2);
+}
+
+.cl-sidebar__link.active svg,
+.cl-sidebar__link.active [data-lucide] {
+    color: var(--cl-red-400);
+}
+
+/* Sub-links (dropdown children) */
+.cl-sidebar__sublink {
+    display: block;
+    padding: 6px 10px 6px 36px;
+    border-radius: var(--cl-radius-sm);
+    color: var(--cl-text-tertiary);
+    font-size: 12.5px;
+    font-weight: var(--cl-font-medium);
+    text-decoration: none;
+    transition: all var(--cl-transition-fast);
+    margin-bottom: 1px;
+}
+
+.cl-sidebar__sublink:hover {
+    color: var(--cl-text-primary);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.cl-sidebar__sublink.active {
+    color: var(--cl-red-400);
+    font-weight: var(--cl-font-semibold);
+}
+
+/* Chevron rotation when expanded */
+.cl-sidebar__chevron {
+    transition: transform var(--cl-transition-fast);
+}
+
+.cl-sidebar__link[aria-expanded="true"] .cl-sidebar__chevron {
+    transform: rotate(180deg);
+}
+
+/* Sidebar toggle button */
+.cl-sidebar__toggle {
+    position: absolute;
+    bottom: 70px;
+    right: -14px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--cl-border-color);
+    background: var(--cl-surface-2);
+    color: var(--cl-text-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--cl-transition-fast);
+    z-index: 1;
+}
+
+.cl-sidebar__toggle:hover {
+    color: var(--cl-text-primary);
+    border-color: var(--cl-border-color-md);
+}
+
+/* ─── SIDEBAR FOOTER ─── */
+.cl-sidebar__footer {
+    padding: 12px 14px;
+    border-top: 1px solid var(--cl-border-color);
+    flex-shrink: 0;
+}
+
+/* User pill */
+.cl-user-pill {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 9px;
+    border-radius: var(--cl-radius-sm);
+    background: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    transition: background var(--cl-transition-fast);
+}
+
+.cl-user-pill:hover {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.cl-user-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: var(--cl-radius-sm);
+    background: linear-gradient(135deg, var(--cl-red-500), var(--cl-gold));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.cl-user-name {
+    font-size: 12.5px;
+    font-weight: var(--cl-font-semibold);
+    color: var(--cl-text-primary);
+}
+
+.cl-user-role {
+    font-size: 11px;
+    color: var(--cl-text-tertiary);
+}
+
+/* ─── TOPBAR ─── */
+.cl-topbar {
+    height: var(--cl-topbar-h, 60px);
+    background: rgba(13, 14, 20, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--cl-border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: var(--cl-z-sticky, 1020);
+}
+
+/* Breadcrumb */
+.cl-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--cl-text-tertiary);
+}
+
+.cl-breadcrumb__current {
+    color: var(--cl-text-primary);
+    font-weight: var(--cl-font-semibold);
+}
+
+.cl-topbar__right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Icon button */
+.cl-icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--cl-radius-sm);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--cl-border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--cl-text-secondary);
+    transition: all var(--cl-transition-fast);
+}
+
+.cl-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.09);
+    color: var(--cl-text-primary);
+}
+
+/* Sucursal badge in topbar */
+.cl-sucursal-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(46, 144, 250, 0.1);
+    border: 1px solid rgba(46, 144, 250, 0.25);
+    border-radius: var(--cl-radius-full);
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: var(--cl-font-semibold);
+    color: var(--cl-info-500);
+}
+
+/* ─── MAIN AREA (offset for sidebar) ─── */
+.cl-main {
+    margin-left: var(--cl-sidebar-w, 240px);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: var(--cl-canvas, #0A0B10);
+    transition: margin-left var(--cl-transition-base);
+}
+
+.cl-sidebar--collapsed~.cl-main {
+    margin-left: var(--cl-sidebar-collapsed, 72px);
+}
+
+/* ─── PAGE CONTENT ─── */
+.cl-content {
+    padding: 24px;
+    flex: 1;
+    background: var(--cl-canvas, #0A0B10);
+}
+
+/* ─── PAGE HEADER ─── */
+.cl-page-hdr {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.cl-page-hdr h1 {
+    font-size: 22px;
+    font-weight: var(--cl-font-extrabold, 800);
+    color: var(--cl-text-primary);
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.cl-page-hdr p {
+    font-size: 13px;
+    color: var(--cl-text-tertiary);
+    margin: 3px 0 0;
+}
+
+.cl-page-hdr__right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ─── PERIOD PILLS ─── */
+.cl-period-pills {
+    display: flex;
+    gap: 3px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--cl-border-color);
+    border-radius: var(--cl-radius-sm);
+    padding: 3px;
+}
+
+.cl-period-pill {
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: var(--cl-font-medium);
+    color: var(--cl-text-tertiary);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    transition: all var(--cl-transition-fast);
+}
+
+.cl-period-pill:hover {
+    color: var(--cl-text-primary);
+}
+
+.cl-period-pill.active,
+.cl-period-pill[aria-selected="true"] {
+    background: rgba(196, 30, 58, 0.2);
+    color: var(--cl-red-400);
+    border: 1px solid rgba(196, 30, 58, 0.3);
+}
+
+/* ─── RESPONSIVE (sidebar collapses on mobile) ─── */
+@media (max-width: 768px) {
+    .cl-sidebar {
+        transform: translateX(-100%);
+        transition: transform var(--cl-transition-base);
+    }
+
+    .cl-sidebar--open {
+        transform: translateX(0);
+    }
+
+    .cl-main {
+        margin-left: 0 !important;
+    }
+
+    .cl-topbar {
+        padding: 0 14px;
+    }
+
+    .cl-content {
+        padding: 16px;
+    }
+}

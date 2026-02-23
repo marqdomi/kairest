@@ -1,0 +1,85 @@
+# ═══════════════════════════════════════════════════
+# KaiRest POS — Docker Compose para PRODUCCIÓN
+# Usa la imagen pre-construida de GHCR (no compila local)
+#
+# Uso:
+#   1. Copiar este archivo y .env al servidor del cliente
+#   2. Editar .env con SECRET_KEY y credenciales reales
+#   3. docker compose -f docker-compose.prod.yml up -d
+#
+# Para actualizar:
+#   ./update.sh
+# ═══════════════════════════════════════════════════
+services:
+  web:
+    # 👇 Imagen oficial pre-construida — NO necesita git ni pip en el servidor
+    image: ${KAIREST_IMAGE:-ghcr.io/marqdomi/kairest:latest}
+    ports:
+      - "${APP_PORT:-5005}:5005"
+    environment:
+      - FLASK_APP=backend.app
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://casaleones:${POSTGRES_PASSWORD:-casaleones_secret}@db:5432/casaleones
+      - SECRET_KEY=${SECRET_KEY:?❌ SECRET_KEY es obligatorio — genera con: python3 -c "import secrets; print(secrets.token_hex(32))"}
+      - REDIS_URL=redis://redis:6379
+      - CACHE_REDIS_URL=redis://redis:6379/2
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5005}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+    command: gunicorn --bind 0.0.0.0:5005 --workers ${GUNICORN_WORKERS:-2} --threads ${GUNICORN_THREADS:-4} --timeout 120 --access-logfile - --error-logfile - "backend.app:app"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5005/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: casaleones
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-casaleones_secret}
+      POSTGRES_DB: casaleones
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U casaleones"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: "redis:alpine"
+    restart: unless-stopped
+
+  backup:
+    image: postgres:16-alpine
+    environment:
+      PGHOST: db
+      PGUSER: casaleones
+      PGPASSWORD: ${POSTGRES_PASSWORD:-casaleones_secret}
+      PGDATABASE: casaleones
+    volumes:
+      - ./backups:/backups
+    entrypoint: >
+      sh -c "
+        while true; do
+          TIMESTAMP=$$(date +%Y%m%d_%H%M%S);
+          pg_dump -Fc > /backups/casaleones_$$TIMESTAMP.dump;
+          echo \"[BACKUP] $$TIMESTAMP completado\";
+          find /backups -name '*.dump' -mtime +7 -delete;
+          sleep 3600;
+        done
+      "
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

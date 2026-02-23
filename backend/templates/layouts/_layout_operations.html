@@ -1,152 +1,177 @@
 {# ═══════════════════════════════════════════════════════
-   Layout: Operations — Top bar only, full-width content
-   Extends: base.html  (overrides {% block body_layout %})
-   Used by: Meseros dashboard, Mapa de mesas, Detalle orden,
-            Seleccionar mesa, Historial del día
+Layout: Operations — Top bar only, full-width content
+Extends: base.html (overrides {% block body_layout %})
+Used by: Meseros dashboard, Mapa de mesas, Detalle orden,
+Seleccionar mesa, Historial del día
 
-   Usage:
-     {% extends 'layouts/_layout_operations.html' %}
-     {% block page_title %}Meseros{% endblock %}
-     {% set active_op_tab = 'meseros' %}
-     {% block ops_content %}
-       ...your content...
-     {% endblock %}
-   ═══════════════════════════════════════════════════════ #}
+Usage:
+{% extends 'layouts/_layout_operations.html' %}
+{% block page_title %}Meseros{% endblock %}
+{% set active_op_tab = 'meseros' %}
+{% block ops_content %}
+...your content...
+{% endblock %}
+═══════════════════════════════════════════════════════ #}
 {% extends 'base.html' %}
 
-{% block title %}{% block page_title %}Operaciones{% endblock %} — CasaLeones{% endblock %}
+{% block title %}{% block page_title %}Operaciones{% endblock %} — {{ brand_name | default('KaiRest') }}{% endblock %}
 
 {% block body_layout %}
-  <a href="#main-content" class="skip-to-content">Saltar al contenido</a>
-  {# ── Top Navigation Bar ── #}
-  <nav class="cl-topbar cl-topbar--ops" role="navigation" aria-label="Navegación operaciones">
-    <div class="cl-topbar__left">
-      <a href="/" class="cl-topbar__brand-link">
-        <img src="{{ url_for('static', filename='img/logoCasaLeones.svg') }}" alt="CasaLeones" style="height:32px">
+<a href="#main-content" class="skip-to-content">Saltar al contenido</a>
+{# ── Top Navigation Bar ── #}
+<nav class="cl-topbar" role="navigation" aria-label="Navegación operaciones" style="--cl-topbar-h:56px;">
+  <div class="cl-topbar__left">
+    <a href="/" class="cl-topbar__brand-link"
+      style="display:flex;align-items:center;gap:8px;text-decoration:none;margin-right:16px;">
+      <div
+        style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--cl-red-500),var(--cl-red-700));display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">
+        🦁</div>
+      <span style="font-size:13px;font-weight:700;color:var(--cl-text-primary);white-space:nowrap;">{{ brand_name |
+        default('KaiRest') }}</span>
+    </a>
+
+    {# Tab navigation #}
+    <div style="display:flex;gap:2px;" class="d-none d-md-flex">
+      <a href="{{ url_for('meseros.view_meseros') }}"
+        class="cl-sidebar__link{% if active_op_tab is defined and active_op_tab == 'meseros' %} active{% endif %}"
+        style="padding:6px 14px;border-radius:8px;font-size:13px;" {% if active_op_tab is defined and
+        active_op_tab=='meseros' %}aria-current="page" {% endif %}>
+        <i data-lucide="clipboard-list" class="icon-sm"></i>
+        <span>Mis Órdenes</span>
       </a>
+      <a href="{{ url_for('meseros.mapa_mesas') }}"
+        class="cl-sidebar__link{% if active_op_tab is defined and active_op_tab == 'mapa' %} active{% endif %}"
+        style="padding:6px 14px;border-radius:8px;font-size:13px;" {% if active_op_tab is defined and
+        active_op_tab=='mapa' %}aria-current="page" {% endif %}>
+        <i data-lucide="map" class="icon-sm"></i>
+        <span>Mapa de Mesas</span>
+      </a>
+      <a href="{{ url_for('meseros.historial_dia') }}"
+        class="cl-sidebar__link{% if active_op_tab is defined and active_op_tab == 'historial' %} active{% endif %}"
+        style="padding:6px 14px;border-radius:8px;font-size:13px;" {% if active_op_tab is defined and
+        active_op_tab=='historial' %}aria-current="page" {% endif %}>
+        <i data-lucide="history" class="icon-sm"></i>
+        <span>Historial</span>
+      </a>
+    </div>
+  </div>
 
-      {# Tab navigation #}
-      <div class="cl-topbar__tabs d-none d-md-flex">
-        <a href="{{ url_for('meseros.view_meseros') }}"
-           class="cl-topbar__tab{% if active_op_tab is defined and active_op_tab == 'meseros' %} active{% endif %}"
-           {% if active_op_tab is defined and active_op_tab == 'meseros' %}aria-current="page"{% endif %}>
-          <i data-lucide="clipboard-list" class="icon-sm"></i>
-          <span>Meseros</span>
-        </a>
-        <a href="{{ url_for('meseros.mapa_mesas') }}"
-           class="cl-topbar__tab{% if active_op_tab is defined and active_op_tab == 'mapa' %} active{% endif %}"
-           {% if active_op_tab is defined and active_op_tab == 'mapa' %}aria-current="page"{% endif %}>
-          <i data-lucide="map" class="icon-sm"></i>
-          <span>Mapa</span>
-        </a>
-        <a href="{{ url_for('meseros.historial_dia') }}"
-           class="cl-topbar__tab{% if active_op_tab is defined and active_op_tab == 'historial' %} active{% endif %}"
-           {% if active_op_tab is defined and active_op_tab == 'historial' %}aria-current="page"{% endif %}>
-          <i data-lucide="history" class="icon-sm"></i>
-          <span>Historial</span>
-        </a>
-      </div>
+  <div class="cl-topbar__right">
+    {% if session.get('sucursal_nombre') %}
+    <span class="cl-sucursal-badge d-none d-sm-inline-flex">
+      <i data-lucide="building" style="width:11px;height:11px;"></i>
+      {{ session['sucursal_nombre'] }}
+    </span>
+    {% endif %}
+
+    <div class="cl-icon-btn" id="darkModeToggle" role="button" aria-label="Alternar modo oscuro" title="Modo oscuro">
+      <span id="darkModeIcon">🌙</span>
     </div>
 
-    <div class="cl-topbar__right">
-      {% if session.get('sucursal_nombre') %}
-      <span class="cl-badge cl-badge--info cl-badge--pill d-none d-sm-inline-flex">
-        <i data-lucide="building" class="icon-xs"></i>
-        {{ session['sucursal_nombre'] }}
-      </span>
-      {% endif %}
-
-      <button class="cl-topbar__icon-btn" id="darkModeToggle"
-              aria-label="Alternar modo oscuro" title="Modo oscuro">
-        <span id="darkModeIcon">🌙</span>
+    {% if current_user.is_authenticated %}
+    <div class="dropdown">
+      <button class="cl-topbar__user-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"
+        id="userMenuBtn"
+        style="background:rgba(255,255,255,0.07);border:1px solid var(--cl-border-color);border-radius:8px;padding:5px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <span class="cl-user-avatar" style="width:26px;height:26px;font-size:10px;">{{ current_user.nombre[0]|upper
+          }}</span>
+        <span style="font-size:12.5px;font-weight:600;color:var(--cl-text-primary);" class="d-none d-md-inline">{{
+          current_user.nombre }}</span>
       </button>
-
-      {% if current_user.is_authenticated %}
-      <div class="dropdown">
-        <button class="cl-topbar__user-btn dropdown-toggle" data-bs-toggle="dropdown"
-                aria-expanded="false" id="userMenuBtn">
-          <span class="cl-topbar__avatar">{{ current_user.nombre[0]|upper }}</span>
-          <span class="cl-topbar__user-name d-none d-md-inline">{{ current_user.nombre }}</span>
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuBtn">
-          <li><span class="dropdown-item-text text-muted small">{{ current_user.rol|capitalize }}</span></li>
-          <li><hr class="dropdown-divider"></li>
-          {% if current_user.rol in ['admin','superadmin'] %}
-          <li>
-            <a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">
-              <i data-lucide="layout-dashboard" class="icon-sm me-2"></i>Panel Admin
-            </a>
-          </li>
-          <li><hr class="dropdown-divider"></li>
-          {% endif %}
-          <li>
-            <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
-              <i data-lucide="log-out" class="icon-sm me-2"></i>Cerrar sesión
-            </a>
-          </li>
-        </ul>
-      </div>
-      {% endif %}
-    </div>
-  </nav>
-
-  {# ── Mobile bottom tabs ── #}
-  <nav class="cl-ops-bottom-tabs d-md-none" aria-label="Navegación rápida">
-    <a href="{{ url_for('meseros.view_meseros') }}"
-       class="cl-ops-bottom-tab{% if active_op_tab is defined and active_op_tab == 'meseros' %} active{% endif %}"
-       {% if active_op_tab is defined and active_op_tab == 'meseros' %}aria-current="page"{% endif %}>
-      <i data-lucide="clipboard-list" class="icon-sm"></i>
-      <span>Meseros</span>
-    </a>
-    <a href="{{ url_for('meseros.mapa_mesas') }}"
-       class="cl-ops-bottom-tab{% if active_op_tab is defined and active_op_tab == 'mapa' %} active{% endif %}"
-       {% if active_op_tab is defined and active_op_tab == 'mapa' %}aria-current="page"{% endif %}>
-      <i data-lucide="map" class="icon-sm"></i>
-      <span>Mapa</span>
-    </a>
-    <a href="{{ url_for('meseros.historial_dia') }}"
-       class="cl-ops-bottom-tab{% if active_op_tab is defined and active_op_tab == 'historial' %} active{% endif %}"
-       {% if active_op_tab is defined and active_op_tab == 'historial' %}aria-current="page"{% endif %}>
-      <i data-lucide="history" class="icon-sm"></i>
-      <span>Historial</span>
-    </a>
-  </nav>
-
-  {# ── Content ── #}
-  <main id="main-content" class="cl-ops-main">
-    {# Flash messages #}
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div class="cl-toast-container" role="region" aria-label="Notificaciones" aria-live="polite">
-      {% for category, message in messages %}
-      {% set variant = 'error' if category in ('danger', 'error') else category %}
-      <div class="cl-toast cl-toast--{{ variant }}" role="alert" aria-atomic="true">
-        <i data-lucide="{{ {'success':'check-circle','error':'x-circle','warning':'alert-triangle','info':'info'}.get(variant,'info') }}" class="icon-sm"></i>
-        <span>{{ message }}</span>
-        <button type="button" class="cl-toast__close" aria-label="Cerrar" onclick="this.parentElement.remove()">
-          <i data-lucide="x" class="icon-xs"></i>
-        </button>
-      </div>
-      {% endfor %}
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuBtn"
+        style="background:var(--cl-surface-2);border:1px solid var(--cl-border-color);border-radius:12px;">
+        <li><span class="dropdown-item-text" style="font-size:11px;color:var(--cl-text-tertiary);">{{
+            current_user.rol|capitalize }}</span></li>
+        <li>
+          <hr class="dropdown-divider" style="border-color:var(--cl-border-color);">
+        </li>
+        {% if current_user.rol in ['admin','superadmin'] %}
+        <li>
+          <a class="dropdown-item" href="{{ url_for('admin.dashboard') }}"
+            style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--cl-text-secondary);">
+            <i data-lucide="layout-dashboard" class="icon-sm"></i>Panel Admin
+          </a>
+        </li>
+        <li>
+          <hr class="dropdown-divider" style="border-color:var(--cl-border-color);">
+        </li>
+        {% endif %}
+        <li>
+          <a class="dropdown-item" href="{{ url_for('auth.logout') }}"
+            style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--cl-text-secondary);">
+            <i data-lucide="log-out" class="icon-sm"></i>Cerrar sesión
+          </a>
+        </li>
+      </ul>
     </div>
     {% endif %}
-    {% endwith %}
+  </div>
+</nav>
 
-    {% block ops_content %}{% endblock %}
-  </main>
+{# ── Mobile bottom tabs ── #}
+<nav class="cl-ops-bottom-tabs d-md-none" aria-label="Navegación rápida">
+  <a href="{{ url_for('meseros.view_meseros') }}"
+    class="cl-ops-bottom-tab{% if active_op_tab is defined and active_op_tab == 'meseros' %} active{% endif %}" {% if
+    active_op_tab is defined and active_op_tab=='meseros' %}aria-current="page" {% endif %}>
+    <i data-lucide="clipboard-list" class="icon-sm"></i>
+    <span>Meseros</span>
+  </a>
+  <a href="{{ url_for('meseros.mapa_mesas') }}"
+    class="cl-ops-bottom-tab{% if active_op_tab is defined and active_op_tab == 'mapa' %} active{% endif %}" {% if
+    active_op_tab is defined and active_op_tab=='mapa' %}aria-current="page" {% endif %}>
+    <i data-lucide="map" class="icon-sm"></i>
+    <span>Mapa</span>
+  </a>
+  <a href="{{ url_for('meseros.historial_dia') }}"
+    class="cl-ops-bottom-tab{% if active_op_tab is defined and active_op_tab == 'historial' %} active{% endif %}" {% if
+    active_op_tab is defined and active_op_tab=='historial' %}aria-current="page" {% endif %}>
+    <i data-lucide="history" class="icon-sm"></i>
+    <span>Historial</span>
+  </a>
+</nav>
 
-  {# Auto-dismiss toasts (pause on hover/focus for a11y) #}
-  <script>
-  (function(){
-    document.querySelectorAll('.cl-toast').forEach(function(t){
+{# ── Content ── #}
+<main id="main-content" style="background:var(--cl-canvas);min-height:calc(100vh - 56px);">
+  {# Flash messages #}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="cl-toast-container" role="region" aria-label="Notificaciones" aria-live="polite"
+    style="position:fixed;top:70px;right:20px;z-index:var(--cl-z-toast);display:flex;flex-direction:column;gap:8px;max-width:360px;">
+    {% for category, message in messages %}
+    {% set variant = 'error' if category in ('danger', 'error') else category %}
+    {% set icon_color = 'var(--cl-success-500)' if variant == 'success' else ('var(--cl-error-500)' if variant ==
+    'error' else ('var(--cl-warning-500)' if variant == 'warning' else 'var(--cl-info-500)')) %}
+    <div class="cl-toast cl-toast--{{ variant }}" role="alert" aria-atomic="true"
+      style="background:var(--cl-surface-2);border:1px solid var(--cl-border-color);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--cl-shadow-md);">
+      <i data-lucide="{{ {'success':'check-circle','error':'x-circle','warning':'alert-triangle','info':'info'}.get(variant,'info') }}"
+        class="icon-sm" style="color:{{ icon_color }};flex-shrink:0;"></i>
+
+      <span style="flex:1;font-size:13px;color:var(--cl-text-primary);">{{ message }}</span>
+      <button type="button" class="cl-icon-btn" aria-label="Cerrar" onclick="this.parentElement.remove()"
+        style="width:24px;height:24px;border:none;cursor:pointer;">
+        <i data-lucide="x" class="icon-xs"></i>
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  {% block ops_content %}{% endblock %}
+</main>
+
+{# Auto-dismiss toasts (pause on hover/focus for a11y) #}
+<script>
+  (function () {
+    document.querySelectorAll('.cl-toast').forEach(function (t) {
       var timer;
-      function startTimer(){ timer = setTimeout(function(){ t.style.opacity='0'; setTimeout(function(){ t.remove(); }, 300); }, 5000); }
-      t.addEventListener('mouseenter', function(){ clearTimeout(timer); });
-      t.addEventListener('focusin', function(){ clearTimeout(timer); });
+      function startTimer() { timer = setTimeout(function () { t.style.opacity = '0'; setTimeout(function () { t.remove(); }, 300); }, 5000); }
+      t.addEventListener('mouseenter', function () { clearTimeout(timer); });
+      t.addEventListener('focusin', function () { clearTimeout(timer); });
       t.addEventListener('mouseleave', startTimer);
       t.addEventListener('focusout', startTimer);
       startTimer();
     });
   })();
-  </script>
+</script>
 {% endblock body_layout %}

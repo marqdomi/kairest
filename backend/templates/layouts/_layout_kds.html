@@ -1,118 +1,162 @@
 {# ═══════════════════════════════════════════════════════
-   Layout: Kitchen Display System (KDS)
-   Extends: base.html  (overrides {% block body_layout %})
-   Full-screen, auto-refresh, timer-based.
-   Used by: Taqueros, Comal, Bebidas
+Layout: Kitchen Display System (KDS) — v7
+Extends: base.html (overrides {% block body_layout %})
+Full-screen, always dark, timer-based urgency colors.
+Used by: Taqueros, Comal, Bebidas
 
-   Usage:
-     {% extends 'layouts/_layout_kds.html' %}
-     {% block page_title %}Taqueros{% endblock %}
-     {% set kds_station = 'taqueros' %}
-     {% set kds_label = 'Taqueros' %}
-     {% set kds_color = 'var(--cl-red-500)' %}
-     {% block kds_content %}
-       ...order cards...
-     {% endblock %}
-   ═══════════════════════════════════════════════════════ #}
+Usage:
+{% extends 'layouts/_layout_kds.html' %}
+{% block page_title %}Taqueros{% endblock %}
+{% set kds_station = 'taqueros' %}
+{% set kds_label = 'Taqueros' %}
+{% set kds_icon = '🌮' %}
+{% block kds_content %}
+...order cards strip...
+{% endblock %}
+═══════════════════════════════════════════════════════ #}
 {% extends 'base.html' %}
 
-{% block title %}{% block page_title %}Cocina{% endblock %} — CasaLeones KDS{% endblock %}
+{% block title %}{% block page_title %}Cocina{% endblock %} — {{ brand_name | default('KaiRest') }} KDS{% endblock %}
 
 {% block head %}
 {{ super() }}
+{# Load KDS-specific stylesheet + original timer CSS #}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/v7-kds.css') }}?v={{ config.VERSION }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/cocina_timers.css') }}?v={{ config.VERSION }}">
 <style>
-  /* KDS full-screen overrides */
-  body { overflow: hidden; overflow-y: auto; }
-  .cl-kds { display: flex; flex-direction: column; height: 100vh; background: var(--cl-bg-primary); }
-  .cl-kds__topbar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: var(--cl-space-3) var(--cl-space-4);
-    background: var(--cl-gray-900); color: #fff;
-    flex-shrink: 0; min-height: 56px;
+  /* Force dark, no scroll on kds body */
+  html,
+  body {
+    background: #050508 !important;
+    overflow: hidden;
   }
-  .cl-kds__station {
-    display: flex; align-items: center; gap: var(--cl-space-3);
-    font-size: var(--cl-text-lg); font-weight: var(--cl-font-semibold);
-  }
-  .cl-kds__station-dot {
-    width: 12px; height: 12px; border-radius: 50%;
-    background: {{ kds_color|default('var(--cl-red-500)') }};
-    animation: kds-pulse 2s ease-in-out infinite;
-  }
-  @keyframes kds-pulse { 0%,100%{ opacity:1; } 50%{ opacity:.5; } }
-  @media (prefers-reduced-motion: reduce) { .cl-kds__station-dot { animation: none; } }
-  .cl-kds__stats { display: flex; gap: var(--cl-space-5); align-items: center; }
-  .cl-kds__stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .cl-kds__stat-value { font-size: var(--cl-text-xl); font-weight: var(--cl-font-bold); }
-  .cl-kds__stat-label { font-size: var(--cl-text-xs); opacity: .7; }
-  .cl-kds__grid {
-    flex: 1; overflow-y: auto; padding: var(--cl-space-4);
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: var(--cl-space-4);
-    align-content: start;
-  }
-  .cl-kds__empty {
-    grid-column: 1 / -1; display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    min-height: 50vh; opacity: .5;
-  }
-  .cl-kds__empty i { width: 64px; height: 64px; margin-bottom: var(--cl-space-4); }
-  .cl-kds__actions { display: flex; gap: var(--cl-space-2); align-items: center; }
 </style>
 {% endblock %}
 
 {% block body_layout %}
-  <a href="#main-content" class="skip-to-content">Saltar al contenido</a>
-  <div class="cl-kds">
-    {# ── KDS Topbar ── #}
-    <header class="cl-kds__topbar">
-      <div class="cl-kds__station">
-        <div class="cl-kds__station-dot"></div>
-        <span>{{ kds_label|default('Cocina') }}</span>
-      </div>
+<a href="#main-content" class="skip-to-content">Saltar al contenido</a>
 
-      <div class="cl-kds__stats">
-        {% block kds_stats %}
-        <div class="cl-kds__stat" role="status" aria-label="Órdenes pendientes">
-          <span class="cl-kds__stat-value" id="kdsPendingCount">—</span>
-          <span class="cl-kds__stat-label">Pendientes</span>
-        </div>
-        <div class="cl-kds__stat" role="status" aria-label="Tiempo promedio">
-          <span class="cl-kds__stat-value" id="kdsAvgTime">—</span>
-          <span class="cl-kds__stat-label">Tiempo prom.</span>
-        </div>
-        {% endblock %}
-      </div>
+<div class="kds-body">
+  {# ── KDS Header ── #}
+  <header class="cl-kds-header" id="kdsHeader">
+    {# Back link #}
+    {% if current_user.is_authenticated and current_user.rol in ['admin','superadmin'] %}
+    <a href="{{ url_for('admin.dashboard') }}" class="cl-icon-btn"
+      style="color:var(--cl-text-tertiary);margin-right:8px;" aria-label="Panel Admin">
+      <i data-lucide="arrow-left" style="width:15px;height:15px;"></i>
+    </a>
+    {% endif %}
 
-      <div class="cl-kds__actions">
-        <button class="cl-topbar__icon-btn" id="darkModeToggle"
-                aria-label="Alternar modo oscuro" title="Modo oscuro"
-                style="color:#fff">
-          <span id="darkModeIcon">🌙</span>
-        </button>
-        {% if current_user.is_authenticated and current_user.rol in ['admin','superadmin'] %}
-        <a href="{{ url_for('admin.dashboard') }}" class="cl-topbar__icon-btn" style="color:#fff"
-           title="Panel Admin" aria-label="Panel Admin">
-          <i data-lucide="layout-dashboard" class="icon-sm"></i>
-        </a>
-        {% endif %}
-        <a href="{{ url_for('auth.logout') }}" class="cl-topbar__icon-btn" style="color:#fff"
-           title="Cerrar sesión" aria-label="Cerrar sesión">
-          <i data-lucide="log-out" class="icon-sm"></i>
-        </a>
-      </div>
-    </header>
+    {# Station pill #}
+    <div class="cl-kds-station">
+      <div class="cl-kds-station__dot"></div>
+      {{ kds_icon|default('👨‍🍳') }} {{ kds_label|default('Cocina') }}
+    </div>
 
-    {# ── Order cards grid ── #}
-    <main class="cl-kds__grid" id="main-content" aria-live="polite" aria-label="Órdenes pendientes">
-      {% block kds_content %}
-      <div class="cl-kds__empty">
-        <i data-lucide="chef-hat"></i>
-        <p>No hay órdenes pendientes</p>
+    {# Pending count #}
+    <div class="cl-kds-pending">
+      <span class="cl-kds-pending__num" id="kdsPendingCount" role="status" aria-label="Órdenes pendientes">—</span>
+      <span style="font-size:12px;">órdenes pendientes</span>
+    </div>
+
+    {# Legend #}
+    <div class="cl-kds-legend d-none d-lg-flex">
+      <div class="cl-kds-legend__item">
+        <div class="cl-kds-legend__dot" style="background:var(--cl-kds-fresh);"></div>
+        0-5 min
       </div>
+      <div class="cl-kds-legend__item">
+        <div class="cl-kds-legend__dot" style="background:var(--cl-kds-warming);"></div>
+        5-10 min
+      </div>
+      <div class="cl-kds-legend__item">
+        <div class="cl-kds-legend__dot" style="background:var(--cl-kds-hot);"></div>
+        10-15 min
+      </div>
+      <div class="cl-kds-legend__item">
+        <div class="cl-kds-legend__dot" style="background:var(--cl-kds-urgent);"></div>
+        +15 min
+      </div>
+    </div>
+
+    {# Right actions: sound toggle + clock #}
+    <div style="display:flex;align-items:center;gap:12px;">
+      {% block kds_actions %}
+      <button class="cl-icon-btn" id="kdsSoundToggle" aria-label="Toggle sonido" title="Sonido"
+        style="font-size:11px;width:auto;padding:5px 10px;gap:5px;border-radius:20px;">
+        <i data-lucide="volume-2" style="width:13px;height:13px;" id="kdsVolumeIcon"></i>
+        <span id="kdsSoundLabel">Sonido: ON</span>
+      </button>
       {% endblock %}
-    </main>
+
+      <div class="cl-kds-clock" id="kdsClock" aria-label="Hora actual">
+        {{ now().strftime('%H:%M:%S') if now is defined else '00:00:00' }}
+      </div>
+    </div>
+  </header>
+
+  {# ── Order cards strip (horizontal scroll) ── #}
+  <div class="cl-kds-strip" id="main-content" aria-live="polite" aria-label="Órdenes pendientes de cocina">
+    {% block kds_content %}
+    {# Default empty state #}
+    <div
+      style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;min-height:60vh;gap:16px;opacity:.4;">
+      <i data-lucide="chef-hat" style="width:64px;height:64px;color:var(--cl-text-tertiary);"></i>
+      <p style="font-size:16px;font-weight:600;color:var(--cl-text-tertiary);">No hay órdenes pendientes</p>
+    </div>
+    {% endblock %}
   </div>
+
+  {# ── KDS Footer — stats ── #}
+  <footer class="cl-kds-footer">
+    <div class="cl-kds-stats">
+      <div class="cl-kds-stat">
+        <i data-lucide="check-circle" style="width:14px;height:14px;color:var(--cl-success-500);"></i>
+        Completadas hoy: <strong id="kdsCompletadas">—</strong>
+      </div>
+      <div class="cl-kds-stat">
+        <i data-lucide="clock" style="width:14px;height:14px;color:var(--cl-warning-500);"></i>
+        Tiempo prom: <strong id="kdsAvgTime">—</strong>
+      </div>
+      {% block kds_stats_extra %}{% endblock %}
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--cl-success-500);">
+      <div class="cl-live-dot"></div>
+      <span>Socket.IO conectado</span>
+    </div>
+  </footer>
+</div>
+
+{# ── KDS Clock JS ── #}
+<script>
+  (function () {
+    // Live clock
+    var clockEl = document.getElementById('kdsClock');
+    function tick() {
+      var now = new Date();
+      var h = String(now.getHours()).padStart(2, '0');
+      var m = String(now.getMinutes()).padStart(2, '0');
+      var s = String(now.getSeconds()).padStart(2, '0');
+      if (clockEl) clockEl.textContent = h + ':' + m + ':' + s;
+    }
+    tick();
+    setInterval(tick, 1000);
+
+    // Sound toggle
+    var soundBtn = document.getElementById('kdsSoundToggle');
+    var soundLabel = document.getElementById('kdsSoundLabel');
+    var soundIcon = document.getElementById('kdsVolumeIcon');
+    var soundOn = true;
+    window.__kdsSound = true;
+    if (soundBtn) {
+      soundBtn.addEventListener('click', function () {
+        soundOn = !soundOn;
+        window.__kdsSound = soundOn;
+        if (soundLabel) soundLabel.textContent = 'Sonido: ' + (soundOn ? 'ON' : 'OFF');
+        if (soundIcon) soundIcon.setAttribute('data-lucide', soundOn ? 'volume-2' : 'volume-x');
+        if (window.lucide) lucide.createIcons();
+      });
+    }
+  })();
+</script>
 {% endblock body_layout %}

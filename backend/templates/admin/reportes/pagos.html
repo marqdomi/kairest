@@ -51,7 +51,7 @@
     <div class="col-md-4">
       <div class="cl-card text-center" style="padding:var(--cl-space-5);">
         <p class="text-capitalize" style="color:var(--cl-text-muted);margin-bottom:var(--cl-space-2);">{{ row.metodo }}</p>
-        <h3 style="margin-bottom:var(--cl-space-1);">${{ '%.2f'|format(row.total) }}</h3>
+        <h3 style="margin-bottom:var(--cl-space-1);">{{ row.total|money }}</h3>
         <small style="color:var(--cl-text-muted);">{{ row.cantidad }} transacciones</small>
       </div>
     </div>

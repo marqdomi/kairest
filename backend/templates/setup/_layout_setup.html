@@ -1,0 +1,219 @@
+{# ═══════════════════════════════════════════════════════
+Layout: Setup Wizard (First-run onboarding)
+Extends: base.html — no navbar, centered card with progress
+═══════════════════════════════════════════════════════ #}
+{% extends 'base.html' %}
+
+{% block title %}Configuración — KaiRest{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+  .cl-setup {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--cl-space-4);
+    background: linear-gradient(135deg, var(--cl-gray-900) 0%, var(--cl-red-900) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cl-setup::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 30% 20%, rgba(196, 30, 58, .15) 0%, transparent 60%),
+      radial-gradient(ellipse at 70% 80%, rgba(196, 30, 58, .1) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .cl-setup__card {
+    width: 100%;
+    max-width: 560px;
+    background: var(--cl-bg-primary);
+    border-radius: var(--cl-radius-xl);
+    box-shadow: var(--cl-shadow-2xl);
+    padding: var(--cl-space-8) var(--cl-space-6);
+    position: relative;
+    z-index: 1;
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--cl-border-color);
+  }
+
+  [data-bs-theme="dark"] .cl-setup__card {
+    background: rgba(16, 24, 40, .85);
+    border-color: rgba(255, 255, 255, .08);
+  }
+
+  /* ── Progress bar ── */
+  .cl-setup__progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--cl-space-2);
+    margin-bottom: var(--cl-space-6);
+  }
+
+  .cl-setup__step {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--cl-text-sm);
+    font-weight: var(--cl-font-semibold);
+    background: var(--cl-gray-200);
+    color: var(--cl-gray-500);
+    transition: all .2s ease;
+  }
+
+  [data-bs-theme="dark"] .cl-setup__step {
+    background: var(--cl-gray-700);
+    color: var(--cl-gray-400);
+  }
+
+  .cl-setup__step--active {
+    background: var(--cl-red-600);
+    color: #fff;
+    transform: scale(1.15);
+    box-shadow: 0 0 0 4px rgba(196, 30, 58, .25);
+  }
+
+  .cl-setup__step--done {
+    background: var(--cl-green-600, #22c55e);
+    color: #fff;
+  }
+
+  .cl-setup__line {
+    flex: 0 0 24px;
+    height: 2px;
+    background: var(--cl-gray-300);
+    border-radius: 1px;
+  }
+
+  .cl-setup__line--done {
+    background: var(--cl-green-600, #22c55e);
+  }
+
+  /* ── Content ── */
+  .cl-setup__title {
+    text-align: center;
+    font-size: var(--cl-text-xl);
+    font-weight: var(--cl-font-semibold);
+    color: var(--cl-text-primary);
+    margin-bottom: var(--cl-space-1);
+  }
+
+  .cl-setup__subtitle {
+    text-align: center;
+    font-size: var(--cl-text-sm);
+    color: var(--cl-text-secondary);
+    margin-bottom: var(--cl-space-5);
+  }
+
+  .cl-setup__actions {
+    display: flex;
+    gap: var(--cl-space-3);
+    margin-top: var(--cl-space-5);
+  }
+
+  .cl-setup__actions .cl-btn {
+    flex: 1;
+    height: 48px;
+    font-size: var(--cl-text-base);
+  }
+
+  /* ── Input groups ── */
+  .cl-setup .cl-form-group {
+    margin-bottom: var(--cl-space-4);
+  }
+
+  .cl-setup .cl-form-input {
+    height: 48px;
+    font-size: var(--cl-text-base);
+  }
+
+  .cl-setup .cl-form-label {
+    margin-bottom: var(--cl-space-1);
+  }
+
+  /* ── Logo ── */
+  .cl-setup__logo {
+    display: block;
+    margin: 0 auto var(--cl-space-4);
+    height: 56px;
+    width: auto;
+  }
+
+  /* ── Dynamic rows ── */
+  .cl-setup__row {
+    display: flex;
+    gap: var(--cl-space-2);
+    align-items: flex-end;
+    margin-bottom: var(--cl-space-3);
+    flex-wrap: wrap;
+  }
+
+  .cl-setup__row .cl-form-group {
+    flex: 1;
+    min-width: 100px;
+    margin-bottom: 0;
+  }
+
+  .cl-setup__row .btn-remove {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--cl-radius-md);
+    border: 1px solid var(--cl-border-color);
+    background: var(--cl-bg-secondary);
+    color: var(--cl-red-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background .15s;
+    margin-bottom: var(--cl-space-1);
+  }
+
+  .cl-setup__row .btn-remove:hover {
+    background: var(--cl-red-50, #fef2f2);
+  }
+</style>
+{% endblock %}
+
+{% block body_layout %}
+<div class="cl-setup">
+  <div class="cl-setup__card">
+    {# ── Progress indicator ── #}
+    <div class="cl-setup__progress" role="progressbar" aria-valuenow="{{ paso }}" aria-valuemin="1" aria-valuemax="5"
+      aria-label="Paso {{ paso }} de 5">
+      {% for s in range(1, 6) %}
+      <div
+        class="cl-setup__step {% if s < paso %}cl-setup__step--done{% elif s == paso %}cl-setup__step--active{% endif %}"
+        aria-label="Paso {{ s }}{% if s < paso %} completado{% elif s == paso %} actual{% endif %}">
+        {% if s < paso %}✓{% else %}{{ s }}{% endif %} </div>
+          {% if s < 5 %}<div class="cl-setup__line {% if s < paso %}cl-setup__line--done{% endif %}">
+      </div>{% endif %}
+      {% endfor %}
+    </div>
+
+    {# ── Flash messages ── #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="cl-toast cl-toast--{{ 'error' if category in ('danger','error') else category }}" role="alert"
+      style="position:relative;margin-bottom:var(--cl-space-3)">
+      <span>{{ message }}</span>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    {% block setup_content %}{% endblock %}
+  </div>
+</div>
+{% endblock body_layout %}

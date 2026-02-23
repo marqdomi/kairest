@@ -4,6 +4,42 @@
 /* body styles now in tokens.css */
 
 /*====================================
+  Tipografía Financiera (Next-Gen)
+====================================*/
+.cl-money {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.cl-money-symbol {
+  opacity: 0.6;
+  font-size: 0.85em;
+  margin-right: 1px;
+}
+.cl-money-decimal {
+  opacity: 0.6;
+  font-size: 0.85em;
+}
+
+/*====================================
+  Tablas de Datos (Next-Gen)
+====================================*/
+.cl-table th {
+  position: sticky;
+  top: 0;
+  background-color: var(--cl-bg-secondary);
+  z-index: 10;
+}
+.cl-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+.cl-table tbody tr:hover {
+  background-color: var(--cl-gray-50);
+}
+[data-theme="dark"] .cl-table tbody tr:hover {
+  background-color: var(--cl-gray-800);
+}
+
+/*====================================
   Navbar
 ====================================*/
 /* Custom class to push items to the right */

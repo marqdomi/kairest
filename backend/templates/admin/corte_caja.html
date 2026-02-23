@@ -1,191 +1,254 @@
 {% extends 'layouts/_layout_admin.html' %}
 {% block page_title %}Corte de Caja{% endblock %}
 
+{% block admin_breadcrumb %}
+<div class="cl-breadcrumb">
+  <a href="{{ url_for('admin.dashboard') }}" style="color:var(--cl-text-tertiary);">Admin</a>
+  <i data-lucide="chevron-right" style="width:13px;height:13px;"></i>
+  <span class="cl-breadcrumb__current">Corte de Caja</span>
+</div>
+{% endblock %}
+
 {% block admin_content %}
-{% from 'components/_page_header.html' import page_header %}
 {% from 'components/_kpi_card.html' import kpi_card %}
 {% set existing_cortes = cortes | selectattr('fecha', 'equalto', resumen.fecha) | list %}
 
-{# ── Page header ── #}
-{% call page_header('Corte de Caja', breadcrumb=[{'label':'Admin','url':url_for('admin.dashboard')},{'label':'Corte de Caja','url':'#'}]) %}
-  <a href="{{ url_for('admin.export_corte_pdf') }}" class="cl-btn cl-btn--outline cl-btn--sm" style="border-color:var(--cl-danger); color:var(--cl-danger);">
-    <i data-lucide="file-text" class="icon-sm"></i> Exportar PDF
-  </a>
-{% endcall %}
+{# ── Page Header ── #}
+<div class="cl-page-hdr">
+  <div>
+    <h1>Corte de Caja</h1>
+    <p>Resumen del día — {{ resumen.fecha }}</p>
+  </div>
+  <div class="cl-page-hdr__right">
+    <a href="{{ url_for('admin.export_corte_pdf') }}" class="cl-btn--v7-outline cl-btn--sm"
+      style="color:var(--cl-error-500);border-color:rgba(240,68,56,0.3);">
+      <i data-lucide="file-text" class="icon-sm"></i> Exportar PDF
+    </a>
+  </div>
+</div>
 
-{# ── Resumen del Día ── #}
+{# ── KPI Cards Row ── #}
+<div class="cl-kpi-grid mb-5">
+  {{ kpi_card('Total Ingresos', '$' ~ '%.2f'|format(resumen.total_ingresos),
+  icon='dollar-sign', color='green',
+  subtitle='ventas del día') }}
+  {{ kpi_card('Órdenes', resumen.num_ordenes|string,
+  icon='receipt', color='blue',
+  subtitle='órdenes cerradas') }}
+  {{ kpi_card('Ticket Promedio', '$' ~ '%.2f'|format(resumen.ticket_promedio),
+  icon='ticket', color='gold',
+  subtitle='por orden') }}
+  {{ kpi_card('Propinas', '$' ~ '%.2f'|format(resumen.propinas_total),
+  icon='coins', color='red',
+  subtitle='total del día') }}
+</div>
+
+{# ── Resumen Card ── #}
 <div class="cl-card mb-4">
-  <div class="cl-card__header">
-    <i data-lucide="calendar" class="icon-sm me-1"></i>
-    <strong>Resumen del Día — {{ resumen.fecha }}</strong>
+  <div class="cl-card__hdr">
+    <span class="cl-card__title">
+      <i data-lucide="credit-card" style="width:15px;height:15px;color:var(--cl-info-500);"></i>
+      Desglose por Método de Pago
+    </span>
   </div>
   <div class="cl-card__body">
-    {# KPI row #}
-    <div class="row g-3 mb-4">
-      <div class="col-6 col-md-3">
-        {{ kpi_card('Total Ingresos', '$' ~ '%.2f'|format(resumen.total_ingresos), icon='dollar-sign', color='primary') }}
-      </div>
-      <div class="col-6 col-md-3">
-        {{ kpi_card('Órdenes', resumen.num_ordenes, icon='receipt', color='success') }}
-      </div>
-      <div class="col-6 col-md-3">
-        {{ kpi_card('Ticket Promedio', '$' ~ '%.2f'|format(resumen.ticket_promedio), icon='ticket', color='warning') }}
-      </div>
-      <div class="col-6 col-md-3">
-        {{ kpi_card('Propinas', '$' ~ '%.2f'|format(resumen.propinas_total), icon='coins', color='accent') }}
-      </div>
-    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;">
 
-    {# Desglose por método de pago #}
-    <h6 class="fw-semibold mb-3">
-      <i data-lucide="credit-card" class="icon-sm me-1"></i>
-      Desglose por Método de Pago
-    </h6>
-    <div class="row g-3 mb-4">
-      <div class="col-md-4">
-        <div class="cl-card" style="border-left:4px solid var(--cl-success);">
-          <div class="cl-card__body text-center">
-            <small class="text-muted">Efectivo esperado</small>
-            <h5 class="mb-0" style="color:var(--cl-success);">${{ '%.2f'|format(resumen.efectivo_esperado) }}</h5>
-          </div>
+      {# Efectivo #}
+      <div
+        style="background:rgba(18,183,106,0.08);border:1px solid rgba(18,183,106,0.25);border-radius:12px;padding:16px;text-align:center;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px;">
+          <i data-lucide="banknote" style="width:15px;height:15px;color:var(--cl-success-500);"></i>
+          <span
+            style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--cl-success-500);">Efectivo
+            esperado</span>
+        </div>
+        <div style="font-family:var(--cl-font-mono);font-size:22px;font-weight:800;color:var(--cl-success-500);">
+          ${{ '%.2f'|format(resumen.efectivo_esperado) }}
         </div>
       </div>
-      <div class="col-md-4">
-        <div class="cl-card" style="border-left:4px solid var(--cl-info, #0dcaf0);">
-          <div class="cl-card__body text-center">
-            <small class="text-muted">Tarjeta</small>
-            <h5 class="mb-0" style="color:var(--cl-info, #0dcaf0);">${{ '%.2f'|format(resumen.tarjeta_total) }}</h5>
-          </div>
+
+      {# Tarjeta #}
+      <div
+        style="background:rgba(46,144,250,0.08);border:1px solid rgba(46,144,250,0.25);border-radius:12px;padding:16px;text-align:center;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px;">
+          <i data-lucide="credit-card" style="width:15px;height:15px;color:var(--cl-info-500);"></i>
+          <span
+            style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--cl-info-500);">Tarjeta</span>
+        </div>
+        <div style="font-family:var(--cl-font-mono);font-size:22px;font-weight:800;color:var(--cl-info-500);">
+          ${{ '%.2f'|format(resumen.tarjeta_total) }}
         </div>
       </div>
-      <div class="col-md-4">
-        <div class="cl-card" style="border-left:4px solid var(--cl-warning);">
-          <div class="cl-card__body text-center">
-            <small class="text-muted">Transferencia</small>
-            <h5 class="mb-0" style="color:var(--cl-warning);">${{ '%.2f'|format(resumen.transferencia_total) }}</h5>
-          </div>
+
+      {# Transferencia #}
+      <div
+        style="background:rgba(247,144,9,0.08);border:1px solid rgba(247,144,9,0.25);border-radius:12px;padding:16px;text-align:center;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px;">
+          <i data-lucide="smartphone" style="width:15px;height:15px;color:var(--cl-warning-500);"></i>
+          <span
+            style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--cl-warning-500);">Transferencia</span>
+        </div>
+        <div style="font-family:var(--cl-font-mono);font-size:22px;font-weight:800;color:var(--cl-warning-500);">
+          ${{ '%.2f'|format(resumen.transferencia_total) }}
         </div>
       </div>
     </div>
 
-    {# Formulario de conciliación #}
-    <h6 class="fw-semibold mb-3">
-      <i data-lucide="calculator" class="icon-sm me-1"></i>
-      Conciliación de Efectivo
-    </h6>
-    <form method="POST">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div class="row align-items-end mb-3 g-3">
-        <div class="col-md-4">
-          <label for="efectivo_contado" class="cl-form-label">Efectivo contado en caja ($)</label>
-          <input type="number" step="0.01" min="0" name="efectivo_contado" id="efectivo_contado"
-                 class="cl-form-input" placeholder="0.00" required
-                 oninput="calcularDiferencia()">
-        </div>
-        <div class="col-md-4">
-          <label class="cl-form-label">Diferencia</label>
-          <input type="text" id="diferencia_display" class="cl-form-input" readonly>
-        </div>
+    {# Conciliación form #}
+    <div style="border-top:1px solid var(--cl-border-color);padding-top:20px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <i data-lucide="calculator" style="width:15px;height:15px;color:var(--cl-text-tertiary);"></i>
+        <span style="font-size:13px;font-weight:700;color:var(--cl-text-primary);">Conciliación de Efectivo</span>
+        {% if existing_cortes|length %}
+        <span class="cl-badge cl-badge--yellow" style="margin-left:auto;">Ya existe corte para hoy</span>
+        {% endif %}
       </div>
-      <div class="mb-3">
-        <label for="notas" class="cl-form-label">Notas / Observaciones</label>
-        <textarea name="notas" id="notas" class="cl-form-input" rows="2"
-                  placeholder="Ej: Faltante por cambio no registrado..."></textarea>
-      </div>
-      <button type="submit" class="cl-btn cl-btn--success"
-        {% if existing_cortes | length %}disabled title="Ya existe corte para hoy"{% endif %}>
-        <i data-lucide="check-circle" class="icon-sm"></i> Generar Corte de Caja
-      </button>
-    </form>
+
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;">
+          <div>
+            <label for="efectivo_contado"
+              style="display:block;font-size:12px;font-weight:600;color:var(--cl-text-secondary);margin-bottom:6px;">
+              Efectivo contado en caja ($)
+            </label>
+            <input type="number" step="0.01" min="0" name="efectivo_contado" id="efectivo_contado"
+              style="width:100%;height:42px;background:var(--cl-surface-4);border:1px solid var(--cl-border-color);border-radius:8px;padding:0 14px;font-size:14px;color:var(--cl-text-primary);font-family:var(--cl-font-mono);outline:none;transition:border-color 150ms;"
+              placeholder="0.00" required onfocus="this.style.borderColor='var(--cl-border-focus)'"
+              onblur="this.style.borderColor='var(--cl-border-color)'" oninput="calcularDiferencia()">
+          </div>
+          <div>
+            <label
+              style="display:block;font-size:12px;font-weight:600;color:var(--cl-text-secondary);margin-bottom:6px;">
+              Diferencia
+            </label>
+            <input type="text" id="diferencia_display" readonly
+              style="width:100%;height:42px;background:rgba(255,255,255,0.04);border:1px solid var(--cl-border-color);border-radius:8px;padding:0 14px;font-size:14px;font-family:var(--cl-font-mono);font-weight:700;outline:none;cursor:default;color:var(--cl-text-secondary);">
+          </div>
+          <button type="submit" class="cl-btn--v7-primary"
+            style="height:42px;white-space:nowrap;{% if existing_cortes|length %}opacity:.4;cursor:not-allowed;{% endif %}"
+            {% if existing_cortes|length %}disabled title="Ya existe corte para hoy" {% endif %}>
+            <i data-lucide="check-circle" class="icon-sm"></i> Generar Corte
+          </button>
+        </div>
+        <div style="margin-top:12px;">
+          <label for="notas"
+            style="display:block;font-size:12px;font-weight:600;color:var(--cl-text-secondary);margin-bottom:6px;">
+            Notas / Observaciones
+          </label>
+          <textarea name="notas" id="notas" rows="2"
+            style="width:100%;background:var(--cl-surface-4);border:1px solid var(--cl-border-color);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--cl-text-primary);font-family:var(--cl-font-sans);outline:none;resize:vertical;transition:border-color 150ms;"
+            placeholder="Ej: Faltante por cambio no registrado..."
+            onfocus="this.style.borderColor='var(--cl-border-focus)'"
+            onblur="this.style.borderColor='var(--cl-border-color)'"></textarea>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
 {# ── Historial de Cortes ── #}
 <div class="cl-card">
-  <div class="cl-card__header">
-    <i data-lucide="history" class="icon-sm me-1"></i>
-    <strong>Historial de Cortes</strong>
-  </div>
-  <div class="cl-card__body p-0">
-    <div class="table-responsive">
-      <table class="cl-table cl-table--striped cl-table--hover">
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Total</th>
-            <th># Órdenes</th>
-            <th>Efectivo Esperado</th>
-            <th>Efectivo Contado</th>
-            <th>Diferencia</th>
-            <th>Tarjeta</th>
-            <th>Transfer.</th>
-            <th>Realizado por</th>
-            <th>Notas</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for c in cortes %}
-          <tr>
-            <td>{{ c.fecha }}</td>
-            <td>${{ '%.2f'|format(c.total_ingresos) }}</td>
-            <td>{{ c.num_ordenes }}</td>
-            <td>${{ '%.2f'|format(c.efectivo_esperado or 0) }}</td>
-            <td>${{ '%.2f'|format(c.efectivo_contado or 0) }}</td>
-            <td class="{% if (c.diferencia or 0) < 0 %}text-danger fw-bold{% elif (c.diferencia or 0) > 0 %}text-success{% endif %}">
-              ${{ '%.2f'|format(c.diferencia or 0) }}
-            </td>
-            <td>${{ '%.2f'|format(c.tarjeta_total or 0) }}</td>
-            <td>${{ '%.2f'|format(c.transferencia_total or 0) }}</td>
-            <td>{{ c.usuario.nombre if c.usuario else 'N/A' }}</td>
-            <td>{{ c.notas or '' }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {# ── Pagination ── #}
-    {% if pagination and pagination.pages > 1 %}
-    <div class="d-flex justify-content-between align-items-center px-3 py-3" style="border-top:1px solid var(--cl-border);">
-      <small style="color:var(--cl-text-muted);">
-        Mostrando {{ ((pagination.page - 1) * pagination.per_page) + 1 }}–{{ [pagination.page * pagination.per_page, pagination.total] | min }} de {{ pagination.total }} cortes
-      </small>
-      <nav aria-label="Paginación cortes">
-        <ul class="pagination pagination-sm mb-0 gap-1">
-          <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-            <a class="cl-btn cl-btn--outline cl-btn--sm" href="{{ url_for('admin.corte_caja', page=pagination.prev_num) if pagination.has_prev else '#' }}">
-              <i data-lucide="chevron-left" class="icon-sm"></i>
-            </a>
-          </li>
-          {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-            {% if p %}
-              <li class="page-item {% if p == pagination.page %}active{% endif %}">
-                <a class="cl-btn cl-btn--sm {% if p == pagination.page %}cl-btn--primary{% else %}cl-btn--outline{% endif %}"
-                   href="{{ url_for('admin.corte_caja', page=p) }}">{{ p }}</a>
-              </li>
-            {% else %}
-              <li class="page-item disabled"><span class="cl-btn cl-btn--sm cl-btn--outline">…</span></li>
-            {% endif %}
-          {% endfor %}
-          <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-            <a class="cl-btn cl-btn--outline cl-btn--sm" href="{{ url_for('admin.corte_caja', page=pagination.next_num) if pagination.has_next else '#' }}">
-              <i data-lucide="chevron-right" class="icon-sm"></i>
-            </a>
-          </li>
-        </ul>
-      </nav>
-    </div>
+  <div class="cl-card__hdr">
+    <span class="cl-card__title">
+      <i data-lucide="history" style="width:15px;height:15px;color:var(--cl-text-tertiary);"></i>
+      Historial de Cortes
+    </span>
+    {% if cortes %}
+    <span class="cl-badge cl-badge--gray">{{ cortes|length }} corte{{ 's' if cortes|length != 1 }}</span>
     {% endif %}
   </div>
+  {% if cortes %}
+  <div style="overflow-x:auto;">
+    <table class="cl-table--v7" aria-label="Historial de cortes de caja">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Total</th>
+          <th>Órdenes</th>
+          <th>Efectivo esp.</th>
+          <th>Efectivo cont.</th>
+          <th>Diferencia</th>
+          <th>Tarjeta</th>
+          <th>Transfer.</th>
+          <th>Realizado por</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in cortes %}
+        {% set diff = c.diferencia or 0 %}
+        {% set diff_color = 'var(--cl-error-500)' if diff < 0 else ('var(--cl-success-500)' if diff> 0 else
+          'var(--cl-text-secondary)') %}
+          <tr>
+            <td>{{ c.fecha }}</td>
+            <td style="font-family:var(--cl-font-mono);color:var(--cl-success-500);font-weight:600;">${{
+              '%.2f'|format(c.total_ingresos) }}</td>
+            <td>{{ c.num_ordenes }}</td>
+            <td style="font-family:var(--cl-font-mono);">${{ '%.2f'|format(c.efectivo_esperado or 0) }}</td>
+            <td style="font-family:var(--cl-font-mono);">${{ '%.2f'|format(c.efectivo_contado or 0) }}</td>
+            <td style="font-family:var(--cl-font-mono);font-weight:700;color:{{ diff_color }};">
+              {% if diff > 0 %}+{% endif %}${{ '%.2f'|format(diff) }}
+            </td>
+            <td style="font-family:var(--cl-font-mono);">${{ '%.2f'|format(c.tarjeta_total or 0) }}</td>
+            <td style="font-family:var(--cl-font-mono);">${{ '%.2f'|format(c.transferencia_total or 0) }}</td>
+            <td>{{ c.usuario.nombre if c.usuario else 'N/A' }}</td>
+          </tr>
+          {% endfor %}
+
+      </tbody>
+    </table>
+  </div>
+
+  {# Pagination #}
+  {% if pagination and pagination.pages > 1 %}
+  <div
+    style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-top:1px solid var(--cl-border-color);">
+    <span style="font-size:12px;color:var(--cl-text-tertiary);">
+      {{ ((pagination.page - 1) * pagination.per_page) + 1 }}–{{ [pagination.page * pagination.per_page,
+      pagination.total]|min }} de {{ pagination.total }} cortes
+    </span>
+    <div style="display:flex;gap:4px;">
+      <a href="{{ url_for('admin.corte_caja', page=pagination.prev_num) if pagination.has_prev else '#' }}"
+        class="cl-btn--v7-outline cl-btn--sm {% if not pagination.has_prev %}disabled{% endif %}"
+        style="{% if not pagination.has_prev %}opacity:.35;pointer-events:none;{% endif %}">
+        <i data-lucide="chevron-left" class="icon-sm"></i>
+      </a>
+      {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if p %}
+      <a href="{{ url_for('admin.corte_caja', page=p) }}" class="cl-btn--v7-outline cl-btn--sm"
+        style="{{ 'background:var(--cl-red-glow);color:var(--cl-red-400);border-color:rgba(196,30,58,0.3);' if p == pagination.page else '' }}">{{
+        p }}</a>
+      {% else %}
+      <span class="cl-btn--v7-outline cl-btn--sm" style="pointer-events:none;opacity:.4;">…</span>
+      {% endif %}
+      {% endfor %}
+      <a href="{{ url_for('admin.corte_caja', page=pagination.next_num) if pagination.has_next else '#' }}"
+        class="cl-btn--v7-outline cl-btn--sm {% if not pagination.has_next %}disabled{% endif %}"
+        style="{% if not pagination.has_next %}opacity:.35;pointer-events:none;{% endif %}">
+        <i data-lucide="chevron-right" class="icon-sm"></i>
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div style="display:flex;flex-direction:column;align-items:center;padding:40px;gap:10px;opacity:.4;">
+    <i data-lucide="clipboard" style="width:36px;height:36px;color:var(--cl-text-tertiary);"></i>
+    <p style="font-size:13px;color:var(--cl-text-tertiary);margin:0;">No hay cortes registrados aún</p>
+  </div>
+  {% endif %}
 </div>
 
 <script>
-function calcularDiferencia() {
-    const contado = parseFloat(document.getElementById('efectivo_contado').value) || 0;
-    const esperado = {{ resumen.efectivo_esperado }};
-    const diff = contado - esperado;
-    const el = document.getElementById('diferencia_display');
-    el.value = '$' + diff.toFixed(2);
-    el.className = 'cl-form-input ' + (diff < 0 ? 'text-danger fw-bold' : diff > 0 ? 'text-success' : '');
-}
+  var _cl_efectivo_esp = {{ resumen.efectivo_esperado }};
+  function calcularDiferencia() {
+    var contado = parseFloat(document.getElementById('efectivo_contado').value) || 0;
+    var diff = contado - _cl_efectivo_esp;
+    var el = document.getElementById('diferencia_display');
+    el.value = (diff >= 0 ? '+' : '') + '$' + diff.toFixed(2);
+    el.style.color = diff < 0 ? 'var(--cl-error-500)' : diff > 0 ? 'var(--cl-success-500)' : 'var(--cl-text-secondary)';
+  }
 </script>
+
 {% endblock %}

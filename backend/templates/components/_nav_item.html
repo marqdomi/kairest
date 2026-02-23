@@ -1,0 +1,18 @@
+{# ═══════════════════════════════════════════════════
+Nav Item Component — v7
+Usage:
+{% from 'components/_nav_item.html' import nav_item %}
+{{ nav_item('Dashboard', url_for('admin.dashboard'), 'layout-dashboard', active=true) }}
+════════════════════════════════════════════════ #}
+
+{% macro nav_item(label, url, icon, active=false, aria_label='') %}
+<a href="{{ url }}" class="cl-sidebar__link{% if active %} active{% endif %}" {% if active %}aria-current="page" {%
+    endif %} {% if aria_label %}aria-label="{{ aria_label }}" {% endif %}>
+    <i data-lucide="{{ icon }}" class="icon-sm" aria-hidden="true" style="flex-shrink:0;"></i>
+    <span class="cl-sidebar__label">{{ label }}</span>
+</a>
+{% endmacro %}
+
+{% macro nav_group_label(label) %}
+<div class="cl-sidebar__group-label">{{ label }}</div>
+{% endmacro %}

@@ -30,6 +30,8 @@ from backend.routes.delivery import delivery_bp
 from backend.routes.sucursales import sucursales_bp
 # Sprint 6
 from backend.routes.auditoria import auditoria_bp
+# Onboarding
+from backend.routes.setup import setup_bp
 
 # ---------------------------------------------------------------------------
 # Logging configuration
@@ -81,10 +83,12 @@ def create_app():
     cache.init_app(app)
 
     # Flask-Session (Redis server-side sessions)
-    import redis as _redis
-    app.config['SESSION_REDIS'] = _redis.from_url(
-        app.config.get('REDIS_URL', 'redis://localhost:6379') + '/1'
-    )
+    redis_url = app.config.get('REDIS_URL', '')
+    if redis_url:
+        import redis as _redis
+        app.config['SESSION_REDIS'] = _redis.from_url(redis_url + '/1')
+    else:
+        app.config['SESSION_TYPE'] = 'filesystem'
     server_session.init_app(app)
 
     # Sentry (Fase 4 - Item 25)
@@ -101,6 +105,24 @@ def create_app():
     def _set_csp_nonce():
         g.csp_nonce = secrets.token_hex(16)
 
+    # ---- Onboarding redirect: force setup wizard if not completed ----
+    @app.before_request
+    def _check_onboarding():
+        from backend.models.models import ConfiguracionSistema
+        # Skip for static files, health, and setup itself
+        if flask_request.endpoint and (
+            flask_request.endpoint.startswith('setup.') or
+            flask_request.endpoint == 'static' or
+            flask_request.endpoint == 'health_check'
+        ):
+            return
+        try:
+            if not ConfiguracionSistema.get_bool('onboarding_completado', False):
+                from flask import redirect, url_for
+                return redirect(url_for('setup.index'))
+        except Exception:
+            pass  # Table may not exist yet during migrations
+
     # ---- Multi-sucursal: inyectar sucursal activa (Sprint 2 — 2.2) ----
     @app.before_request
     def _set_sucursal_activa():
@@ -111,6 +133,46 @@ def create_app():
     @app.context_processor
     def _inject_csp_nonce():
         return dict(csp_nonce=getattr(g, 'csp_nonce', ''))
+
+    # Inject modo_sistema for sidebar/navbar filtering
+    @app.context_processor
+    def _inject_modo_sistema():
+        try:
+            from backend.models.models import ConfiguracionSistema
+            modo = ConfiguracionSistema.get('modo_sistema', 'basico')
+        except Exception:
+            modo = 'basico'
+        return dict(modo_sistema=modo)
+
+    # Inject branding for white-label support
+    @app.context_processor
+    def _inject_branding():
+        from flask import url_for as _url_for
+        try:
+            from backend.models.models import Sucursal
+            sucursal = Sucursal.query.first()
+            brand_name = sucursal.nombre if sucursal else 'KaiRest'
+            brand_logo = getattr(sucursal, 'logo_url', None) or _url_for(
+                'static', filename='img/kairest-logo.svg')
+        except Exception:
+            brand_name = 'KaiRest'
+            brand_logo = _url_for('static', filename='img/kairest-logo.svg')
+        return dict(
+            brand_name=brand_name,
+            brand_logo=brand_logo,
+            product_name='KaiRest',
+        )
+
+    # Custom Jinja filter for Next-Gen money formatting
+    @app.template_filter('money')
+    def format_money(amount):
+        if amount is None:
+            return '<span class="cl-money"><span class="cl-money-symbol">$</span>0<span class="cl-money-decimal">.00</span></span>'
+        amount_str = f"{float(amount):,.2f}"
+        parts = amount_str.split('.')
+        enteros = parts[0]
+        decimales = parts[1]
+        return f'<span class="cl-money"><span class="cl-money-symbol">$</span>{enteros}<span class="cl-money-decimal">.{decimales}</span></span>'
 
     # Security headers (Fase 4 - Item 24) + CSP (Fase 5 - Sprint 1)
     @app.after_request
@@ -142,6 +204,7 @@ def create_app():
     csrf.exempt(api_bp)
     csrf.exempt(orders_bp)
     csrf.exempt(ventas_bp)
+    csrf.exempt(setup_bp)
 
     login_manager.user_loader(load_user)
 
@@ -169,6 +232,8 @@ def create_app():
     app.register_blueprint(sucursales_bp)
     # Sprint 6
     app.register_blueprint(auditoria_bp)
+    # Onboarding
+    app.register_blueprint(setup_bp)
 
     # Exempt API routes from CSRF
     csrf.exempt(inventario_bp)
@@ -210,7 +275,16 @@ def create_app():
     return app
 
 
-app = create_app()
+def _get_app():
+    """Get or create the app (called at module level for gunicorn/socketio)."""
+    if os.getenv('TESTING'):
+        return None
+    return create_app()
+
+
+app = _get_app()
 
 if __name__ == "__main__":
+    if app is None:
+        app = create_app()
     socketio.run(app, debug=True, use_reloader=False, host='0.0.0.0', port=5005)

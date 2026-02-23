@@ -16,19 +16,21 @@ Flask + PostgreSQL + Socket.IO + Redis + Gunicorn. Backend: `backend/`, Frontend
 - Backups: pg_dump cada hora via Docker, retención 7 días
 
 ## Estructura
-- `backend/routes/` — auth, meseros, cocina, admin, api, orders, ventas, productos, inventario, reportes, facturacion, clientes, reservaciones, delivery, sucursales, auditoria
-- `backend/models/models.py` — Sucursal, Usuario, Producto, Orden, OrdenDetalle, Pago, Sale, Ingrediente, RecetaDetalle, MovimientoInventario, Cliente, Reservacion, Factura, DeliveryOrden, CorteCaja, NotaCredito, AuditLog
+- `backend/routes/` — auth, meseros, cocina, admin, api, orders, ventas, productos, inventario, reportes, facturacion, clientes, reservaciones, delivery, sucursales, auditoria, setup
+- `backend/models/models.py` — Sucursal, Usuario, Producto, Orden, OrdenDetalle, Pago, Sale, Ingrediente, RecetaDetalle, MovimientoInventario, Cliente, Reservacion, Factura, DeliveryOrden, CorteCaja, NotaCredito, AuditLog, ConfiguracionSistema
 - `backend/services/cfdi.py` — Integración Facturapi completa (timbrado, cancelación, notas de crédito, complemento de pago, descarga XML/PDF)
 - `backend/services/audit.py` — Registro de auditoría (login, logout, pagos, facturación)
 - `backend/services/pdf_generator.py` — Generación de PDF con WeasyPrint
 - `backend/services/rfc_validator.py` — Validación RFC con dígito verificador SAT (módulo 11)
 - `backend/services/printer.py` — Impresión ESC/POS (comandas, tickets, cortes de caja)
+- `backend/services/seeder.py` — Seed idempotente (menú default, mesas, datos demo)
 - `backend/data/catalogos_sat.json` — Catálogos SAT (regímenes fiscales, usos CFDI, formas de pago)
 - `backend/services/delivery.py` — Integración delivery (Uber Eats, Rappi, DiDi Food)
 - `backend/services/webhook_auth.py` — Verificación HMAC de webhooks delivery (Uber Eats, Rappi, DiDi Food)
 - `backend/services/password_policy.py` — Validación de fuerza de contraseñas
 - `backend/services/sanitizer.py` — Sanitización de inputs (texto, RFC, email, teléfono)
 - `backend/templates/admin/` — inventario/, reportes/, facturacion/, clientes/, reservaciones/, delivery/, sucursales/
+- `backend/templates/setup/` — _layout_setup.html, paso1-5.html (onboarding wizard)
 
 ## Fiscal / Pagos (Fase 2)
 - IVA 16% automático (`Orden.calcular_totales()`, constante `IVA_RATE`)
@@ -255,3 +257,35 @@ Flask + PostgreSQL + Socket.IO + Redis + Gunicorn. Backend: `backend/`, Frontend
 - **Sprint 9 ✅** Operations Redesign (7/7 items: split-panel detalle_orden, product tiles + search, cart panel sticky, mesa grid color-coded, meseros cards + urgency, pago full-page multi-payment, historial CSV)
 - **Sprint 10 ✅** KDS, Polish & Dark Mode (8/8 items: KDS conveyor+urgency+sound, dashboard period selector, dark mode data-bs-theme nativo, reportes 9/9 migrados, facturación 6/6 migrada, corte de caja paginación)
 - **Sprint 11 ✅** Accessibility, Animation & QA (8/8 items: WCAG audit, focus management, aria-live, keyboard nav, prefers-reduced-motion, print CSS, performance audit, cross-browser/tablet)
+
+## Instalador Multi-OS (Deployment)
+- `install.sh` — Installer script: detecta macOS/Ubuntu, instala Docker + Docker Compose, genera `.env` con secretos aleatorios, ejecuta `docker-compose up --build -d`
+- `uninstall.sh` — Limpieza completa: para containers, borra volúmenes, imágenes, `.env`, backups
+- `update.sh` — Actualización: `git pull`, rebuild containers, ejecuta migraciones Alembic
+- `.env` auto-generado con: `SECRET_KEY`, `DATABASE_URL`, `REDIS_URL`, `FLASK_ENV=production`
+
+## Onboarding Wizard (Setup)
+- Blueprint: `backend/routes/setup.py` — 5 pasos, sin auth requerido
+- Middleware: `_check_onboarding` en `app.py` redirige a `/setup/` si onboarding no completado
+- Paso 1: Nombre del negocio → crea Sucursal
+- Paso 2: Admin principal → crea Usuario superadmin con validación de contraseña
+- Paso 3: Menú → plantilla default (seed_menu_default) o entrada manual de productos
+- Paso 4: Mesas → selector ± (1-30), crea mesas numeradas
+- Paso 5: Equipo → usuarios adicionales opcionales (mesero/taquero/comal/bebidas)
+- Completar: marca `onboarding_completado=true`, `modo_sistema=basico`
+- Templates: `backend/templates/setup/_layout_setup.html`, `paso1-5.html`
+- Modelo: `ConfiguracionSistema` — almacén key-value para config persistente
+- Service: `backend/services/seeder.py` — seed idempotente (menú, mesas)
+
+## Modo Sistema (Básico/Avanzado)
+- Constantes en `config.py`: `MODULOS_BASICOS` (dashboard, operaciones, catalogo, ventas), `MODULOS_AVANZADOS` (todos)
+- Sidebar admin: filtrado dinámico con `{% if modo_sistema == 'avanzado' or group.key in modulos_basicos %}`
+- Navbar base: Inventario, CRM, Fiscal, Delivery, Sucursales ocultos en modo básico
+- Toggle: widget superadmin en sidebar, ruta POST `/admin/toggle-modo`
+- Context processor: `_inject_modo_sistema` inyecta `modo_sistema` a todos los templates
+- ConfiguracionSistema.get('modo_sistema', 'basico') como default
+
+## Pytest Setup Tests (Deployment)
+- `tests/test_setup.py`: 26 tests (ConfiguracionSistema 6, SetupWizard 13, ModoSistema 2, Seeder 4)
+- Conftest: SQLite in-memory, Redis deshabilitado (`REDIS_URL=''`), filesystem sessions, memory limiter
+- Test infrastructure: `_get_app()` guard para TESTING env, pool options condicionales para SQLite

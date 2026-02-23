@@ -144,7 +144,7 @@ def imprimir_comanda(orden):
         return False
 
 
-def imprimir_ticket_cuenta(orden, nombre_negocio='Casa Leones'):
+def imprimir_ticket_cuenta(orden, nombre_negocio='Mi Restaurante'):
     """
     Imprime ticket de cuenta / recibo para el cliente.
 
@@ -233,7 +233,7 @@ def imprimir_ticket_cuenta(orden, nombre_negocio='Casa Leones'):
         return False
 
 
-def imprimir_corte_caja(corte, nombre_negocio='Casa Leones'):
+def imprimir_corte_caja(corte, nombre_negocio='Mi Restaurante'):
     """
     Imprime reporte de corte de caja.
 
@@ -335,7 +335,7 @@ def generar_texto_comanda(orden):
     return '\n'.join(lines)
 
 
-def generar_texto_ticket(orden, nombre_negocio='Casa Leones'):
+def generar_texto_ticket(orden, nombre_negocio='Mi Restaurante'):
     """
     Genera el texto de ticket como string (para fallback window.print).
     """

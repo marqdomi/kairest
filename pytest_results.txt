@@ -1,0 +1,522 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.0.2, pluggy-1.6.0 -- /Users/marco.dominguez/Projects/CasaLeones/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/marco.dominguez/Projects/CasaLeones
+configfile: pytest.ini
+plugins: cov-7.0.0
+collecting ... collected 60 items
+
+tests/test_auth.py::TestLogin::test_login_page_loads FAILED              [  1%]
+tests/test_auth.py::TestLogin::test_login_valid_credentials ERROR        [  3%]
+tests/test_auth.py::TestLogin::test_login_invalid_password ERROR         [  5%]
+tests/test_auth.py::TestLogin::test_login_nonexistent_user PASSED        [  6%]
+tests/test_auth.py::TestLogin::test_logout ERROR                         [  8%]
+tests/test_auth.py::TestProtectedRoutes::test_admin_requires_login PASSED [ 10%]
+tests/test_auth.py::TestProtectedRoutes::test_meseros_requires_login PASSED [ 11%]
+tests/test_inventario.py::TestInventoryModels::test_ingrediente_creation PASSED [ 13%]
+tests/test_inventario.py::TestInventoryModels::test_receta_detalle ERROR [ 15%]
+tests/test_inventario.py::TestInventoryModels::test_movimiento_inventario FAILED [ 16%]
+tests/test_inventario.py::TestStockAlerts::test_low_stock_detection PASSED [ 18%]
+tests/test_models.py::TestUsuarioModel::test_create_usuario FAILED       [ 20%]
+tests/test_models.py::TestUsuarioModel::test_usuario_roles FAILED        [ 21%]
+tests/test_models.py::TestProductoModel::test_create_producto ERROR      [ 23%]
+tests/test_models.py::TestProductoModel::test_producto_disponibilidad FAILED [ 25%]
+tests/test_models.py::TestMesaModel::test_create_mesa FAILED             [ 26%]
+tests/test_models.py::TestMesaModel::test_mesa_estados PASSED            [ 28%]
+tests/test_models.py::TestOrdenModel::test_orden_calcular_totales ERROR  [ 30%]
+tests/test_models.py::TestOrdenModel::test_orden_propina PASSED          [ 31%]
+tests/test_models.py::TestClienteModel::test_create_cliente PASSED       [ 33%]
+tests/test_models.py::TestFacturaModel::test_create_factura ERROR        [ 35%]
+tests/test_models.py::TestFacturaModel::test_factura_ppd ERROR           [ 36%]
+tests/test_models.py::TestHealthEndpoint::test_health_check PASSED       [ 38%]
+tests/test_orders.py::TestOrderCreation::test_create_order ERROR         [ 40%]
+tests/test_orders.py::TestOrderCreation::test_order_total_calculates_iva ERROR [ 41%]
+tests/test_orders.py::TestPayment::test_payment_model ERROR              [ 43%]
+tests/test_reportes.py::TestReportAccess::test_reportes_dashboard_requires_auth PASSED [ 45%]
+tests/test_reportes.py::TestReportAccess::test_reportes_dashboard_admin ERROR [ 46%]
+tests/test_reportes.py::TestReportData::test_ventas_report_empty ERROR   [ 48%]
+tests/test_reportes.py::TestReportData::test_productos_report_empty ERROR [ 50%]
+tests/test_reportes.py::TestCSVExport::test_ventas_csv ERROR             [ 51%]
+tests/test_reportes.py::TestCSVExport::test_productos_csv ERROR          [ 53%]
+tests/test_reportes.py::TestAuditLog::test_audit_log_creation ERROR      [ 55%]
+tests/test_reportes.py::TestAuditLog::test_audit_log_list_route ERROR    [ 56%]
+tests/test_setup.py::TestConfiguracionSistema::test_set_and_get PASSED   [ 58%]
+tests/test_setup.py::TestConfiguracionSistema::test_get_default PASSED   [ 60%]
+tests/test_setup.py::TestConfiguracionSistema::test_get_bool_true PASSED [ 61%]
+tests/test_setup.py::TestConfiguracionSistema::test_get_bool_false PASSED [ 63%]
+tests/test_setup.py::TestConfiguracionSistema::test_get_bool_default PASSED [ 65%]
+tests/test_setup.py::TestConfiguracionSistema::test_upsert PASSED        [ 66%]
+tests/test_setup.py::TestSetupWizard::test_redirect_to_setup_when_not_done PASSED [ 68%]
+tests/test_setup.py::TestSetupWizard::test_setup_index_redirects_to_step1 PASSED [ 70%]
+tests/test_setup.py::TestSetupWizard::test_paso1_renders PASSED          [ 71%]
+tests/test_setup.py::TestSetupWizard::test_paso1_creates_sucursal PASSED [ 73%]
+tests/test_setup.py::TestSetupWizard::test_paso2_renders PASSED          [ 75%]
+tests/test_setup.py::TestSetupWizard::test_paso2_creates_admin PASSED    [ 76%]
+tests/test_setup.py::TestSetupWizard::test_paso2_password_mismatch PASSED [ 78%]
+tests/test_setup.py::TestSetupWizard::test_paso3_renders PASSED          [ 80%]
+tests/test_setup.py::TestSetupWizard::test_paso3_default_menu PASSED     [ 81%]
+tests/test_setup.py::TestSetupWizard::test_paso4_renders PASSED          [ 83%]
+tests/test_setup.py::TestSetupWizard::test_paso4_creates_mesas PASSED    [ 85%]
+tests/test_setup.py::TestSetupWizard::test_paso5_renders PASSED          [ 86%]
+tests/test_setup.py::TestSetupWizard::test_completar_marks_onboarding_done PASSED [ 88%]
+tests/test_setup.py::TestSetupWizard::test_steps_redirect_after_onboarding PASSED [ 90%]
+tests/test_setup.py::TestModoSistema::test_toggle_basico_to_avanzado PASSED [ 91%]
+tests/test_setup.py::TestModoSistema::test_toggle_avanzado_to_basico PASSED [ 93%]
+tests/test_setup.py::TestSeeder::test_seed_menu_default PASSED           [ 95%]
+tests/test_setup.py::TestSeeder::test_seed_menu_default_idempotent PASSED [ 96%]
+tests/test_setup.py::TestSeeder::test_seed_mesas PASSED                  [ 98%]
+tests/test_setup.py::TestSeeder::test_seed_mesas_idempotent PASSED       [100%]
+
+==================================== ERRORS ====================================
+___________ ERROR at setup of TestLogin.test_login_valid_credentials ___________
+tests/conftest.py:58: in admin_user
+    user = Usuario(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2175: in _declarative_constructor
+    raise TypeError(
+E   TypeError: 'username' is an invalid keyword argument for Usuario
+___________ ERROR at setup of TestLogin.test_login_invalid_password ____________
+tests/conftest.py:58: in admin_user
+    user = Usuario(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2175: in _declarative_constructor
+    raise TypeError(
+E   TypeError: 'username' is an invalid keyword argument for Usuario
+___________________ ERROR at setup of TestLogin.test_logout ____________________
+tests/conftest.py:58: in admin_user
+    user = Usuario(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2175: in _declarative_constructor
+    raise TypeError(
+E   TypeError: 'username' is an invalid keyword argument for Usuario
+__________ ERROR at setup of TestInventoryModels.test_receta_detalle ___________
+tests/conftest.py:108: in sample_producto
+    prod = Producto(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2178: in _declarative_constructor
+    setattr(self, k, kwargs[k])
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:537: in __set__
+    self.impl.set(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1467: in set
+    value = self.fire_replace_event(state, dict_, value, old, initiator)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1506: in fire_replace_event
+    value = fn(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:2161: in emit_backref_from_scalar_set_event
+    instance_state(child),
+    ^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'str' object has no attribute '_sa_instance_state'
+___________ ERROR at setup of TestProductoModel.test_create_producto ___________
+tests/conftest.py:108: in sample_producto
+    prod = Producto(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2178: in _declarative_constructor
+    setattr(self, k, kwargs[k])
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:537: in __set__
+    self.impl.set(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1467: in set
+    value = self.fire_replace_event(state, dict_, value, old, initiator)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1506: in fire_replace_event
+    value = fn(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:2161: in emit_backref_from_scalar_set_event
+    instance_state(child),
+    ^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'str' object has no attribute '_sa_instance_state'
+_________ ERROR at setup of TestOrdenModel.test_orden_calcular_totales _________
+tests/conftest.py:108: in sample_producto
+    prod = Producto(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2178: in _declarative_constructor
+    setattr(self, k, kwargs[k])
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:537: in __set__
+    self.impl.set(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1467: in set
+    value = self.fire_replace_event(state, dict_, value, old, initiator)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1506: in fire_replace_event
+    value = fn(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:2161: in emit_backref_from_scalar_set_event
+    instance_state(child),
+    ^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'str' object has no attribute '_sa_instance_state'
+____________ ERROR at setup of TestFacturaModel.test_create_factura ____________
+tests/conftest.py:108: in sample_producto
+    prod = Producto(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2178: in _declarative_constructor
+    setattr(self, k, kwargs[k])
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:537: in __set__
+    self.impl.set(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1467: in set
+    value = self.fire_replace_event(state, dict_, value, old, initiator)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1506: in fire_replace_event
+    value = fn(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:2161: in emit_backref_from_scalar_set_event
+    instance_state(child),
+    ^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'str' object has no attribute '_sa_instance_state'
+_____________ ERROR at setup of TestFacturaModel.test_factura_ppd ______________
+tests/conftest.py:108: in sample_producto
+    prod = Producto(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2178: in _declarative_constructor
+    setattr(self, k, kwargs[k])
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:537: in __set__
+    self.impl.set(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1467: in set
+    value = self.fire_replace_event(state, dict_, value, old, initiator)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1506: in fire_replace_event
+    value = fn(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:2161: in emit_backref_from_scalar_set_event
+    instance_state(child),
+    ^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'str' object has no attribute '_sa_instance_state'
+____________ ERROR at setup of TestOrderCreation.test_create_order _____________
+tests/conftest.py:75: in mesero_user
+    user = Usuario(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2175: in _declarative_constructor
+    raise TypeError(
+E   TypeError: 'username' is an invalid keyword argument for Usuario
+_____ ERROR at setup of TestOrderCreation.test_order_total_calculates_iva ______
+tests/conftest.py:108: in sample_producto
+    prod = Producto(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2178: in _declarative_constructor
+    setattr(self, k, kwargs[k])
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:537: in __set__
+    self.impl.set(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1467: in set
+    value = self.fire_replace_event(state, dict_, value, old, initiator)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1506: in fire_replace_event
+    value = fn(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:2161: in emit_backref_from_scalar_set_event
+    instance_state(child),
+    ^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'str' object has no attribute '_sa_instance_state'
+_______________ ERROR at setup of TestPayment.test_payment_model _______________
+tests/conftest.py:108: in sample_producto
+    prod = Producto(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2178: in _declarative_constructor
+    setattr(self, k, kwargs[k])
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:537: in __set__
+    self.impl.set(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1467: in set
+    value = self.fire_replace_event(state, dict_, value, old, initiator)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1506: in fire_replace_event
+    value = fn(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:2161: in emit_backref_from_scalar_set_event
+    instance_state(child),
+    ^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'str' object has no attribute '_sa_instance_state'
+_______ ERROR at setup of TestReportAccess.test_reportes_dashboard_admin _______
+tests/conftest.py:58: in admin_user
+    user = Usuario(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2175: in _declarative_constructor
+    raise TypeError(
+E   TypeError: 'username' is an invalid keyword argument for Usuario
+__________ ERROR at setup of TestReportData.test_ventas_report_empty ___________
+tests/conftest.py:58: in admin_user
+    user = Usuario(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2175: in _declarative_constructor
+    raise TypeError(
+E   TypeError: 'username' is an invalid keyword argument for Usuario
+_________ ERROR at setup of TestReportData.test_productos_report_empty _________
+tests/conftest.py:58: in admin_user
+    user = Usuario(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2175: in _declarative_constructor
+    raise TypeError(
+E   TypeError: 'username' is an invalid keyword argument for Usuario
+_______________ ERROR at setup of TestCSVExport.test_ventas_csv ________________
+tests/conftest.py:58: in admin_user
+    user = Usuario(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2175: in _declarative_constructor
+    raise TypeError(
+E   TypeError: 'username' is an invalid keyword argument for Usuario
+______________ ERROR at setup of TestCSVExport.test_productos_csv ______________
+tests/conftest.py:58: in admin_user
+    user = Usuario(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2175: in _declarative_constructor
+    raise TypeError(
+E   TypeError: 'username' is an invalid keyword argument for Usuario
+____________ ERROR at setup of TestAuditLog.test_audit_log_creation ____________
+tests/conftest.py:58: in admin_user
+    user = Usuario(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2175: in _declarative_constructor
+    raise TypeError(
+E   TypeError: 'username' is an invalid keyword argument for Usuario
+___________ ERROR at setup of TestAuditLog.test_audit_log_list_route ___________
+tests/conftest.py:92: in superadmin_user
+    user = Usuario(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2175: in _declarative_constructor
+    raise TypeError(
+E   TypeError: 'username' is an invalid keyword argument for Usuario
+=================================== FAILURES ===================================
+_______________________ TestLogin.test_login_page_loads ________________________
+tests/test_auth.py:9: in test_login_page_loads
+    assert resp.status_code == 200
+E   assert 302 == 200
+E    +  where 302 = <WrapperTestResponse streamed [302 FOUND]>.status_code
+---------------------------- Captured stderr setup -----------------------------
+2026-02-23 09:29:08 [INFO] backend.models.database: Base de datos inicializada correctamente.
+2026-02-23 09:29:08 [INFO] backend.app: App creada — blueprints registrados.
+------------------------------ Captured log setup ------------------------------
+INFO     backend.models.database:database.py:31 Base de datos inicializada correctamente.
+INFO     backend.app:app.py:255 App creada — blueprints registrados.
+________________ TestInventoryModels.test_movimiento_inventario ________________
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1964: in _exec_single_context
+    self.dialect.do_execute(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:945: in do_execute
+    cursor.execute(statement, parameters)
+E   sqlite3.IntegrityError: NOT NULL constraint failed: movimientos_inventario.usuario_id
+
+The above exception was the direct cause of the following exception:
+tests/test_inventario.py:69: in test_movimiento_inventario
+    db.session.commit()
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/scoping.py:599: in commit
+    return self._proxied.commit()
+           ^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2032: in commit
+    trans.commit(_to_root=True)
+<string>:2: in commit
+    ???
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:139: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1313: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:139: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1288: in _prepare_impl
+    self.session.flush()
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4353: in flush
+    self._flush(objects)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4488: in _flush
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4449: in _flush
+    flush_context.execute()
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:466: in execute
+    rec.execute(self)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:642: in execute
+    util.preloaded.orm_persistence.save_obj(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:93: in save_obj
+    _emit_insert_statements(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1233: in _emit_insert_statements
+    result = connection.execute(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1416: in execute
+    return meth(
+.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:523: in _execute_on_connection
+    return connection._execute_clauseelement(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1638: in _execute_clauseelement
+    ret = self._execute_context(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1843: in _execute_context
+    return self._exec_single_context(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1983: in _exec_single_context
+    self._handle_dbapi_exception(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2352: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1964: in _exec_single_context
+    self.dialect.do_execute(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:945: in do_execute
+    cursor.execute(statement, parameters)
+E   sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) NOT NULL constraint failed: movimientos_inventario.usuario_id
+E   [SQL: INSERT INTO movimientos_inventario (ingrediente_id, tipo, cantidad, costo, motivo, orden_id, usuario_id, fecha) VALUES (?, ?, ?, ?, ?, ?, ?, ?)]
+E   [parameters: (1, 'entrada', 5.0, None, 'Compra semanal', None, None, '2026-02-23 15:29:09.024964')]
+E   (Background on this error at: https://sqlalche.me/e/20/gkpj)
+_____________________ TestUsuarioModel.test_create_usuario _____________________
+tests/test_models.py:11: in test_create_usuario
+    user = Usuario(
+<string>:4: in __init__
+    ???
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2175: in _declarative_constructor
+    raise TypeError(
+E   TypeError: 'username' is an invalid keyword argument for Usuario
+_____________________ TestUsuarioModel.test_usuario_roles ______________________
+tests/test_models.py:28: in test_usuario_roles
+    user = Usuario(
+<string>:4: in __init__
+    ???
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2175: in _declarative_constructor
+    raise TypeError(
+E   TypeError: 'username' is an invalid keyword argument for Usuario
+________________ TestProductoModel.test_producto_disponibilidad ________________
+tests/test_models.py:48: in test_producto_disponibilidad
+    prod = Producto(nombre='Quesadilla', precio=55.0, categoria='tacos', disponible=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<string>:4: in __init__
+    ???
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:571: in _initialize_instance
+    with util.safe_reraise():
+.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:569: in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py:2178: in _declarative_constructor
+    setattr(self, k, kwargs[k])
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:537: in __set__
+    self.impl.set(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1467: in set
+    value = self.fire_replace_event(state, dict_, value, old, initiator)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1506: in fire_replace_event
+    value = fn(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:2161: in emit_backref_from_scalar_set_event
+    instance_state(child),
+    ^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'str' object has no attribute '_sa_instance_state'
+________________________ TestMesaModel.test_create_mesa ________________________
+tests/test_models.py:60: in test_create_mesa
+    assert sample_mesa.numero == 1
+E   AssertionError: assert '1' == 1
+E    +  where '1' = <Mesa 1>.numero
+=========================== short test summary info ============================
+FAILED tests/test_auth.py::TestLogin::test_login_page_loads - assert 302 == 200
+ +  where 302 = <WrapperTestResponse streamed [302 FOUND]>.status_code
+FAILED tests/test_inventario.py::TestInventoryModels::test_movimiento_inventario - sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) NOT NULL constraint failed: movimientos_inventario.usuario_id
+[SQL: INSERT INTO movimientos_inventario (ingrediente_id, tipo, cantidad, costo, motivo, orden_id, usuario_id, fecha) VALUES (?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: (1, 'entrada', 5.0, None, 'Compra semanal', None, None, '2026-02-23 15:29:09.024964')]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+FAILED tests/test_models.py::TestUsuarioModel::test_create_usuario - TypeError: 'username' is an invalid keyword argument for Usuario
+FAILED tests/test_models.py::TestUsuarioModel::test_usuario_roles - TypeError: 'username' is an invalid keyword argument for Usuario
+FAILED tests/test_models.py::TestProductoModel::test_producto_disponibilidad - AttributeError: 'str' object has no attribute '_sa_instance_state'
+FAILED tests/test_models.py::TestMesaModel::test_create_mesa - AssertionError: assert '1' == 1
+ +  where '1' = <Mesa 1>.numero
+ERROR tests/test_auth.py::TestLogin::test_login_valid_credentials - TypeError: 'username' is an invalid keyword argument for Usuario
+ERROR tests/test_auth.py::TestLogin::test_login_invalid_password - TypeError: 'username' is an invalid keyword argument for Usuario
+ERROR tests/test_auth.py::TestLogin::test_logout - TypeError: 'username' is an invalid keyword argument for Usuario
+ERROR tests/test_inventario.py::TestInventoryModels::test_receta_detalle - AttributeError: 'str' object has no attribute '_sa_instance_state'
+ERROR tests/test_models.py::TestProductoModel::test_create_producto - AttributeError: 'str' object has no attribute '_sa_instance_state'
+ERROR tests/test_models.py::TestOrdenModel::test_orden_calcular_totales - AttributeError: 'str' object has no attribute '_sa_instance_state'
+ERROR tests/test_models.py::TestFacturaModel::test_create_factura - AttributeError: 'str' object has no attribute '_sa_instance_state'
+ERROR tests/test_models.py::TestFacturaModel::test_factura_ppd - AttributeError: 'str' object has no attribute '_sa_instance_state'
+ERROR tests/test_orders.py::TestOrderCreation::test_create_order - TypeError: 'username' is an invalid keyword argument for Usuario
+ERROR tests/test_orders.py::TestOrderCreation::test_order_total_calculates_iva - AttributeError: 'str' object has no attribute '_sa_instance_state'
+ERROR tests/test_orders.py::TestPayment::test_payment_model - AttributeError: 'str' object has no attribute '_sa_instance_state'
+ERROR tests/test_reportes.py::TestReportAccess::test_reportes_dashboard_admin - TypeError: 'username' is an invalid keyword argument for Usuario
+ERROR tests/test_reportes.py::TestReportData::test_ventas_report_empty - TypeError: 'username' is an invalid keyword argument for Usuario
+ERROR tests/test_reportes.py::TestReportData::test_productos_report_empty - TypeError: 'username' is an invalid keyword argument for Usuario
+ERROR tests/test_reportes.py::TestCSVExport::test_ventas_csv - TypeError: 'username' is an invalid keyword argument for Usuario
+ERROR tests/test_reportes.py::TestCSVExport::test_productos_csv - TypeError: 'username' is an invalid keyword argument for Usuario
+ERROR tests/test_reportes.py::TestAuditLog::test_audit_log_creation - TypeError: 'username' is an invalid keyword argument for Usuario
+ERROR tests/test_reportes.py::TestAuditLog::test_audit_log_list_route - TypeError: 'username' is an invalid keyword argument for Usuario
+============= 6 failed, 36 passed, 9 warnings, 18 errors in 4.79s ==============

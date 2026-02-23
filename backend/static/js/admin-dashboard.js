@@ -7,20 +7,46 @@
   'use strict';
 
   const COLORS = {
-    primary: '#A6192E',
-    secondary: '#0A3D62',
-    accent: '#507C36',
-    warning: '#FFD6B0',
-    dark: '#1E1E1E',
-    light: '#FAF3E0',
+    // v7 Design System palette
+    red:     '#C41E3A',
+    red2:    '#E5535A',
+    gold:    '#C29E59',
+    gold2:   '#D4B97A',
+    green:   '#12B76A',
+    yellow:  '#F79009',
+    blue:    '#2E90FA',
+    purple:  '#9B8AFB',
+    // Chart backgrounds (translucent glow)
+    redGlow:    'rgba(196,30,58,0.15)',
+    goldGlow:   'rgba(194,158,89,0.10)',
+    greenGlow:  'rgba(18,183,106,0.12)',
+    // Chart grid/axis
+    gridColor:  'rgba(255,255,255,0.05)',
+    tickColor:  'rgba(255,255,255,0.35)',
+    // Tooltip
+    tooltipBg:  'rgba(13,14,20,0.95)',
   };
   const REFRESH_MS = 30000;
   let chart7Dias = null;
   let chartTop = null;
   let currentPeriod = 'today';
 
-  // Currency formatter
-  const currency = v => '$' + Number(v).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // Currency formatter (Next-Gen)
+  const currency = v => {
+    const num = Number(v);
+    const str = num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const parts = str.split('.');
+    return `<span class="cl-money"><span class="cl-money-symbol">$</span>${parts[0]}<span class="cl-money-decimal">.${parts[1]}</span></span>`;
+  };
+
+  function createGradient(ctx, colorHex) {
+    const canvas = ctx.canvas || ctx;
+    const context = canvas.getContext('2d');
+    const gradient = context.createLinearGradient(0, 0, 0, canvas.height || 220);
+    gradient.addColorStop(0, colorHex + '80'); // 50% opacity
+    gradient.addColorStop(1, colorHex + '00'); // 0% opacity
+    return gradient;
+  }
 
   // Fetch helper — appends period query param
   const api = endpoint => fetch(`/admin/api/dashboard/${endpoint}?period=${currentPeriod}`).then(r => r.json());
@@ -57,10 +83,10 @@
         api('ultimo_corte'),
       ]);
 
-      document.getElementById('ventasHoy').textContent = currency(ventas.ventasHoy);
+      document.getElementById('ventasHoy').innerHTML = currency(ventas.ventasHoy);
       document.getElementById('ordenesHoy').textContent = ordenes.ordenesHoy;
-      document.getElementById('ticketPromedio').textContent = currency(ticket.ticketPromedio);
-      document.getElementById('propinasHoy').textContent = currency(propinas.propinas);
+      document.getElementById('ticketPromedio').innerHTML = currency(ticket.ticketPromedio);
+      document.getElementById('propinasHoy').innerHTML = currency(propinas.propinas);
 
       // Mesas
       document.getElementById('mesasActivas').textContent = `${mesas.ocupadas}/${mesas.total}`;
@@ -81,37 +107,54 @@
 
       // Stock alerts list
       const stockList = document.getElementById('stockAlertsList');
+      const stockBadge = document.getElementById('alertasStockBadge');
+      if (stockBadge) {
+        stockBadge.textContent = stock.count;
+        stockBadge.style.display = stock.count > 0 ? 'inline-flex' : 'none';
+      }
       if (stock.count === 0) {
-        stockList.innerHTML = '<p class="text-muted text-center mb-0">Sin alertas de inventario 👍</p>';
+        stockList.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:10px;opacity:.5;">
+            <i data-lucide="package-check" style="width:32px;height:32px;color:var(--cl-success-500);"></i>
+            <p style="font-size:13px;color:var(--cl-text-tertiary);margin:0;">Sin alertas de inventario ✓</p>
+          </div>`;
+        if (window.lucide) lucide.createIcons();
       } else {
-        stockList.innerHTML = stock.items.map(item => {
+        stockList.innerHTML = `<div class="cl-alert-list">` + stock.items.map(item => {
           const pct = item.minimo > 0 ? Math.min((item.stock / item.minimo) * 100, 100) : 0;
-          const color = pct < 30 ? 'var(--cl-danger)' : pct < 70 ? 'var(--cl-warning)' : 'var(--cl-success)';
+          const dotColor = pct < 30 ? 'var(--cl-error-500)' : pct < 70 ? 'var(--cl-warning-500)' : 'var(--cl-success-500)';
+          const barColor = dotColor;
           return `
-            <div class="stock-alert-item d-flex justify-content-between align-items-center mb-2">
-              <div>
-                <strong>${item.nombre}</strong>
-                <div class="stock-bar mt-1" style="width:100px;">
-                  <div class="stock-bar-fill" style="width:${pct}%; background:${color};"></div>
-                </div>
+            <div class="cl-alert-item">
+              <div class="cl-alert-dot" style="background:${dotColor};"></div>
+              <div class="cl-alert-name">${item.nombre}</div>
+              <div class="cl-bar-wrap" style="width:80px;">
+                <div class="cl-bar-fill" style="width:${pct}%;background:${barColor};"></div>
               </div>
-              <span class="text-end">${item.stock} / ${item.minimo} ${item.unidad}</span>
+              <span class="cl-alert-qty">${item.stock}/${item.minimo} ${item.unidad}</span>
             </div>`;
-        }).join('');
+        }).join('') + '</div>';
       }
 
-      // Último corte
-      const corteEl = document.getElementById('ultimoCorteInfo');
+      // Último corte KPI card
+      const corteEl = document.getElementById('kpi-ultimoCorte');
+      if (!corteEl) return;
       if (!corte.exists) {
-        corteEl.innerHTML = '<div class="cl-kpi-card__value">—</div><small class="text-muted">Sin cortes registrados</small>';
+        corteEl.innerHTML = '—';
+        corteEl.closest('.cl-kpi-card').querySelector('.cl-kpi-card__sub').textContent = 'Sin cortes registrados';
       } else {
-        const diffClass = corte.diferencia >= 0 ? 'cl-kpi-trend--up' : 'cl-kpi-trend--down';
-        const diffSign = corte.diferencia >= 0 ? '+' : '';
-        const diffIcon = corte.diferencia >= 0 ? '↑' : '↓';
-        corteEl.innerHTML = `
-          <div class="cl-kpi-card__value" style="font-size:1.2rem;">${currency(corte.total_ingresos)}</div>
-          <small class="text-muted">${corte.fecha} · ${corte.usuario}</small><br>
-          <small class="${diffClass} fw-bold">${diffIcon} ${diffSign}${currency(corte.diferencia)}</small>`;
+        corteEl.innerHTML = currency(corte.total_ingresos);
+        const sub = corteEl.closest('.cl-kpi-card').querySelector('.cl-kpi-card__sub');
+        if (sub) sub.textContent = `${corte.fecha} · ${corte.usuario}`;
+        // Add trend
+        const hdr = corteEl.closest('.cl-kpi-card').querySelector('.cl-kpi-card__header');
+        const trend = hdr ? hdr.querySelector('.cl-kpi-trend') : null;
+        if (trend) {
+          const isPos = corte.diferencia >= 0;
+          trend.className = `cl-kpi-trend cl-kpi-trend--${isPos ? 'up' : 'down'}`;
+          trend.innerHTML = `<i data-lucide="trending-${isPos ? 'up' : 'down'}" class="icon-xs"></i> ${isPos ? '+' : ''}${currency(corte.diferencia)}`;
+          if (window.lucide) lucide.createIcons();
+        }
       }
 
     } catch (err) {
@@ -141,22 +184,44 @@
             datasets: [{
               label: 'Ventas ($)',
               data: ventas7.data,
-              borderColor: COLORS.primary,
-              backgroundColor: COLORS.primary + '30',
+              borderColor: COLORS.red,
+              backgroundColor: createGradient(ctx7, COLORS.red),
               fill: true,
-              tension: 0.3,
-              pointRadius: 5,
-              pointBackgroundColor: COLORS.primary,
+              tension: 0.4,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBackgroundColor: COLORS.red,
+              pointBorderColor: '#0A0B10',
+              pointBorderWidth: 2,
+              borderWidth: 2.5,
             }]
           },
           options: {
             responsive: true,
+            animation: { duration: 600, easing: 'easeInOutQuart' },
             plugins: {
               legend: { display: false },
-              tooltip: { callbacks: { label: ctx => currency(ctx.parsed.y) } },
+              tooltip: { 
+                backgroundColor: COLORS.tooltipBg,
+                titleColor: '#F2F4F7',
+                bodyColor: '#98A2B3',
+                borderColor: 'rgba(255,255,255,0.08)',
+                borderWidth: 1,
+                padding: 12,
+                cornerRadius: 10,
+                callbacks: { label: ctx => ' $' + ctx.parsed.y.toLocaleString('es-MX', { minimumFractionDigits: 2 }) } 
+              },
             },
             scales: {
-              y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString('es-MX') } }
+              x: {
+                grid: { color: COLORS.gridColor },
+                ticks: { color: COLORS.tickColor, font: { size: 11 } }
+              },
+              y: { 
+                beginAtZero: true, 
+                grid: { color: COLORS.gridColor, borderDash: [3, 3] },
+                ticks: { color: COLORS.tickColor, font: { size: 11 }, callback: v => '$' + v.toLocaleString('es-MX') } 
+              }
             }
           }
         });
@@ -177,14 +242,43 @@
             datasets: [{
               label: 'Unidades',
               data: top.data,
-              backgroundColor: [COLORS.primary, COLORS.secondary, COLORS.accent, '#c29e59', '#666'],
+              backgroundColor: [
+                COLORS.red + 'CC',
+                COLORS.gold + 'CC',
+                COLORS.green + 'CC',
+                COLORS.blue + 'CC',
+                COLORS.purple + 'CC',
+              ],
+              borderRadius: 6,
+              borderSkipped: false,
             }]
           },
           options: {
             indexAxis: 'y',
             responsive: true,
-            plugins: { legend: { display: false } },
-            scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            animation: { duration: 600 },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: COLORS.tooltipBg,
+                titleColor: '#F2F4F7',
+                bodyColor: '#98A2B3',
+                borderColor: 'rgba(255,255,255,0.08)',
+                borderWidth: 1,
+                padding: 10, cornerRadius: 8,
+              }
+            },
+            scales: {
+              x: {
+                beginAtZero: true,
+                grid: { color: COLORS.gridColor },
+                ticks: { color: COLORS.tickColor, font: { size: 11 }, stepSize: 1 }
+              },
+              y: {
+                grid: { display: false },
+                ticks: { color: COLORS.tickColor, font: { size: 11 } }
+              }
+            }
           }
         });
       }
@@ -193,26 +287,38 @@
     }
   }
 
-  // ---- Activity Feed ----
+  // ---- Activity Feed (v7 markup) ----
   async function refreshActivity() {
     try {
       const data = await api('actividad_reciente');
       const feed = document.getElementById('activityFeed');
       if (!data.items.length) {
-        feed.innerHTML = '<p class="text-muted text-center">Sin actividad reciente.</p>';
+        feed.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;padding:24px;gap:8px;opacity:.4;">
+            <i data-lucide="inbox" style="width:28px;height:28px;"></i>
+            <p style="font-size:13px;color:var(--cl-text-tertiary);margin:0;">Sin actividad reciente</p>
+          </div>`;
+        if (window.lucide) lucide.createIcons();
         return;
       }
-      feed.innerHTML = data.items.map(item => `
-        <div class="activity-item mb-2 py-1">
-          <div class="d-flex justify-content-between">
-            <span><strong>Orden #${item.id}</strong> · Mesa ${item.mesa} · ${item.mesero}</span>
-            <span class="text-muted">${item.hora}</span>
+      feed.innerHTML = data.items.map(item => {
+        const initials = (item.mesero || '').split(' ').map(w => w[0]||'').slice(0,2).join('').toUpperCase() || '?';
+        const colors = ['#C41E3A','#C29E59','#12B76A','#2E90FA','#9B8AFB'];
+        const avatarColor = colors[item.id % colors.length];
+        const hasTotal = item.total > 0;
+        return `
+        <div class="cl-feed__item">
+          <div class="cl-feed__avatar" style="background:${avatarColor};">${initials}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="cl-feed__text">
+              <strong>Orden #${item.id}</strong> · ${item.mesa ? 'Mesa ' + item.mesa : 'Para llevar'} · ${item.mesero}
+            </div>
+            <div class="cl-feed__time">${item.hora} &nbsp; ${estadoBadge(item.estado)}</div>
           </div>
-          <div class="d-flex justify-content-between">
-            ${estadoBadge(item.estado)}
-            <span class="fw-bold">${item.total > 0 ? currency(item.total) : '—'}</span>
-          </div>
-        </div>`).join('');
+          ${hasTotal ? `<div class="cl-feed__amount">${currency(item.total)}</div>` : ''}
+        </div>`;
+      }).join('');
+      if (window.lucide) lucide.createIcons();
     } catch (err) {
       console.error('Error refreshing activity:', err);
     }
@@ -225,11 +331,22 @@
     container.addEventListener('click', (e) => {
       const pill = e.target.closest('.cl-period-pill');
       if (!pill) return;
-      container.querySelectorAll('.cl-period-pill').forEach(p => p.classList.remove('cl-period-pill--active'));
-      pill.classList.add('cl-period-pill--active');
+      container.querySelectorAll('.cl-period-pill').forEach(p => {
+        p.classList.remove('active');
+        p.setAttribute('aria-pressed', 'false');
+      });
+      pill.classList.add('active');
+      pill.setAttribute('aria-pressed', 'true');
       currentPeriod = pill.dataset.period;
+      // Update chart title
+      const titleEl = document.getElementById('chartTitle');
+      const labels = { today: 'Hoy', yesterday: 'Ayer', week: 'Últimos 7 días', month: 'Últimos 30 días' };
+      if (titleEl) titleEl.textContent = `Ventas — ${labels[currentPeriod] || 'Hoy'}`;
       refreshAll();
     });
+    // Manual refresh button
+    const btn = document.getElementById('dashRefreshBtn');
+    if (btn) btn.addEventListener('click', refreshAll);
   }
 
   // ---- Auto-refresh ----

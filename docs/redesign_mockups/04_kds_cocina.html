@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KDS Taqueros — CasaLeones Redesign</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            /* KDS is always dark - no light mode */
+            --bg: #050508;
+            --bg-hdr: #08090E;
+            --border: rgba(255, 255, 255, 0.07);
+
+            /* Urgency gradient tokens */
+            --fresh: #12B76A;
+            --normal: #6BD167;
+            --warming: #F79009;
+            --hot: #E86825;
+            --urgent: #F04438;
+            --critical: #B42318;
+
+            --fresh-bg: rgba(18, 183, 106, 0.08);
+            --normal-bg: rgba(107, 209, 103, 0.08);
+            --warming-bg: rgba(247, 144, 9, 0.1);
+            --hot-bg: rgba(232, 104, 37, 0.1);
+            --urgent-bg: rgba(240, 68, 56, 0.1);
+            --critical-bg: rgba(180, 35, 24, 0.12);
+
+            --fresh-border: rgba(18, 183, 106, 0.3);
+            --normal-border: rgba(107, 209, 103, 0.3);
+            --warming-border: rgba(247, 144, 9, 0.4);
+            --hot-border: rgba(232, 104, 37, 0.45);
+            --urgent-border: rgba(240, 68, 56, 0.55);
+            --critical-border: rgba(180, 35, 24, 0.7);
+
+            --text-1: #F8F8FF;
+            --text-2: #CBD5E1;
+            --text-3: #475467;
+
+            --red: #C41E3A;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text-1);
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ═══ HEADER ═══ */
+        .kds-header {
+            background: var(--bg-hdr);
+            border-bottom: 1px solid var(--border);
+            padding: 0 20px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .kds-header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .station-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 16px;
+            background: rgba(196, 30, 58, 0.15);
+            border: 1px solid rgba(196, 30, 58, 0.35);
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #FCA5A5;
+        }
+
+        .station-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--red);
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .4
+            }
+        }
+
+        .pending-count {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+        .count-num {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--text-1);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .kds-header-center {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-3);
+            padding: 0 8px;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .kds-header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .kds-clock {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-2);
+            letter-spacing: 0.04em;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-3);
+            font-size: 12px;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: all .15s;
+        }
+
+        .back-link:hover {
+            color: var(--text-1);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* ═══ CARDS STRIP ═══ */
+        .kds-strip {
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 16px;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            scroll-snap-type: x mandatory;
+        }
+
+        .kds-strip::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .kds-strip::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        /* ORDER CARD */
+        .kds-card {
+            width: 280px;
+            min-width: 280px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            scroll-snap-align: start;
+            transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), box-shadow .2s;
+        }
+
+        .kds-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .kds-card--fresh {
+            background: var(--fresh-bg);
+            border-color: var(--fresh-border);
+        }
+
+        .kds-card--normal {
+            background: var(--normal-bg);
+            border-color: var(--normal-border);
+        }
+
+        .kds-card--warming {
+            background: var(--warming-bg);
+            border-color: var(--warming-border);
+        }
+
+        .kds-card--hot {
+            background: var(--hot-bg);
+            border-color: var(--hot-border);
+        }
+
+        .kds-card--urgent {
+            background: var(--urgent-bg);
+            border-color: var(--urgent-border);
+        }
+
+        .kds-card--critical {
+            background: var(--critical-bg);
+            border-color: var(--critical-border);
+            animation: urgentPulse 1.2s infinite;
+        }
+
+        @keyframes urgentPulse {
+
+            0%,
+            100% {
+                border-color: var(--critical-border);
+                box-shadow: 0 0 0 0 rgba(180, 35, 24, 0);
+            }
+
+            50% {
+                border-color: rgba(180, 35, 24, 0.9);
+                box-shadow: 0 0 0 6px rgba(180, 35, 24, 0.1);
+            }
+        }
+
+        /* CARD HEADER */
+        .kc-hdr {
+            padding: 14px 16px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .kc-order-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            line-height: 1;
+        }
+
+        .kc-fresh .kc-order-num {
+            color: var(--fresh);
+        }
+
+        .kc-normal .kc-order-num {
+            color: var(--normal);
+        }
+
+        .kc-warming .kc-order-num {
+            color: var(--warming);
+        }
+
+        .kc-hot .kc-order-num {
+            color: var(--hot);
+        }
+
+        .kc-urgent .kc-order-num {
+            color: var(--urgent);
+        }
+
+        .kc-critical .kc-order-num {
+            color: #FCA5A5;
+        }
+
+        /* Needed for the above .kc-* classes */
+        .kds-card--fresh {}
+
+        .kds-card--normal {}
+
+        .kds-card--warming {}
+
+        .kds-card--hot {}
+
+        .kds-card--urgent {}
+
+        .kds-card--critical {}
+
+        .kc-meta {
+            font-size: 12px;
+            color: var(--text-3);
+            margin-top: 3px;
+        }
+
+        .kc-hdr-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        /* Timer */
+        .timer {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .timer--fresh {
+            color: var(--fresh);
+        }
+
+        .timer--normal {
+            color: var(--normal);
+        }
+
+        .timer--warming {
+            color: var(--warming);
+        }
+
+        .timer--hot {
+            color: var(--hot);
+        }
+
+        .timer--urgent {
+            color: var(--urgent);
+            animation: blink 1s infinite;
+        }
+
+        .timer--critical {
+            color: #FCA5A5;
+            animation: blink .5s infinite;
+        }
+
+        .mesa-chip {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 9px;
+            border-radius: 100px;
+            background: rgba(255, 255, 255, 0.07);
+            color: var(--text-2);
+        }
+
+        /* CARD BODY */
+        .kc-body {
+            padding: 14px 16px;
+            flex: 1;
+        }
+
+        .kc-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .kc-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .kc-item--done {
+            opacity: .4;
+        }
+
+        .kc-qty {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 24px;
+            line-height: 1;
+            color: var(--text-1);
+        }
+
+        .kc-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-1);
+            line-height: 1.3;
+            flex: 1;
+        }
+
+        .kc-note {
+            margin-top: 4px;
+            display: flex;
+            align-items: flex-start;
+            gap: 5px;
+            padding: 5px 8px;
+            background: rgba(247, 144, 9, 0.12);
+            border: 1px solid rgba(247, 144, 9, 0.2);
+            border-radius: 6px;
+            font-size: 11px;
+            color: #FCD34D;
+            font-weight: 600;
+        }
+
+        .check-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            flex-shrink: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .15s;
+        }
+
+        .check-circle--done {
+            background: var(--fresh);
+            border-color: var(--fresh);
+        }
+
+        .check-circle:hover {
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* CARD FOOTER */
+        .kc-footer {
+            padding: 12px 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+            display: flex;
+            gap: 8px;
+        }
+
+        .kc-btn {
+            flex: 1;
+            padding: 13px;
+            border-radius: 10px;
+            border: none;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            transition: all .15s;
+        }
+
+        .kc-btn--done {
+            background: var(--fresh);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(18, 183, 106, 0.4);
+        }
+
+        .kc-btn--done:hover {
+            opacity: .88;
+            transform: scale(1.02);
+        }
+
+        .kc-btn--skip {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-3);
+        }
+
+        .kc-btn--skip:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-2);
+        }
+
+        /* COMPLETED BANNER */
+        .kds-footer {
+            height: 52px;
+            background: var(--bg-hdr);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            flex-shrink: 0;
+        }
+
+        .completed-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .completed-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-3);
+        }
+
+        .completed-item strong {
+            color: var(--fresh);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Sound btn */
+        .sound-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-3);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .sound-btn:hover {
+            color: var(--text-1);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header class="kds-header">
+        <div class="kds-header-left">
+            <a href="index.html" class="back-link">
+                <i data-lucide="arrow-left" style="width:12px;height:12px;"></i>
+                Índice
+            </a>
+            <div class="station-badge">
+                <div class="station-dot"></div>
+                🌮 Taqueros
+            </div>
+            <div class="pending-count">
+                <i data-lucide="chef-hat" style="width:14px;height:14px;"></i>
+                <span class="count-num">8</span>
+                <span>órdenes pendientes</span>
+            </div>
+        </div>
+
+        <div class="kds-header-center">
+            <div class="legend-item">
+                <div class="legend-dot" style="background:var(--fresh);"></div>0-5 min
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:var(--warming);"></div>5-10 min
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:var(--hot);"></div>10-15 min
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:var(--urgent);"></div>+15 min
+            </div>
+        </div>
+
+        <div class="kds-header-right">
+            <button class="sound-btn">
+                <i data-lucide="volume-2" style="width:13px;height:13px;"></i>
+                Sonido: ON
+            </button>
+            <div class="kds-clock" id="clock">14:38:22</div>
+        </div>
+    </header>
+
+    <!-- CARDS STRIP -->
+    <div class="kds-strip">
+
+        <!-- Card 1: CRITICAL — 22 min -->
+        <div class="kds-card kds-card--critical">
+            <div class="kc-hdr kc-critical">
+                <div>
+                    <div class="kc-order-num">#1039</div>
+                    <div class="kc-meta">Para llevar · 3 items</div>
+                </div>
+                <div class="kc-hdr-right">
+                    <div class="timer timer--critical">22:14</div>
+                    <div class="mesa-chip">🔴 Urgente</div>
+                </div>
+            </div>
+            <div class="kc-body">
+                <div class="kc-items">
+                    <div class="kc-item">
+                        <div class="kc-qty">2</div>
+                        <div style="flex:1;">
+                            <div class="kc-name">Enchiladas Verdes</div>
+                            <div class="kc-note">
+                                <i data-lucide="alert-circle"
+                                    style="width:11px;height:11px;flex-shrink:0;margin-top:1px;"></i>
+                                Sin crema, extra queso
+                            </div>
+                        </div>
+                        <div class="check-circle"></div>
+                    </div>
+                    <div class="kc-item">
+                        <div class="kc-qty">1</div>
+                        <div style="flex:1;">
+                            <div class="kc-name">Caldo de Gallina</div>
+                        </div>
+                        <div class="check-circle"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="kc-footer">
+                <button class="kc-btn kc-btn--skip"><i data-lucide="skip-forward"
+                        style="width:14px;height:14px;"></i>Posponer</button>
+                <button class="kc-btn kc-btn--done" onclick="markDone(this)"><i data-lucide="check"
+                        style="width:16px;height:16px;"></i>Listo</button>
+            </div>
+        </div>
+
+        <!-- Card 2: URGENT — 18 min -->
+        <div class="kds-card kds-card--urgent">
+            <div class="kc-hdr kc-urgent">
+                <div>
+                    <div class="kc-order-num">#1041</div>
+                    <div class="kc-meta">Mesa 1 · 7 items</div>
+                </div>
+                <div class="kc-hdr-right">
+                    <div class="timer timer--urgent">18:42</div>
+                    <div class="mesa-chip">Mesa 1</div>
+                </div>
+            </div>
+            <div class="kc-body">
+                <div class="kc-items">
+                    <div class="kc-item">
+                        <div class="kc-qty">3</div>
+                        <div style="flex:1;">
+                            <div class="kc-name">Chiles en Nogada</div>
+                        </div>
+                        <div class="check-circle"></div>
+                    </div>
+                    <div class="kc-item">
+                        <div class="kc-qty">2</div>
+                        <div style="flex:1;">
+                            <div class="kc-name">Sopa de Lima Yucateca</div>
+                        </div>
+                        <div class="check-circle"></div>
+                    </div>
+                    <div class="kc-item">
+                        <div class="kc-qty">2</div>
+                        <div style="flex:1;">
+                            <div class="kc-name">Tacos de Canasta</div>
+                        </div>
+                        <div class="check-circle"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="kc-footer">
+                <button class="kc-btn kc-btn--skip"><i data-lucide="skip-forward"
+                        style="width:14px;height:14px;"></i>Posponer</button>
+                <button class="kc-btn kc-btn--done" onclick="markDone(this)"><i data-lucide="check"
+                        style="width:16px;height:16px;"></i>Listo</button>
+            </div>
+        </div>
+
+        <!-- Card 3: HOT — 13 min -->
+        <div class="kds-card kds-card--hot">
+            <div class="kc-hdr kc-hot">
+                <div>
+                    <div class="kc-order-num">#1043</div>
+                    <div class="kc-meta">Mesa 2 · 3 items</div>
+                </div>
+                <div class="kc-hdr-right">
+                    <div class="timer timer--hot">13:08</div>
+                    <div class="mesa-chip">Mesa 2</div>
+                </div>
+            </div>
+            <div class="kc-body">
+                <div class="kc-items">
+                    <div class="kc-item">
+                        <div class="kc-qty">1</div>
+                        <div style="flex:1;">
+                            <div class="kc-name">Molcajete Norteño</div>
+                            <div class="kc-note"><i data-lucide="alert-circle"
+                                    style="width:11px;height:11px;flex-shrink:0;margin-top:1px;"></i>Bien cocido</div>
+                        </div>
+                        <div class="check-circle"></div>
+                    </div>
+                    <div class="kc-item">
+                        <div class="kc-qty">2</div>
+                        <div style="flex:1;">
+                            <div class="kc-name">Costillas BBQ</div>
+                        </div>
+                        <div class="check-circle"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="kc-footer">
+                <button class="kc-btn kc-btn--skip"><i data-lucide="skip-forward"
+                        style="width:14px;height:14px;"></i>Posponer</button>
+                <button class="kc-btn kc-btn--done" onclick="markDone(this)"><i data-lucide="check"
+                        style="width:16px;height:16px;"></i>Listo</button>
+            </div>
+        </div>
+
+        <!-- Card 4: WARMING — 9 min -->
+        <div class="kds-card kds-card--warming">
+            <div class="kc-hdr kc-warming">
+                <div>
+                    <div class="kc-order-num">#1046</div>
+                    <div class="kc-meta">Mesa 8 · 8 items</div>
+                </div>
+                <div class="kc-hdr-right">
+                    <div class="timer timer--warming">09:22</div>
+                    <div class="mesa-chip">Mesa 8</div>
+                </div>
+            </div>
+            <div class="kc-body">
+                <div class="kc-items">
+                    <div class="kc-item kc-item--done">
+                        <div class="kc-qty">4</div>
+                        <div style="flex:1;">
+                            <div class="kc-name">Tacos Acorazados</div>
+                        </div>
+                        <div class="check-circle check-circle--done"><i data-lucide="check"
+                                style="width:12px;height:12px;color:#fff;"></i></div>
+                    </div>
+                    <div class="kc-item">
+                        <div class="kc-qty">2</div>
+                        <div style="flex:1;">
+                            <div class="kc-name">Orden Tostadas</div>
+                            <div class="kc-note"><i data-lucide="alert-circle"
+                                    style="width:11px;height:11px;flex-shrink:0;margin-top:1px;"></i>Extra guacamole
+                            </div>
+                        </div>
+                        <div class="check-circle"></div>
+                    </div>
+                    <div class="kc-item">
+                        <div class="kc-qty">2</div>
+                        <div style="flex:1;">
+                            <div class="kc-name">Pozole Rojo</div>
+                        </div>
+                        <div class="check-circle"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="kc-footer">
+                <button class="kc-btn kc-btn--skip"><i data-lucide="skip-forward"
+                        style="width:14px;height:14px;"></i>Posponer</button>
+                <button class="kc-btn kc-btn--done" onclick="markDone(this)"><i data-lucide="check"
+                        style="width:16px;height:16px;"></i>Listo</button>
+            </div>
+        </div>
+
+        <!-- Card 5: NORMAL — 6 min -->
+        <div class="kds-card kds-card--normal">
+            <div class="kc-hdr kc-normal">
+                <div>
+                    <div class="kc-order-num">#1047</div>
+                    <div class="kc-meta">Mesa 5 · 6 items</div>
+                </div>
+                <div class="kc-hdr-right">
+                    <div class="timer timer--normal">06:15</div>
+                    <div class="mesa-chip">Mesa 5</div>
+                </div>
+            </div>
+            <div class="kc-body">
+                <div class="kc-items">
+                    <div class="kc-item">
+                        <div class="kc-qty">1</div>
+                        <div style="flex:1;">
+                            <div class="kc-name">Queso Fundido con Chorizo</div>
+                        </div>
+                        <div class="check-circle"></div>
+                    </div>
+                    <div class="kc-item">
+                        <div class="kc-qty">2</div>
+                        <div style="flex:1;">
+                            <div class="kc-name">Tlayuda Oaxaqueña</div>
+                        </div>
+                        <div class="check-circle"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="kc-footer">
+                <button class="kc-btn kc-btn--skip"><i data-lucide="skip-forward"
+                        style="width:14px;height:14px;"></i>Posponer</button>
+                <button class="kc-btn kc-btn--done" onclick="markDone(this)"><i data-lucide="check"
+                        style="width:16px;height:16px;"></i>Listo</button>
+            </div>
+        </div>
+
+        <!-- Card 6: FRESH — 3 min -->
+        <div class="kds-card kds-card--fresh">
+            <div class="kc-hdr kc-fresh">
+                <div>
+                    <div class="kc-order-num">#1048</div>
+                    <div class="kc-meta">Mesa 12 · 4 items</div>
+                </div>
+                <div class="kc-hdr-right">
+                    <div class="timer timer--fresh">03:40</div>
+                    <div class="mesa-chip">Mesa 12</div>
+                </div>
+            </div>
+            <div class="kc-body">
+                <div class="kc-items">
+                    <div class="kc-item">
+                        <div class="kc-qty">3</div>
+                        <div style="flex:1;">
+                            <div class="kc-name">Taco Birria Especial</div>
+                        </div>
+                        <div class="check-circle"></div>
+                    </div>
+                    <div class="kc-item">
+                        <div class="kc-qty">1</div>
+                        <div style="flex:1;">
+                            <div class="kc-name">Consomé de Res</div>
+                        </div>
+                        <div class="check-circle"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="kc-footer">
+                <button class="kc-btn kc-btn--skip"><i data-lucide="skip-forward"
+                        style="width:14px;height:14px;"></i>Posponer</button>
+                <button class="kc-btn kc-btn--done" onclick="markDone(this)"><i data-lucide="check"
+                        style="width:16px;height:16px;"></i>Listo</button>
+            </div>
+        </div>
+
+        <!-- Card 7: FRESH — 1 min (NEW) -->
+        <div class="kds-card kds-card--fresh" style="animation:slideNewCard .5s cubic-bezier(.34,1.56,.64,1);">
+            <div class="kc-hdr kc-fresh">
+                <div>
+                    <div class="kc-order-num">#1049</div>
+                    <div class="kc-meta">Mesa 7 · 3 items</div>
+                </div>
+                <div class="kc-hdr-right">
+                    <div class="timer timer--fresh">01:12</div>
+                    <div class="mesa-chip"
+                        style="background:rgba(18,183,106,0.15);color:var(--fresh);border-color:rgba(18,183,106,0.3);">✨
+                        Nueva</div>
+                </div>
+            </div>
+            <div class="kc-body">
+                <div class="kc-items">
+                    <div class="kc-item">
+                        <div class="kc-qty">2</div>
+                        <div style="flex:1;">
+                            <div class="kc-name">Pozole Rojo</div>
+                        </div>
+                        <div class="check-circle"></div>
+                    </div>
+                    <div class="kc-item">
+                        <div class="kc-qty">1</div>
+                        <div style="flex:1;">
+                            <div class="kc-name">Tlacoyo de Habas</div>
+                            <div class="kc-note"><i data-lucide="alert-circle"
+                                    style="width:11px;height:11px;flex-shrink:0;margin-top:1px;"></i>Sin sal</div>
+                        </div>
+                        <div class="check-circle"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="kc-footer">
+                <button class="kc-btn kc-btn--skip"><i data-lucide="skip-forward"
+                        style="width:14px;height:14px;"></i>Posponer</button>
+                <button class="kc-btn kc-btn--done" onclick="markDone(this)"><i data-lucide="check"
+                        style="width:16px;height:16px;"></i>Listo</button>
+            </div>
+        </div>
+
+    </div><!-- end kds-strip -->
+
+    <!-- FOOTER -->
+    <footer class="kds-footer">
+        <div class="completed-row">
+            <div class="completed-item">
+                <i data-lucide="check-circle" style="width:13px;height:13px;color:var(--fresh);"></i>
+                <span>Completadas hoy: <strong>34</strong></span>
+            </div>
+            <div class="completed-item">
+                <i data-lucide="clock" style="width:13px;height:13px;"></i>
+                <span>Tiempo prom: <strong style="color:var(--fresh);">7.4 min</strong></span>
+            </div>
+            <div class="completed-item">
+                <i data-lucide="trending-up" style="width:13px;height:13px;"></i>
+                <span>Turno anterior: <strong>8.1 min</strong> avg</span>
+            </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <div style="width:7px;height:7px;border-radius:50%;background:var(--fresh);animation:blink 2s infinite;">
+            </div>
+            <span style="font-size:12px;color:var(--text-3);">Socket.IO conectado</span>
+        </div>
+    </footer>
+
+    <style>
+        @keyframes slideNewCard {
+            from {
+                opacity: 0;
+                transform: translateX(60px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+    </style>
+
+    <script>
+        lucide.createIcons();
+
+        /* Live clock */
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent =
+                [now.getHours(), now.getMinutes(), now.getSeconds()]
+                    .map(n => String(n).padStart(2, '0')).join(':');
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        /* Check circles interaction */
+        document.querySelectorAll('.check-circle:not(.check-circle--done)').forEach(c => {
+            c.addEventListener('click', () => {
+                c.classList.toggle('check-circle--done');
+                if (c.classList.contains('check-circle--done')) {
+                    c.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                    c.closest('.kc-item').classList.add('kc-item--done');
+                } else {
+                    c.innerHTML = '';
+                    c.closest('.kc-item').classList.remove('kc-item--done');
+                }
+            });
+        });
+
+        /* Mark done */
+        function markDone(btn) {
+            const card = btn.closest('.kds-card');
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.9)';
+            card.style.transition = 'all .3s ease';
+            setTimeout(() => card.remove(), 350);
+        }
+
+        /* Sound toggle */
+        document.querySelector('.sound-btn').addEventListener('click', function () {
+            const isOn = this.textContent.includes('ON');
+            this.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>${isOn ? '<line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>' : '<path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>'}` + `</svg> Sonido: ${isOn ? 'OFF' : 'ON'}`;
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,173 @@
+/* ═══════════════════════════════════════════════════
+   CasaLeones POS — v7 Base Styles
+   Global reset over Bootstrap 5.3 for the dark canvas
+   ═══════════════════════════════════════════════════ */
+
+/* ── Google Fonts import ──
+   Inter + JetBrains Mono — preconnect is set in base.html */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+/* ── Global reset ── */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* ── Global root: override Bootstrap light-mode defaults ── */
+:root {
+    /* Override Bootstrap's --bs-body-bg so it never shows white */
+    --bs-body-bg: var(--cl-canvas, #0A0B10);
+    --bs-body-color: var(--cl-text-primary, #F2F4F7);
+    --bs-border-color: rgba(255, 255, 255, 0.07);
+}
+
+/* Make HTML + body fill full viewport with dark bg, no overflow gaps */
+html {
+    height: 100%;
+    background-color: var(--cl-canvas, #0A0B10);
+}
+
+/* ── Body dark canvas ── */
+body {
+    background-color: var(--cl-canvas, #0A0B10) !important;
+    color: var(--cl-text-primary);
+    font-family: var(--cl-font-sans);
+    font-size: 14px;
+    line-height: var(--cl-leading-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100%;
+    /* Ensure the sidebar layout fills correctly */
+    display: block;
+}
+
+/* ── Typography headings ── */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: var(--cl-font-bold);
+    line-height: var(--cl-leading-tight);
+    color: var(--cl-text-primary);
+    letter-spacing: -0.02em;
+}
+
+/* ── Monospace numbers ── */
+.mono {
+    font-family: var(--cl-font-mono);
+}
+
+.tabular {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Focus visible — accessible ── */
+:focus-visible {
+    outline: 2px solid var(--cl-red-400, #E5535A);
+    outline-offset: 2px;
+}
+
+/* ── Selection ── */
+::selection {
+    background: rgba(196, 30, 58, 0.3);
+    color: #fff;
+}
+
+/* ── Link defaults ── */
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--cl-text-primary);
+}
+
+/* ── Section label (uppercase helper) ── */
+.cl-sect-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    color: var(--cl-text-tertiary);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+/* ── Live dot (socket connected indicator) ── */
+.cl-live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--cl-success-500);
+    animation: cl-livepulse 2s infinite;
+    display: inline-block;
+}
+
+@keyframes cl-livepulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(18, 183, 106, 0.5);
+    }
+
+    50% {
+        box-shadow: 0 0 0 5px rgba(18, 183, 106, 0);
+    }
+}
+
+/* ── Urgency pulse (KDS critical) ── */
+@keyframes cl-urgentpulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.55;
+    }
+}
+
+/* ── Slide in animation (new order card) ── */
+@keyframes cl-slidein {
+    from {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ── Card spring hover utility ── */
+.cl-hover-lift {
+    transition: transform var(--cl-transition-spring), box-shadow var(--cl-transition-base);
+}
+
+.cl-hover-lift:hover {
+    transform: translateY(-3px);
+}

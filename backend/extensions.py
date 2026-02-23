@@ -22,10 +22,12 @@ _cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:5005').split(',')
 socketio = SocketIO(cors_allowed_origins=_cors_origins)
 
 csrf = CSRFProtect()
+
+_redis_url = os.getenv('REDIS_URL', '')
 limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["200 per minute"],
-    storage_uri=os.getenv('REDIS_URL', 'redis://localhost:6379') + '/0',
+    storage_uri=(_redis_url + '/0') if _redis_url else 'memory://',
 )
 cache = Cache()
 server_session = Session()

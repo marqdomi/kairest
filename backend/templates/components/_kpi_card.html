@@ -1,28 +1,54 @@
-{# ═══════════════════════════════════════════
-   KPI Card Component
-   Usage:
-     {% from 'components/_kpi_card.html' import kpi_card %}
-     {{ kpi_card('Ventas Hoy', '$12,500', 'dollar-sign', color='success', trend='+12%', trend_up=true) }}
-   ═══════════════════════════════════════════ #}
+{# ═══════════════════════════════════════════════════
+KPI Card Component — v7
+Usage:
+{% from 'components/_kpi_card.html' import kpi_card %}
+{{ kpi_card('Ventas Hoy', '$18,340',
+icon='dollar-sign',
+color='red',
+trend='+12.4%', trend_up=true,
+subtitle='vs $16,318 ayer',
+sparkline_id='sparkVentas') }}
+════════════════════════════════════════════════ #}
 
-{% macro kpi_card(title, value, icon='activity', color='primary', trend=None, trend_up=true, prefix='', suffix='', id='') %}
-<div class="cl-kpi-card cl-kpi-card--{{ color }}" {% if id %}id="{{ id }}"{% endif %}>
+{% macro kpi_card(title, value, icon='activity', color='red',
+trend=None, trend_up=true,
+subtitle='', badge='', badge_variant='gray',
+sparkline_id='', id='', prefix='', suffix='') %}
+<div class="cl-kpi-card cl-kpi-card--{{ color }}" {% if id %}id="{{ id }}" {% endif %} role="region"
+  aria-label="{{ title }}">
+
+  {# Top row: icon + trend/badge #}
   <div class="cl-kpi-card__header">
-    <span class="cl-kpi-card__icon">
-      <i data-lucide="{{ icon }}" class="icon-lg"></i>
+    <div class="cl-kpi-card__icon cl-kpi-icon--{{ color }}">
+      <i data-lucide="{{ icon }}" class="icon-md"></i>
+    </div>
+    {% if trend is not none %}
+    <span class="cl-kpi-trend cl-kpi-trend--{{ 'up' if trend_up else 'down' }}">
+      <i data-lucide="trending-{{ 'up' if trend_up else 'down' }}" class="icon-xs"></i>
+      {{ trend }}
     </span>
-    <span class="cl-kpi-card__title">{{ title }}</span>
+    {% elif badge %}
+    <span class="cl-badge cl-badge--{{ badge_variant }}" style="font-size:11px;">{{ badge }}</span>
+    {% endif %}
   </div>
-  <div class="cl-kpi-card__value">
-    {% if prefix %}<span class="cl-kpi-card__prefix">{{ prefix }}</span>{% endif %}
-    <span {% if id %}data-kpi="{{ id }}"{% endif %}>{{ value }}</span>
-    {% if suffix %}<span class="cl-kpi-card__suffix">{{ suffix }}</span>{% endif %}
+
+  {# Label + Value #}
+  <div class="cl-kpi-card__title">{{ title }}</div>
+  <div class="cl-kpi-card__value" {% if id %}id="kpi-{{ id }}" {% endif %}>
+    {% if prefix %}<span style="font-size:.65em;opacity:.7;">{{ prefix }}</span>{% endif %}
+    {{ value|safe }}
+    {% if suffix %}<span style="font-size:.65em;opacity:.7;">{{ suffix }}</span>{% endif %}
   </div>
-  {% if trend is not none %}
-  <div class="cl-kpi-card__trend cl-kpi-card__trend--{{ 'up' if trend_up else 'down' }}">
-    <i data-lucide="{{ 'trending-up' if trend_up else 'trending-down' }}" class="icon-xs"></i>
-    <span>{{ trend }}</span>
-  </div>
+
+  {# Subtitle / secondary metric #}
+  {% if subtitle %}
+  <div class="cl-kpi-card__sub">{{ subtitle }}</div>
   {% endif %}
+
+  {# Sparkline canvas (rendered by admin-dashboard.js) #}
+  {% if sparkline_id %}
+  <canvas class="cl-sparkline" id="{{ sparkline_id }}" aria-hidden="true"></canvas>
+  {% endif %}
+
 </div>
 {% endmacro %}

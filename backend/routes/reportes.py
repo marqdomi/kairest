@@ -646,8 +646,26 @@ def export_rentabilidad_csv():
 @reportes_bp.route('/api/rentabilidad')
 @login_required(roles=['admin', 'superadmin'])
 def api_rentabilidad_chart():
-    """Scatter: precio venta vs margen % para Chart.js."""
+    """Bar/Line: Ingreso Total vs Margen % para Chart.js."""
     fi, ff = _parse_rango(request.args)
+    suc_id = getattr(g, 'sucursal_id', None)
+
+    # Cantidad vendida por producto en el rango
+    q_ventas = db.session.query(
+        SaleItem.producto_id,
+        func.sum(SaleItem.cantidad).label('cantidad_vendida'),
+        func.sum(SaleItem.subtotal).label('ingreso_total'),
+    ).join(Sale, SaleItem.sale_id == Sale.id
+    ).filter(
+        func.date(Sale.fecha_hora) >= fi,
+        func.date(Sale.fecha_hora) <= ff,
+    )
+    if suc_id is not None:
+        q_ventas = q_ventas.filter(Sale.sucursal_id == suc_id)
+    ventas_map = {
+        r.producto_id: {'cantidad': int(r.cantidad_vendida), 'ingreso': float(r.ingreso_total)}
+        for r in q_ventas.group_by(SaleItem.producto_id).all()
+    }
 
     productos = Producto.query.options(
         joinedload(Producto.receta_items).joinedload(RecetaDetalle.ingrediente),
@@ -657,12 +675,25 @@ def api_rentabilidad_chart():
     for p in productos:
         if not p.receta_items:
             continue
+        vendidos = ventas_map.get(p.id, {})
+        ingreso = vendidos.get('ingreso', 0.0)
+        if ingreso == 0:
+            continue # Solo mostrar productos con ventas en el periodo
+
         precio = float(p.precio)
         costo = sum(float(r.cantidad_por_unidad) * float(r.ingrediente.costo_unitario or 0)
                      for r in p.receta_items)
         margen = ((precio - costo) / precio * 100) if precio > 0 else 0
-        points.append({'nombre': p.nombre, 'precio': precio, 'margen': round(margen, 1),
-                       'costo': round(costo, 2)})
+        points.append({
+            'nombre': p.nombre, 
+            'ingreso': ingreso, 
+            'margen': round(margen, 1)
+        })
+
+    # Sort by ingreso desc
+    points.sort(key=lambda x: x['ingreso'], reverse=True)
+    # Take top 20 to avoid clutter
+    points = points[:20]
 
     return jsonify({'productos': points})
 

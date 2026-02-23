@@ -3,189 +3,173 @@
 
 {% block head %}
 {{ super() }}
-<style>
-  .cl-dashboard-kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--cl-space-4); }
-  @media (max-width: 768px) { .cl-dashboard-kpi { grid-template-columns: repeat(2, 1fr); } }
-  .cl-kpi-card .cl-kpi-card__value .skeleton {
-    display: inline-block; height: 1.6rem; border-radius: var(--cl-radius-sm);
-    background: linear-gradient(90deg, rgba(255,255,255,.15) 25%, rgba(255,255,255,.3) 50%, rgba(255,255,255,.15) 75%);
-    background-size: 200% 100%; animation: shimmer 1.5s infinite;
-  }
-  .cl-kpi-card .cl-kpi-card__value .skeleton-sm { height: 0.9rem; }
-  @keyframes shimmer { to { background-position: -200% 0; } }
-  .stock-alert-item { font-size: 0.9rem; }
-  .stock-bar { height: 6px; border-radius: 3px; background: var(--cl-gray-200); }
-  .stock-bar-fill { height: 100%; border-radius: 3px; }
-  .activity-item { border-left: 3px solid var(--cl-primary); padding-left: var(--cl-space-3); }
-  /* Period selector pills */
-  .cl-period-pills { display: flex; gap: 4px; background: var(--cl-gray-100); border-radius: var(--cl-radius-md); padding: 3px; }
-  .cl-period-pill {
-    padding: 6px 14px; border-radius: var(--cl-radius-sm); border: none;
-    background: transparent; font-size: var(--cl-text-sm); font-weight: 500;
-    color: var(--cl-text-secondary); cursor: pointer; transition: all .2s;
-  }
-  .cl-period-pill:hover { color: var(--cl-text-primary); }
-  .cl-period-pill--active { background: #fff; color: var(--cl-primary); box-shadow: var(--cl-shadow-sm); font-weight: 600; }
-  /* KPI trend indicator */
-  .cl-kpi-trend { font-size: var(--cl-text-xs); font-weight: 600; display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; }
-  .cl-kpi-trend--up { color: var(--cl-success); }
-  .cl-kpi-trend--down { color: var(--cl-danger); }
-</style>
+{% endblock %}
+
+{% block admin_breadcrumb %}
+<div class="cl-breadcrumb">
+  <span>Admin</span>
+  <i data-lucide="chevron-right" style="width:13px;height:13px;"></i>
+  <span class="cl-breadcrumb__current">Dashboard</span>
+</div>
 {% endblock %}
 
 {% block admin_content %}
-{# ── Page header ── #}
-{% from 'components/_page_header.html' import page_header %}
-{% call page_header('Panel de Administración', breadcrumb=[{'label':'Admin','url':'#'}]) %}
-  <div class="cl-period-pills" id="periodSelector">
-    <button class="cl-period-pill cl-period-pill--active" data-period="today">Hoy</button>
-    <button class="cl-period-pill" data-period="yesterday">Ayer</button>
-    <button class="cl-period-pill" data-period="week">7 días</button>
-    <button class="cl-period-pill" data-period="month">30 días</button>
-  </div>
-  <a href="{{ url_for('reportes.dashboard_reportes') }}" class="cl-btn cl-btn--outline cl-btn--sm">
-    <i data-lucide="bar-chart-3" class="icon-sm"></i> Reportes
-  </a>
-{% endcall %}
+{% from 'components/_kpi_card.html' import kpi_card %}
 
-{# ── ROW 1: KPI Cards (8 widgets) ── #}
-<div class="cl-dashboard-kpi mb-4" role="region" aria-label="Indicadores clave" aria-live="polite">
-  {# Ventas Hoy #}
-  <div class="cl-kpi-card cl-kpi-card--primary">
-    <div class="cl-kpi-card__header">
-      <span class="cl-kpi-card__icon"><i data-lucide="dollar-sign" class="icon-lg"></i></span>
-      <span class="cl-kpi-card__title">Ventas Hoy</span>
+{# ── Page Header ── #}
+<div class="cl-page-hdr">
+  <div>
+    <h1>Panel de Administración</h1>
+    <p id="dashSubtitle" style="margin-top:4px;">
+      <i data-lucide="calendar" style="width:12px;height:12px;vertical-align:middle;"></i>
+      {{ now().strftime('%A %d de %B, %Y') if now is defined else '' }}
+    </p>
+  </div>
+  <div class="cl-page-hdr__right">
+    {# Period pills #}
+    <div class="cl-period-pills" id="periodSelector" role="group" aria-label="Período de análisis">
+      <button class="cl-period-pill active" data-period="today" aria-pressed="true">Hoy</button>
+      <button class="cl-period-pill" data-period="yesterday" aria-pressed="false">Ayer</button>
+      <button class="cl-period-pill" data-period="week" aria-pressed="false">7 días</button>
+      <button class="cl-period-pill" data-period="month" aria-pressed="false">30 días</button>
     </div>
-    <div class="cl-kpi-card__value" id="ventasHoy">
-      <span class="skeleton" style="width:60%"></span>
+    <a href="{{ url_for('reportes.dashboard_reportes') }}" class="cl-btn--v7-outline cl-btn--sm">
+      <i data-lucide="bar-chart-3" class="icon-sm"></i> Reportes
+    </a>
+    <button class="cl-btn--v7-outline cl-btn--sm" id="dashRefreshBtn" title="Actualizar datos">
+      <i data-lucide="refresh-cw" class="icon-sm"></i> Actualizar
+    </button>
+  </div>
+</div>
+
+{# ── Finanzas KPIs ── #}
+<div class="cl-sect-label" style="margin-top:4px;">Finanzas</div>
+<div class="cl-kpi-grid mb-5" role="region" aria-label="Indicadores financieros" aria-live="polite">
+
+  {{ kpi_card('Ventas Hoy', '<span class="cl-skeleton"
+    style="width:80px;height:28px;border-radius:6px;display:inline-block;"></span>',
+  icon='dollar-sign', color='red',
+  subtitle='vs período anterior',
+  sparkline_id='sparkVentas', id='ventasHoy') }}
+
+  {{ kpi_card('Ticket Promedio', '<span class="cl-skeleton"
+    style="width:70px;height:28px;border-radius:6px;display:inline-block;"></span>',
+  icon='receipt', color='gold',
+  subtitle='por orden cerrada',
+  sparkline_id='sparkTicket', id='ticketPromedio') }}
+
+  {{ kpi_card('Propinas Hoy', '<span class="cl-skeleton"
+    style="width:70px;height:28px;border-radius:6px;display:inline-block;"></span>',
+  icon='coins', color='green',
+  subtitle='% del total de ventas',
+  sparkline_id='sparkPropinas', id='propinasHoy') }}
+
+  {{ kpi_card('Último Corte', '—',
+  icon='clipboard-check', color='blue',
+  badge='Último corte', badge_variant='gray',
+  id='ultimoCorte') }}
+</div>
+
+{# ── Operaciones KPIs ── #}
+<div class="cl-sect-label">Operaciones</div>
+<div class="cl-kpi-grid mb-5" role="region" aria-label="Indicadores operativos" aria-live="polite">
+
+  {{ kpi_card('Órdenes Hoy', '<span class="cl-skeleton"
+    style="width:50px;height:28px;border-radius:6px;display:inline-block;"></span>',
+  icon='receipt', color='green',
+  subtitle='órdenes cerradas',
+  sparkline_id='sparkOrdenes', id='ordenesHoy') }}
+
+  {{ kpi_card('Mesas Activas', '<span class="cl-skeleton"
+    style="width:60px;height:28px;border-radius:6px;display:inline-block;"></span>',
+  icon='armchair', color='blue',
+  id='mesasActivas') }}
+
+  {{ kpi_card('En Cocina', '<span class="cl-skeleton"
+    style="width:40px;height:28px;border-radius:6px;display:inline-block;"></span>',
+  icon='chef-hat', color='yellow',
+  id='ordenesCocina') }}
+
+  {{ kpi_card('Alertas Stock', '<span class="cl-skeleton"
+    style="width:40px;height:28px;border-radius:6px;display:inline-block;"></span>',
+  icon='alert-triangle', color='red',
+  id='alertasStockCount') }}
+</div>
+
+{# ── Charts Row ── #}
+<div style="display:grid;grid-template-columns:1fr 380px;gap:16px;margin-bottom:20px;">
+  {# Line chart: 7-day sales #}
+  <div class="cl-card">
+    <div class="cl-card__hdr">
+      <span class="cl-card__title">
+        <i data-lucide="trending-up" style="width:15px;height:15px;color:var(--cl-red-400);"></i>
+        <span id="chartTitle">Ventas — Últimos 7 días</span>
+      </span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="cl-btn--v7-outline cl-btn--sm" id="chartToggle" data-view="daily" title="Toggle vista semanal">
+          <i data-lucide="calendar" class="icon-sm"></i> Diaria
+        </button>
+        <span class="cl-badge cl-badge--gray" id="refreshTimer">30s</span>
+      </div>
+    </div>
+    <div class="cl-card__body">
+      <canvas id="chart7Dias" height="220" aria-label="Gráfica de ventas 7 días"></canvas>
     </div>
   </div>
-  {# Órdenes Hoy #}
-  <div class="cl-kpi-card cl-kpi-card--success">
-    <div class="cl-kpi-card__header">
-      <span class="cl-kpi-card__icon"><i data-lucide="receipt" class="icon-lg"></i></span>
-      <span class="cl-kpi-card__title">Órdenes Hoy</span>
+
+  {# Doughnut: Top 5 Productos #}
+  <div class="cl-card">
+    <div class="cl-card__hdr">
+      <span class="cl-card__title">
+        <i data-lucide="trophy" style="width:15px;height:15px;color:var(--cl-gold);"></i>
+        Top 5 Productos
+      </span>
     </div>
-    <div class="cl-kpi-card__value" id="ordenesHoy">
-      <span class="skeleton" style="width:40%"></span>
-    </div>
-  </div>
-  {# Ticket Promedio #}
-  <div class="cl-kpi-card cl-kpi-card--warning">
-    <div class="cl-kpi-card__header">
-      <span class="cl-kpi-card__icon"><i data-lucide="ticket" class="icon-lg"></i></span>
-      <span class="cl-kpi-card__title">Ticket Promedio</span>
-    </div>
-    <div class="cl-kpi-card__value" id="ticketPromedio">
-      <span class="skeleton" style="width:50%"></span>
-    </div>
-  </div>
-  {# Propinas Hoy #}
-  <div class="cl-kpi-card cl-kpi-card--accent">
-    <div class="cl-kpi-card__header">
-      <span class="cl-kpi-card__icon"><i data-lucide="coins" class="icon-lg"></i></span>
-      <span class="cl-kpi-card__title">Propinas Hoy</span>
-    </div>
-    <div class="cl-kpi-card__value" id="propinasHoy">
-      <span class="skeleton" style="width:45%"></span>
-    </div>
-  </div>
-  {# Mesas Activas #}
-  <div class="cl-kpi-card">
-    <div class="cl-kpi-card__header">
-      <span class="cl-kpi-card__icon"><i data-lucide="armchair" class="icon-lg"></i></span>
-      <span class="cl-kpi-card__title">Mesas Activas</span>
-    </div>
-    <div class="cl-kpi-card__value" id="mesasActivas">
-      <span class="skeleton" style="width:60%"></span>
-    </div>
-    <small class="text-muted" id="mesasReservadas"></small>
-  </div>
-  {# Órdenes en Cocina #}
-  <div class="cl-kpi-card">
-    <div class="cl-kpi-card__header">
-      <span class="cl-kpi-card__icon"><i data-lucide="chef-hat" class="icon-lg"></i></span>
-      <span class="cl-kpi-card__title">Órdenes en Cocina</span>
-    </div>
-    <div class="cl-kpi-card__value" id="ordenesCocina">
-      <span class="skeleton" style="width:40%"></span>
-    </div>
-    <small class="text-muted" id="timerCocina"></small>
-  </div>
-  {# Alertas Stock #}
-  <div class="cl-kpi-card">
-    <div class="cl-kpi-card__header">
-      <span class="cl-kpi-card__icon"><i data-lucide="alert-triangle" class="icon-lg"></i></span>
-      <span class="cl-kpi-card__title">Alertas Stock</span>
-    </div>
-    <div class="cl-kpi-card__value" id="alertasStockCount">
-      <span class="skeleton" style="width:30%"></span>
-    </div>
-  </div>
-  {# Último Corte #}
-  <div class="cl-kpi-card">
-    <div class="cl-kpi-card__header">
-      <span class="cl-kpi-card__icon"><i data-lucide="clipboard-list" class="icon-lg"></i></span>
-      <span class="cl-kpi-card__title">Último Corte</span>
-    </div>
-    <div id="ultimoCorteInfo">
-      <span class="skeleton" style="width:70%"></span>
-      <span class="skeleton skeleton-sm" style="width:50%"></span>
+    <div class="cl-card__body">
+      <canvas id="chartTopProductos" height="200" aria-label="Top 5 productos del período"></canvas>
     </div>
   </div>
 </div>
 
-{# ── ROW 2: Charts ── #}
-<div class="row g-4 mb-4">
-  <div class="col-lg-8">
-    <div class="cl-card h-100">
-      <div class="cl-card__header d-flex justify-content-between align-items-center">
-        <strong>Ventas — Últimos 7 días</strong>
-        <span class="cl-badge cl-badge--gray" id="refreshTimer">Auto-refresh: 30s</span>
-      </div>
-      <div class="cl-card__body">
-        <canvas id="chart7Dias" height="220"></canvas>
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-4">
-    <div class="cl-card h-100">
-      <div class="cl-card__header"><strong>Top 5 Productos Hoy</strong></div>
-      <div class="cl-card__body">
-        <canvas id="chartTopProductos" height="220"></canvas>
-      </div>
-    </div>
-  </div>
-</div>
+{# ── Bottom Row: Stock Alerts + Activity Feed ── #}
+<div style="display:grid;grid-template-columns:420px 1fr;gap:16px;margin-bottom:20px;">
 
-{# ── ROW 3: Alertas Stock + Actividad Reciente ── #}
-<div class="row g-4 mb-4">
-  <div class="col-lg-5">
-    <div class="cl-card h-100">
-      <div class="cl-card__header">
-        <i data-lucide="package-x" class="icon-sm me-1"></i>
-        <strong>Alertas de Inventario</strong>
-      </div>
-      <div class="cl-card__body" id="stockAlertsList">
-        <div class="text-center text-muted py-3">
-          <span class="skeleton" style="width:80%; height:3rem; display:inline-block; border-radius:var(--cl-radius-sm);"></span>
-        </div>
+  {# Stock alerts #}
+  <div class="cl-card">
+    <div class="cl-card__hdr">
+      <span class="cl-card__title">
+        <i data-lucide="package-x" style="width:15px;height:15px;color:var(--cl-error-500);"></i>
+        Alertas de Inventario
+      </span>
+      <span id="alertasStockBadge" class="cl-badge cl-badge--red" style="display:none;">0</span>
+    </div>
+    <div class="cl-card__body" id="stockAlertsList">
+      <div class="cl-alert-list" aria-live="polite">
+        <div class="cl-skeleton" style="height:38px;border-radius:8px;margin-bottom:8px;"></div>
+        <div class="cl-skeleton" style="height:38px;border-radius:8px;margin-bottom:8px;"></div>
+        <div class="cl-skeleton" style="height:38px;border-radius:8px;"></div>
       </div>
     </div>
   </div>
-  <div class="col-lg-7">
-    <div class="cl-card h-100">
-      <div class="cl-card__header">
-        <i data-lucide="activity" class="icon-sm me-1"></i>
-        <strong>Actividad Reciente</strong>
-      </div>
-      <div class="cl-card__body" id="activityFeed" style="max-height:320px; overflow-y:auto;">
-        <span class="skeleton mb-2" style="width:100%; height:1rem; display:block; border-radius:var(--cl-radius-sm);"></span>
-        <span class="skeleton mb-2" style="width:90%; height:1rem; display:block; border-radius:var(--cl-radius-sm);"></span>
-        <span class="skeleton mb-2" style="width:95%; height:1rem; display:block; border-radius:var(--cl-radius-sm);"></span>
-      </div>
+
+  {# Activity feed #}
+  <div class="cl-card">
+    <div class="cl-card__hdr">
+      <span class="cl-card__title">
+        <i data-lucide="activity" style="width:15px;height:15px;color:var(--cl-info-500);"></i>
+        Actividad Reciente
+      </span>
+      <a href="{{ url_for('meseros.view_meseros') }}" class="cl-btn--v7-outline cl-btn--sm">
+        <i data-lucide="external-link" class="icon-sm"></i> Ver todas
+      </a>
+    </div>
+    <div class="cl-card__body cl-feed" id="activityFeed" style="max-height:340px;overflow-y:auto;" aria-live="polite">
+      <div class="cl-skeleton" style="height:54px;border-radius:8px;margin-bottom:6px;"></div>
+      <div class="cl-skeleton" style="height:54px;border-radius:8px;margin-bottom:6px;"></div>
+      <div class="cl-skeleton" style="height:54px;border-radius:8px;"></div>
     </div>
   </div>
+
 </div>
 {% endblock %}
 

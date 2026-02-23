@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <!-- Mobile viewport -->
@@ -12,44 +13,53 @@
   <meta name="theme-color" content="#A6192E">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="CasaLeones">
+  <meta name="apple-mobile-web-app-title" content="KaiRest">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/icon-192.svg') }}">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
   <!-- Design System v6 -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v={{ config.VERSION }}">
+  <!-- Design System v7 Dark — overlays v6 tokens -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/v7-base.css') }}?v={{ config.VERSION }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/v7-sidebar.css') }}?v={{ config.VERSION }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/v7-components.css') }}?v={{ config.VERSION }}">
+  <!-- v7-kds.css only loaded by KDS layout -->
   <!-- Custom global styles -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v={{ config.VERSION }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tablet.css') }}?v={{ config.VERSION }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-mode.css') }}?v={{ config.VERSION }}">
+
   <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}" type="image/x-icon">
   {% block head %}{% endblock %}
   <!-- Dark mode: restore before paint -->
   <script>
-    (function(){
-      var t=localStorage.getItem('theme');
-      var dark=t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme:dark)').matches);
-      if(dark){
-        document.documentElement.setAttribute('data-bs-theme','dark');
-        document.documentElement.setAttribute('data-theme','dark');
+    (function () {
+      var t = localStorage.getItem('theme');
+      var dark = t === 'dark' || (t !== 'light' && window.matchMedia('(prefers-color-scheme:dark)').matches);
+      if (dark) {
+        document.documentElement.setAttribute('data-bs-theme', 'dark');
+        document.documentElement.setAttribute('data-theme', 'dark');
       }
     })();
   </script>
 </head>
+
 <body>
   <!-- Skip to content — accessibility -->
   <a href="#main-content" class="skip-to-content">Saltar al contenido</a>
   <!-- Toast container for real-time notifications -->
-  <div id="toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1200;" role="region" aria-label="Notificaciones" aria-live="polite"></div>
+  <div id="toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1200;" role="region"
+    aria-label="Notificaciones" aria-live="polite"></div>
 
   {% block body_layout %}
   {# ── Default layout: Top navbar + container ── #}
-  <nav class="navbar navbar-expand-lg navbar-light bg-light custom-navbar" role="navigation" aria-label="Navegación principal">
+  <nav class="navbar navbar-expand-lg navbar-light bg-light custom-navbar" role="navigation"
+    aria-label="Navegación principal">
     <div class="container-fluid">
       <a class="navbar-brand" href="/">
-        <img src="{{ url_for('static', filename='img/logoCasaLeones.svg') }}" alt="Logo Casa Leones" class="navbar-logo">
+        <img src="{{ url_for('static', filename='img/kairest-logo.svg') }}" alt="KaiRest" class="navbar-logo">
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor01"
-              aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
+        aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
         <span class="visually-hidden">Toggle navigation</span>
       </button>
@@ -57,43 +67,56 @@
         <ul class="navbar-nav me-auto">
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'meseros.view_meseros' %}active{% endif %}"
-               href="{{ url_for('meseros.view_meseros') }}">Meseros</a>
+              href="{{ url_for('meseros.view_meseros') }}">Meseros</a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'meseros.mapa_mesas' %}active{% endif %}"
-               href="{{ url_for('meseros.mapa_mesas') }}">Mapa</a>
+              href="{{ url_for('meseros.mapa_mesas') }}">Mapa</a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'cocina.dashboard_bebidas_view' %}active{% endif %}"
-               href="{{ url_for('cocina.dashboard_bebidas_view') }}">Bebidas</a>
+              href="{{ url_for('cocina.dashboard_bebidas_view') }}">Bebidas</a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'cocina.dashboard_taqueros_view' %}active{% endif %}"
-               href="{{ url_for('cocina.dashboard_taqueros_view') }}">Taqueros</a>
+              href="{{ url_for('cocina.dashboard_taqueros_view') }}">Taqueros</a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'cocina.dashboard_comal_view' %}active{% endif %}"
-               href="{{ url_for('cocina.dashboard_comal_view') }}">Comal</a>
+              href="{{ url_for('cocina.dashboard_comal_view') }}">Comal</a>
           </li>
           {% if current_user.is_authenticated and current_user.rol in ['admin','superadmin'] %}
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="adminMenu" role="button"
-               data-bs-toggle="dropdown" aria-expanded="false">Admin</a>
+            <a class="nav-link dropdown-toggle" href="#" id="adminMenu" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">Admin</a>
             <ul class="dropdown-menu" aria-labelledby="adminMenu">
               <li><a class="dropdown-item" href="{{ url_for('admin.lista_usuarios') }}">Usuarios</a></li>
               <li><a class="dropdown-item" href="{{ url_for('admin.lista_productos') }}">Productos</a></li>
               <li><a class="dropdown-item" href="{{ url_for('admin.lista_mesas') }}">Mesas</a></li>
-              <li><hr class="dropdown-divider"></li>
+              {% if modo_sistema == 'avanzado' %}
+              <li>
+                <hr class="dropdown-divider">
+              </li>
               <li><a class="dropdown-item" href="{{ url_for('inventario.lista_ingredientes') }}">Inventario</a></li>
               <li><a class="dropdown-item" href="{{ url_for('clientes.lista_clientes') }}">Clientes</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('reservaciones.lista_reservaciones') }}">Reservaciones</a></li>
-              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{{ url_for('reservaciones.lista_reservaciones') }}">Reservaciones</a>
+              </li>
+              {% endif %}
+              <li>
+                <hr class="dropdown-divider">
+              </li>
               <li><a class="dropdown-item" href="{{ url_for('reportes.dashboard_reportes') }}">Reportes</a></li>
+              {% if modo_sistema == 'avanzado' %}
               <li><a class="dropdown-item" href="{{ url_for('facturacion.lista_facturas') }}">Facturación</a></li>
+              {% endif %}
               <li><a class="dropdown-item" href="{{ url_for('admin.corte_caja') }}">Corte de Caja</a></li>
-              <li><hr class="dropdown-divider"></li>
+              {% if modo_sistema == 'avanzado' %}
+              <li>
+                <hr class="dropdown-divider">
+              </li>
               <li><a class="dropdown-item" href="{{ url_for('delivery.admin_delivery') }}">Delivery</a></li>
               <li><a class="dropdown-item" href="{{ url_for('sucursales.lista_sucursales') }}">Sucursales</a></li>
+              {% endif %}
             </ul>
           </li>
           {% endif %}
@@ -101,22 +124,22 @@
         <ul class="navbar-nav ms-auto">
           <li class="nav-item">
             <button class="btn btn-sm btn-outline-secondary ms-2 me-2" id="darkModeToggle"
-                    aria-label="Alternar modo oscuro" title="Modo oscuro">
+              aria-label="Alternar modo oscuro" title="Modo oscuro">
               <span id="darkModeIcon">🌙</span>
             </button>
           </li>
           {% if current_user.is_authenticated %}
-            {% if session.get('sucursal_nombre') %}
-            <li class="nav-item">
-              <span class="navbar-text me-2 badge bg-info text-dark">{{ session['sucursal_nombre'] }}</span>
-            </li>
-            {% endif %}
-            <li class="nav-item">
-              <span class="navbar-text">Hola, {{ current_user.nombre }} ({{ current_user.rol }})</span>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('auth.logout') }}">Cerrar sesión</a>
-            </li>
+          {% if session.get('sucursal_nombre') %}
+          <li class="nav-item">
+            <span class="navbar-text me-2 badge bg-info text-dark">{{ session['sucursal_nombre'] }}</span>
+          </li>
+          {% endif %}
+          <li class="nav-item">
+            <span class="navbar-text">Hola, {{ current_user.nombre }} ({{ current_user.rol }})</span>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('auth.logout') }}">Cerrar sesión</a>
+          </li>
           {% endif %}
         </ul>
       </div>
@@ -126,22 +149,23 @@
     {% block content %}{% endblock %}
   </main>
   {% endblock body_layout %}
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js?v={{ config.VERSION }}"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js?v={{ config.VERSION }}"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@0.263.1/dist/umd/lucide.min.js"></script>
-  <script>document.addEventListener('DOMContentLoaded', function(){ if(window.lucide) lucide.createIcons(); });</script>
+  <script>document.addEventListener('DOMContentLoaded', function () { if (window.lucide) lucide.createIcons(); });</script>
   {% block scripts %}
-    <script src="/socket.io/socket.io.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
   {% endblock %}
   <script nonce="{{ csp_nonce }}">
     // CSRF token for Fetch (always available, no jQuery needed)
-    (function() {
+    (function () {
       var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
       window.__csrfToken = csrfToken;
 
       // Fetch override — auto-inject CSRF on non-GET requests
       var originalFetch = window.fetch;
-      window.fetch = function(url, options) {
+      window.fetch = function (url, options) {
         options = options || {};
         if (options.method && !/^(GET|HEAD|OPTIONS|TRACE)$/i.test(options.method)) {
           options.headers = options.headers || {};
@@ -155,11 +179,11 @@
       };
 
       // jQuery — setup after DOM ready (covers scripts that load jQuery later)
-      document.addEventListener('DOMContentLoaded', function() {
+      document.addEventListener('DOMContentLoaded', function () {
         if (typeof $ !== 'undefined' || typeof jQuery !== 'undefined') {
           var jq = $ || jQuery;
           jq.ajaxSetup({
-            beforeSend: function(xhr, settings) {
+            beforeSend: function (xhr, settings) {
               if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
                 xhr.setRequestHeader("X-CSRFToken", csrfToken);
               }
@@ -171,7 +195,7 @@
   </script>
   <!-- Dark mode toggle logic -->
   <script nonce="{{ csp_nonce }}">
-    (function() {
+    (function () {
       var btn = document.getElementById('darkModeToggle');
       var icon = document.getElementById('darkModeIcon');
       if (!btn) return;
@@ -183,12 +207,12 @@
         icon.textContent = dark ? '☀️' : '🌙';
       }
       apply(isDark());
-      btn.addEventListener('click', function() {
+      btn.addEventListener('click', function () {
         var next = !isDark();
         apply(next);
         localStorage.setItem('theme', next ? 'dark' : 'light');
       });
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
         if (!localStorage.getItem('theme')) apply(e.matches);
       });
     })();
@@ -202,4 +226,5 @@
     }
   </script>
 </body>
+
 </html>

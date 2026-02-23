@@ -37,16 +37,16 @@ class TestInventoryModels:
         receta = RecetaDetalle(
             producto_id=sample_producto.id,
             ingrediente_id=ing.id,
-            cantidad_necesaria=Decimal('2'),
+            cantidad_por_unidad=Decimal('2'),  # Field name in current ORM
         )
         db.session.add(receta)
         db.session.commit()
 
         assert receta.id is not None
-        assert float(receta.cantidad_necesaria) == 2.0
+        assert float(receta.cantidad_por_unidad) == 2.0
 
-    def test_movimiento_inventario(self, db):
-        """Test inventory movements."""
+    def test_movimiento_inventario(self, db, admin_user):
+        """Test inventory movements (requires usuario_id NOT NULL)."""
         from backend.models.models import Ingrediente, MovimientoInventario
 
         ing = Ingrediente(
@@ -64,6 +64,7 @@ class TestInventoryModels:
             tipo='entrada',
             cantidad=Decimal('5.0'),
             motivo='Compra semanal',
+            usuario_id=admin_user.id,  # Required FK
         )
         db.session.add(mov)
         db.session.commit()

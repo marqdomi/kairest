@@ -1,0 +1,23 @@
+{% extends 'setup/_layout_setup.html' %}
+
+{% block setup_content %}
+<img src="{{ url_for('static', filename='img/kairest-logo.svg') }}" alt="Logo KaiRest" class="cl-setup__logo">
+<h1 class="cl-setup__title">Tu Negocio</h1>
+<p class="cl-setup__subtitle">¿Cómo se llama tu restaurante o puesto?</p>
+
+<form method="POST" action="{{ url_for('setup.paso1') }}" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="cl-form-group">
+    <label class="cl-form-label" for="nombre_negocio">Nombre del negocio</label>
+    <input type="text" class="cl-form-input" name="nombre_negocio" id="nombre_negocio" value="{{ nombre_actual }}"
+      placeholder="Ej: Barbacoa Don José" maxlength="100" required autofocus>
+  </div>
+
+  <div class="cl-setup__actions">
+    <button type="submit" class="cl-btn cl-btn--primary">
+      Siguiente →
+    </button>
+  </div>
+</form>
+{% endblock %}

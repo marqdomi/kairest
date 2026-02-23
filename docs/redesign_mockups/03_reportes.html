@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes & Analytics — CasaLeones Redesign</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --bg: #07080D;
+            --bg-card: #0E1018;
+            --bg-card2: #111422;
+            --bg-input: #14172A;
+            --border: rgba(255, 255, 255, 0.07);
+            --red: #C41E3A;
+            --red-400: #E5535A;
+            --red-glow: rgba(196, 30, 58, 0.15);
+            --gold: #C29E59;
+            --green: #12B76A;
+            --yellow: #F79009;
+            --blue: #2E90FA;
+            --purple: #7C3AED;
+            --text-1: #F2F4F7;
+            --text-2: #98A2B3;
+            --text-3: #475467;
+            --sidebar-w: 240px;
+            --topbar-h: 60px;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text-1);
+            display: flex;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            font-size: 14px;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 10;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border);
+            height: var(--topbar-h);
+        }
+
+        .brand-logo {
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            background: linear-gradient(135deg, var(--red), #8B1525);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .brand-name {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 10px 8px;
+            overflow-y: auto;
+        }
+
+        .nav-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: var(--text-3);
+            text-transform: uppercase;
+            padding: 8px 10px 4px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            color: var(--text-2);
+            cursor: pointer;
+            transition: all .15s;
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-1);
+        }
+
+        .nav-item.active {
+            background: var(--red-glow);
+            color: var(--red-400);
+            border: 1px solid rgba(196, 30, 58, 0.2);
+        }
+
+        .sidebar-footer {
+            padding: 12px 14px;
+            border-top: 1px solid var(--border);
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 7px 9px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: linear-gradient(135deg, var(--red), var(--gold));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        /* MAIN */
+        .main {
+            margin-left: var(--sidebar-w);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar {
+            height: var(--topbar-h);
+            background: rgba(7, 8, 13, 0.9);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-3);
+        }
+
+        .breadcrumb .cur {
+            color: var(--text-1);
+            font-weight: 600;
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 7px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-2);
+            transition: all .15s;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.09);
+            color: var(--text-1);
+        }
+
+        /* CONTENT */
+        .content {
+            padding: 24px;
+            flex: 1;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-3);
+            font-size: 12px;
+            text-decoration: none;
+            margin-bottom: 20px;
+            transition: color .15s;
+        }
+
+        .back-link:hover {
+            color: var(--text-1);
+        }
+
+        /* PAGE HDR */
+        .page-hdr {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .page-hdr h1 {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .page-hdr p {
+            font-size: 13px;
+            color: var(--text-3);
+            margin-top: 3px;
+        }
+
+        /* DATE RANGE BAR */
+        .date-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 24px;
+        }
+
+        .date-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 7px 12px;
+            font-size: 13px;
+            color: var(--text-2);
+            cursor: pointer;
+            transition: border-color .15s;
+        }
+
+        .date-input:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            color: var(--text-1);
+        }
+
+        .date-sep {
+            color: var(--text-3);
+            font-size: 13px;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 18px;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(135deg, var(--red), #A6192E);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(196, 30, 58, 0.3);
+            transition: opacity .15s;
+        }
+
+        .btn-primary:hover {
+            opacity: .88;
+        }
+
+        .btn-outline {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 7px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-2);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-1);
+        }
+
+        .quick-pills {
+            display: flex;
+            gap: 4px;
+        }
+
+        .qpill {
+            padding: 6px 12px;
+            border-radius: 100px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-3);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .qpill:hover {
+            color: var(--text-1);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .qpill.active {
+            background: var(--red-glow);
+            color: var(--red-400);
+            border-color: rgba(196, 30, 58, 0.3);
+        }
+
+        .spacer {
+            flex: 1;
+        }
+
+        /* REPORT CARDS GRID */
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .report-card {
+            display: block;
+            text-decoration: none;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), border-color .15s, box-shadow .15s;
+            cursor: pointer;
+        }
+
+        .report-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 14px 14px 0 0;
+        }
+
+        .report-card--red::before {
+            background: var(--red);
+        }
+
+        .report-card--green::before {
+            background: var(--green);
+        }
+
+        .report-card--blue::before {
+            background: var(--blue);
+        }
+
+        .report-card--yellow::before {
+            background: var(--yellow);
+        }
+
+        .report-card--purple::before {
+            background: var(--purple);
+        }
+
+        .report-card--gold::before {
+            background: var(--gold);
+        }
+
+        .report-card--gray::before {
+            background: var(--text-3);
+        }
+
+        .report-card.selected {
+            border: 1px solid var(--red);
+            box-shadow: 0 0 0 4px rgba(196, 30, 58, 0.1);
+        }
+
+        .report-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+        }
+
+        .rcard-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 14px;
+        }
+
+        .ri--red {
+            background: rgba(196, 30, 58, 0.12);
+            color: var(--red-400);
+        }
+
+        .ri--green {
+            background: rgba(18, 183, 106, 0.12);
+            color: var(--green);
+        }
+
+        .ri--blue {
+            background: rgba(46, 144, 250, 0.12);
+            color: var(--blue);
+        }
+
+        .ri--yellow {
+            background: rgba(247, 144, 9, 0.12);
+            color: var(--yellow);
+        }
+
+        .ri--purple {
+            background: rgba(124, 58, 237, 0.12);
+            color: #A78BFA;
+        }
+
+        .ri--gold {
+            background: rgba(194, 158, 89, 0.12);
+            color: var(--gold);
+        }
+
+        .ri--gray {
+            background: rgba(71, 84, 103, 0.2);
+            color: var(--text-2);
+        }
+
+        .rcard-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--text-1);
+            margin-bottom: 5px;
+        }
+
+        .rcard-desc {
+            font-size: 12px;
+            color: var(--text-3);
+            line-height: 1.5;
+        }
+
+        /* CHART SECTION */
+        .chart-section {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .card-hdr {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-body {
+            padding: 18px;
+        }
+
+        .chart-toggle {
+            display: flex;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 7px;
+            padding: 3px;
+        }
+
+        .toggle-btn {
+            padding: 4px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-3);
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            transition: all .15s;
+        }
+
+        .toggle-btn.active {
+            background: rgba(196, 30, 58, 0.2);
+            color: var(--red-400);
+        }
+
+        /* KPI ROW inside main chart */
+        .kpi-row {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 18px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mini-kpi {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .mk-label {
+            font-size: 11px;
+            color: var(--text-3);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .mk-value {
+            font-size: 20px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: -0.02em;
+        }
+
+        .mk-trend {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .trend-up {
+            color: var(--green);
+        }
+
+        .trend-down {
+            color: #F04438;
+        }
+
+        /* MINI TABLE */
+        .mini-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .mini-table th {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mini-table td {
+            font-size: 13px;
+            color: var(--text-2);
+            padding: 9px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .mini-table td:first-child {
+            font-weight: 600;
+            color: var(--text-1);
+        }
+
+        .mini-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .mini-table tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .bar-cell {
+            padding: 6px 10px !important;
+        }
+
+        .bar-wrap {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 2px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-logo">🦁</div>
+            <div>
+                <div class="brand-name">CasaLeones</div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-item"><i data-lucide="layout-dashboard" style="width:15px;height:15px;"></i>Dashboard</div>
+            <div class="nav-label">Operaciones</div>
+            <div class="nav-item"><i data-lucide="clipboard-list" style="width:15px;height:15px;"></i>Órdenes</div>
+            <div class="nav-item"><i data-lucide="map" style="width:15px;height:15px;"></i>Mapa Mesas</div>
+            <div class="nav-label">Ventas</div>
+            <div class="nav-item"><i data-lucide="wallet" style="width:15px;height:15px;"></i>Corte de Caja</div>
+            <div class="nav-item active"><i data-lucide="bar-chart-3" style="width:15px;height:15px;"></i>Reportes</div>
+            <div class="nav-label">Configuración</div>
+            <div class="nav-item"><i data-lucide="users" style="width:15px;height:15px;"></i>Usuarios</div>
+            <div class="nav-item"><i data-lucide="shield" style="width:15px;height:15px;"></i>Auditoría</div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-pill">
+                <div class="user-avatar">MD</div>
+                <div>
+                    <div style="font-size:12.5px;font-weight:600;">Marco D.</div>
+                    <div style="font-size:11px;color:var(--text-3);">Superadmin</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+        <header class="topbar">
+            <div class="breadcrumb">
+                <span>Admin</span>
+                <i data-lucide="chevron-right" style="width:11px;height:11px;"></i>
+                <span class="cur">Reportes & Analytics</span>
+            </div>
+            <div style="display:flex;gap:8px;">
+                <div class="icon-btn">🌙</div>
+                <div class="icon-btn"><i data-lucide="bell" style="width:14px;height:14px;"></i></div>
+            </div>
+        </header>
+
+        <main class="content">
+            <a href="index.html" class="back-link">
+                <i data-lucide="arrow-left" style="width:12px;height:12px;"></i>
+                Volver al índice
+            </a>
+
+            <div class="page-hdr">
+                <div>
+                    <h1>Reportes & Analytics</h1>
+                    <p>Visualiza el rendimiento de tu restaurante por período, categoría y mesero</p>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn-outline">
+                        <i data-lucide="file-text" style="width:13px;height:13px;"></i>Exportar PDF
+                    </button>
+                    <button class="btn-outline">
+                        <i data-lucide="download" style="width:13px;height:13px;"></i>CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- DATE RANGE BAR -->
+            <div class="date-bar">
+                <div class="quick-pills">
+                    <button class="qpill">Hoy</button>
+                    <button class="qpill">7 días</button>
+                    <button class="qpill active">30 días</button>
+                    <button class="qpill">Mes actual</button>
+                    <button class="qpill">Personalizado</button>
+                </div>
+                <div class="date-sep">·</div>
+                <div class="date-input">
+                    <i data-lucide="calendar" style="width:13px;height:13px;"></i>
+                    <span>25 ene 2026</span>
+                </div>
+                <span class="date-sep">→</span>
+                <div class="date-input">
+                    <i data-lucide="calendar" style="width:13px;height:13px;"></i>
+                    <span>22 feb 2026</span>
+                </div>
+                <span class="spacer"></span>
+                <button class="btn-primary">
+                    <i data-lucide="search" style="width:13px;height:13px;"></i>
+                    Aplicar filtro
+                </button>
+            </div>
+
+            <!-- REPORT CARDS -->
+            <div class="reports-grid">
+                <div class="report-card report-card--red selected">
+                    <div class="rcard-icon ri--red"><i data-lucide="trending-up" style="width:20px;height:20px;"></i>
+                    </div>
+                    <div class="rcard-title">Ventas</div>
+                    <div class="rcard-desc">Resumen de ventas y tendencias diarias</div>
+                </div>
+                <div class="report-card report-card--green">
+                    <div class="rcard-icon ri--green"><i data-lucide="package" style="width:20px;height:20px;"></i>
+                    </div>
+                    <div class="rcard-title">Top Productos</div>
+                    <div class="rcard-desc">Más vendidos e ingresos por SKU</div>
+                </div>
+                <div class="report-card report-card--blue">
+                    <div class="rcard-icon ri--blue"><i data-lucide="users" style="width:20px;height:20px;"></i></div>
+                    <div class="rcard-title">Meseros</div>
+                    <div class="rcard-desc">Ventas y propinas por mesero</div>
+                </div>
+                <div class="report-card report-card--yellow">
+                    <div class="rcard-icon ri--yellow"><i data-lucide="credit-card" style="width:20px;height:20px;"></i>
+                    </div>
+                    <div class="rcard-title">Métodos de Pago</div>
+                    <div class="rcard-desc">Efectivo · Tarjeta · Transferencia</div>
+                </div>
+                <div class="report-card report-card--purple">
+                    <div class="rcard-icon ri--purple"><i data-lucide="alert-triangle"
+                            style="width:20px;height:20px;"></i></div>
+                    <div class="rcard-title">Inventario</div>
+                    <div class="rcard-desc">Mermas de ingredientes en el período</div>
+                </div>
+                <div class="report-card report-card--gold">
+                    <div class="rcard-icon ri--gold"><i data-lucide="percent" style="width:20px;height:20px;"></i></div>
+                    <div class="rcard-title">Rentabilidad</div>
+                    <div class="rcard-desc">Costo, margen y utilidad por producto</div>
+                </div>
+                <div class="report-card report-card--gray">
+                    <div class="rcard-icon ri--gray"><i data-lucide="bike" style="width:20px;height:20px;"></i></div>
+                    <div class="rcard-title">Delivery</div>
+                    <div class="rcard-desc">Canales y comisiones de delivery</div>
+                </div>
+            </div>
+
+            <!-- CHART SECTION: Ventas selected -->
+            <div class="chart-section">
+
+                <!-- Main chart -->
+                <div class="card">
+                    <div class="card-hdr">
+                        <div class="card-title">
+                            <i data-lucide="trending-up" style="width:15px;height:15px;color:var(--red-400);"></i>
+                            Ventas — Últimos 30 días
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <div class="chart-toggle">
+                                <button class="toggle-btn active">Diaria</button>
+                                <button class="toggle-btn">Semanal</button>
+                            </div>
+                            <button class="btn-outline" style="padding:5px 12px;font-size:12px;">
+                                <i data-lucide="download" style="width:11px;height:11px;"></i>CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- MINI KPIs -->
+                        <div class="kpi-row">
+                            <div class="mini-kpi">
+                                <span class="mk-label">Total del período</span>
+                                <span class="mk-value" style="color:var(--text-1);">$514,280</span>
+                                <span class="mk-trend trend-up">↑ 18.4% vs período anterior</span>
+                            </div>
+                            <div class="mini-kpi">
+                                <span class="mk-label">Promedio diario</span>
+                                <span class="mk-value" style="color:var(--text-2);font-size:18px;">$17,142</span>
+                                <span class="mk-trend trend-up">↑ 12.1%</span>
+                            </div>
+                            <div class="mini-kpi">
+                                <span class="mk-label">Mejor día</span>
+                                <span class="mk-value" style="color:var(--gold);font-size:18px;">$28,600</span>
+                                <span class="mk-trend" style="color:var(--text-3);">Sáb 15 feb</span>
+                            </div>
+                            <div class="mini-kpi">
+                                <span class="mk-label">Órdenes</span>
+                                <span class="mk-value" style="color:var(--green);font-size:18px;">1,842</span>
+                                <span class="mk-trend trend-up">↑ 9.3%</span>
+                            </div>
+                        </div>
+                        <canvas id="salesChart" height="220"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top products table -->
+                <div class="card">
+                    <div class="card-hdr">
+                        <div class="card-title">
+                            <i data-lucide="trophy" style="width:14px;height:14px;color:var(--gold);"></i>
+                            Top Productos
+                        </div>
+                        <span style="font-size:11px;color:var(--text-3);">30 días</span>
+                    </div>
+                    <div class="card-body" style="padding:0;">
+                        <table class="mini-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Producto</th>
+                                    <th>Ventas</th>
+                                    <th>%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="color:var(--gold);font-weight:800;">1</td>
+                                    <td>Taco Birria Esp.</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;color:var(--text-1);">$48,200</td>
+                                    <td>
+                                        <div class="bar-wrap" style="width:80px;">
+                                            <div class="bar-fill" style="width:94%;background:var(--red);"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="color:var(--text-2);">2</td>
+                                    <td>Queso Fundido</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;color:var(--text-1);">$31,400</td>
+                                    <td>
+                                        <div class="bar-wrap" style="width:80px;">
+                                            <div class="bar-fill" style="width:61%;background:var(--gold);"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="color:var(--text-2);">3</td>
+                                    <td>Tlayuda Oaxaqueña</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;color:var(--text-1);">$24,800</td>
+                                    <td>
+                                        <div class="bar-wrap" style="width:80px;">
+                                            <div class="bar-fill" style="width:48%;background:var(--green);"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="color:var(--text-2);">4</td>
+                                    <td>Torta Ahumada</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;color:var(--text-1);">$19,600</td>
+                                    <td>
+                                        <div class="bar-wrap" style="width:80px;">
+                                            <div class="bar-fill" style="width:38%;background:var(--blue);"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="color:var(--text-2);">5</td>
+                                    <td>Orden Tostadas</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;color:var(--text-1);">$16,200</td>
+                                    <td>
+                                        <div class="bar-wrap" style="width:80px;">
+                                            <div class="bar-fill" style="width:31%;background:var(--purple);"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="color:var(--text-2);">6</td>
+                                    <td>Entrecot Parrilla</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;color:var(--text-1);">$14,800</td>
+                                    <td>
+                                        <div class="bar-wrap" style="width:80px;">
+                                            <div class="bar-fill" style="width:28%;background:var(--yellow);"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="color:var(--text-2);">7</td>
+                                    <td>Pozole Rojo</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;color:var(--text-1);">$12,100</td>
+                                    <td>
+                                        <div class="bar-wrap" style="width:80px;">
+                                            <div class="bar-fill" style="width:23%;background:var(--text-2);"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div><!-- chart-section -->
+
+            <!-- PAYMENT METHODS ROW -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+                <!-- Payment pie -->
+                <div class="card">
+                    <div class="card-hdr">
+                        <div class="card-title"><i data-lucide="credit-card"
+                                style="width:14px;height:14px;color:var(--yellow);"></i>Métodos de Pago</div>
+                    </div>
+                    <div class="card-body"><canvas id="payChart" height="170"></canvas></div>
+                </div>
+                <!-- Meseros -->
+                <div class="card" style="grid-column:span 2;">
+                    <div class="card-hdr">
+                        <div class="card-title"><i data-lucide="users"
+                                style="width:14px;height:14px;color:var(--blue);"></i>Rendimiento por Mesero</div>
+                    </div>
+                    <div class="card-body" style="padding:0;">
+                        <table class="mini-table">
+                            <thead>
+                                <tr>
+                                    <th>Mesero</th>
+                                    <th>Órdenes</th>
+                                    <th>Ventas</th>
+                                    <th>Propinas</th>
+                                    <th>% del total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Ana García</td>
+                                    <td>312</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;">$148,200</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;color:var(--green);">$18,100</td>
+                                    <td><span
+                                            style="background:rgba(196,30,58,0.12);color:var(--red-400);padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700;">28.8%</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Rodrigo López</td>
+                                    <td>278</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;">$128,500</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;color:var(--green);">$15,400</td>
+                                    <td><span
+                                            style="background:rgba(46,144,250,0.1);color:var(--blue);padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700;">25.0%</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>María Hernández</td>
+                                    <td>234</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;">$108,900</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;color:var(--green);">$12,800</td>
+                                    <td><span
+                                            style="background:rgba(18,183,106,0.1);color:var(--green);padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700;">21.2%</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Carlos Montes</td>
+                                    <td>198</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;">$94,200</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;color:var(--green);">$11,200</td>
+                                    <td><span
+                                            style="background:rgba(247,144,9,0.1);color:var(--yellow);padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700;">18.3%</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Sofía Vázquez</td>
+                                    <td>164</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;">$82,480</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;color:var(--green);">$9,800</td>
+                                    <td><span
+                                            style="background:rgba(71,84,103,0.15);color:var(--text-2);padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700;">16.0%</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        /* SALES CHART */
+        const days = Array.from({ length: 30 }, (_, i) => { const d = new Date(2026, 0, 24 + i); return d.toLocaleDateString('es', { day: 'numeric', month: 'short' }); });
+        const sales = [14200, 11800, 16400, 13200, 18600, 24800, 21400, 13800, 12400, 15600, 17200, 19800, 22400, 28600, 25200, 16600, 14800, 17400, 20200, 23600, 19400, 15200, 16800, 21400, 24800, 26400, 22800, 17600, 19200, 18340];
+        const gc = document.getElementById('salesChart').getContext('2d');
+        const grad = gc.createLinearGradient(0, 0, 0, 240);
+        grad.addColorStop(0, 'rgba(196,30,58,0.3)');
+        grad.addColorStop(0.65, 'rgba(196,30,58,0.05)');
+        grad.addColorStop(1, 'rgba(196,30,58,0)');
+        new Chart(gc, {
+            type: 'line',
+            data: {
+                labels: days, datasets: [{
+                    label: 'Ventas', data: sales, borderColor: '#C41E3A', borderWidth: 2,
+                    fill: true, backgroundColor: grad, tension: 0.4,
+                    pointRadius: 0, pointHoverRadius: 5,
+                    pointHoverBackgroundColor: '#C41E3A', pointHoverBorderColor: '#0E1018', pointHoverBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1A1C28', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+                        titleColor: '#98A2B3', bodyColor: '#F2F4F7',
+                        callbacks: { label: ctx => ' $' + ctx.parsed.y.toLocaleString('es-MX') }
+                    }
+                },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#475467', font: { family: 'Inter', size: 11 }, maxTicksLimit: 10 } },
+                    y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#475467', font: { family: 'JetBrains Mono', size: 11 }, callback: v => '$' + v.toLocaleString('es-MX') } }
+                }
+            }
+        });
+
+        /* PAYMENT CHART */
+        new Chart(document.getElementById('payChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Efectivo', 'Tarjeta', 'Transferencia'],
+                datasets: [{ data: [42, 35, 23], backgroundColor: ['#12B76A', '#2E90FA', '#C29E59'], borderWidth: 0, hoverOffset: 6 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '65%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#98A2B3', font: { family: 'Inter', size: 12 }, padding: 12, usePointStyle: true } },
+                    tooltip: {
+                        backgroundColor: '#1A1C28', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+                        titleColor: '#98A2B3', bodyColor: '#F2F4F7',
+                        callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.parsed + '%' }
+                    }
+                }
+            }
+        });
+
+        /* Interactions */
+        document.querySelectorAll('.qpill').forEach(p => { p.addEventListener('click', () => { document.querySelectorAll('.qpill').forEach(x => x.classList.remove('active')); p.classList.add('active'); }); });
+        document.querySelectorAll('.toggle-btn').forEach(b => { b.addEventListener('click', () => { document.querySelectorAll('.toggle-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); }); });
+        document.querySelectorAll('.report-card').forEach(c => { c.addEventListener('click', () => { document.querySelectorAll('.report-card').forEach(x => x.classList.remove('selected')); c.classList.add('selected'); }); });
+    </script>
+</body>
+
+</html>

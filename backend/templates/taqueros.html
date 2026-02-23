@@ -1,129 +1,145 @@
-{% extends "base.html" %}
-{% block title %}Órdenes - Estación Taqueros{% endblock %}
+{# ═══════════════════════════════════════════════════════
+Taqueros KDS — v7
+Uses _layout_kds.html with horizontal scroll strip.
+═══════════════════════════════════════════════════════ #}
+{% extends 'layouts/_layout_kds.html' %}
+{% block page_title %}Taqueros{% endblock %}
+{% set kds_label = 'Taqueros' %}
+{% set kds_icon = '🌮' %}
 
-{% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/cocina_timers.css') }}?v={{ config.VERSION }}">
-<script>document.documentElement.setAttribute('data-theme','dark');</script>
-{% endblock %}
-
-{% block content %}
+{% block kds_content %}
 {% set total_productos = ordenes_por_estacion.values() | map('length') | sum %}
-<div class="container mt-4">
-  <h2 class="mb-4 text-center">Órdenes para Taqueros</h2>
-  <div id="pendingCount" class="alert alert-info text-center">
-    Total de productos pendientes: <span id="contador-productos-pendientes">{{ total_productos }}</span>
+
+{% if total_productos > 0 %}
+{% for orden_id, detalles in ordenes_por_estacion.items() if detalles|length > 0 %}
+{% set orden = detalles[0].orden %}
+{% set mins = ((now_utc - orden.tiempo_registro).total_seconds() / 60)|int if now_utc is defined and
+orden.tiempo_registro else 0 %}
+{% if mins < 5 %}{% set urgency='fresh' %} {% elif mins < 10 %}{% set urgency='normal' %} {% elif mins < 15 %}{% set
+  urgency='warming' %} {% elif mins < 20 %}{% set urgency='hot' %} {% elif mins < 25 %}{% set urgency='urgent' %} {%
+  else %}{% set urgency='critical' %}{% endif %} <div class="cl-kds-card cl-kds-card--{{ urgency }}"
+  id="orden-{{ orden_id }}" data-tiempo-registro="{{ orden.tiempo_registro.isoformat() }}">
+
+  <div class="cl-kds-card__hdr">
+    <div>
+      <div class="cl-kds-card__num">#{{ orden_id }}</div>
+      <div class="cl-kds-card__meta">
+        {% if orden.es_para_llevar %}🛍 Para Llevar{% else %}Mesa {{ orden.mesa.numero if orden.mesa else '?' }}{% endif
+        %}
+      </div>
+    </div>
+    <div class="cl-kds-card__hdr-right">
+      <span class="cl-kds-timer cl-kds-timer--{{ urgency }}" data-timer-orden="{{ orden_id }}">00:00</span>
+      <span class="cl-kds-mesa-chip">{{ detalles|length }} prod.</span>
+    </div>
   </div>
 
-  {% if total_productos > 0 %}
-  <div class="row" id="ordenes-pendientes-lista">
-    {% for orden_id, detalles in ordenes_por_estacion.items() if detalles|length > 0 %}
-      <div class="col-md-6 mb-4 orden-card orden-timer-card" id="orden-{{ orden_id }}"
-           data-tiempo-registro="{{ detalles[0].orden.tiempo_registro.isoformat() }}">
-        <div class="card shadow-sm">
-          <div class="card-header text-white d-flex justify-content-between align-items-center {% if detalles[0].orden.es_para_llevar %}bg-success{% else %}bg-primary{% endif %}">
-            <span>
-              Orden #{{ orden_id }} &ndash; {{ detalles|length }} productos
-              <span class="badge ms-2 {% if detalles[0].orden.es_para_llevar %}bg-light text-dark{% else %}bg-warning text-dark{% endif %}">
-                {{ detalles[0].orden.es_para_llevar and 'Para Llevar' or 'Para Mesa' }}
-              </span>
-            </span>
-            <span class="badge bg-dark timer-badge" data-timer-orden="{{ orden_id }}">00:00</span>
-          </div>
-          <ul class="list-group list-group-flush">
-            {% for group in detalles|groupby('producto.nombre') %}
-            <li class="list-group-item d-flex justify-content-between align-items-center producto-item" id="item-{{ group.list[0].id }}">
-                <span>{{ group.grouper }} &ndash; {{ group.list|length }}</span>
-                <button class="btn btn-sm btn-success marcar-listo-btn"
-                        data-detalle-id="{{ group.list[0].id }}" data-orden-id="{{ group.list[0].orden_id }}">
-                  ✓ Listo
-                </button>
-              </li>
-            {% endfor %}
-          </ul>
-        </div>
+  <div class="cl-kds-card__body">
+    <div class="cl-kds-items">
+      {% for group in detalles|groupby('producto.nombre') %}
+      <div class="cl-kds-item" id="item-{{ group.list[0].id }}">
+        <div class="cl-kds-item__qty">×{{ group.list|length }}</div>
+        <div class="cl-kds-item__name" style="flex:1;">{{ group.grouper }}</div>
       </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="cl-kds-card__footer">
+    {% for item in detalles %}
+    <button class="cl-kds-btn cl-kds-btn--done marcar-listo-btn" data-detalle-id="{{ item.id }}"
+      data-orden-id="{{ item.orden_id }}" aria-label="Marcar {{ item.producto.nombre }} como listo"
+      style="font-size:11px;">
+      {% if loop.index == 1 %}
+      <i data-lucide="check-circle" style="width:16px;height:16px;"></i>
+      LISTO
+      {% endif %}
+    </button>
     {% endfor %}
   </div>
+  </div>
+  {% endfor %}
+
   {% else %}
-    <p class="text-center">No hay órdenes pendientes para Taqueros.</p>
+  <div
+    style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;min-height:60vh;gap:16px;opacity:.35;">
+    <i data-lucide="chef-hat" style="width:72px;height:72px;color:var(--cl-text-tertiary);"></i>
+    <p style="font-size:18px;font-weight:600;color:var(--cl-text-tertiary);margin:0;">No hay órdenes para Taqueros</p>
+  </div>
   {% endif %}
-</div>
-{% endblock %}
+  {% endblock %}
 
-{% block scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="{{ url_for('static', filename='js/cocina_timers.js') }}?v={{ config.VERSION }}"></script>
-<script>
-$(document).ready(function() {
-    var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
+  {% block kds_stats_extra %}
+  <div class="cl-kds-stat">
+    <i data-lucide="package" style="width:14px;height:14px;color:var(--cl-red-400);"></i>
+    Productos: <strong id="contador-productos-pendientes" style="color:var(--cl-text-primary);">
+      {{ ordenes_por_estacion.values() | map('length') | sum }}
+    </strong>
+  </div>
+  {% endblock %}
 
-    socket.on('connect', function() {
-        console.log('Conectado al servidor de WebSockets! (Taquero)');
-    });
+  {% block scripts %}
+  {{ super() }}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+  <script src="{{ url_for('static', filename='js/cocina_timers.js') }}?v={{ config.VERSION }}"></script>
+  <script>
+    (function () {
+      var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
 
-    socket.on('disconnect', function() {
-        console.log('Desconectado del servidor de WebSockets. (Taquero)');
-    });
+      socket.on('connect', function () {
+        var dot = document.querySelector('.cl-live-dot');
+        if (dot) dot.style.background = 'var(--cl-success-500)';
+      });
+      socket.on('disconnect', function () {
+        var dot = document.querySelector('.cl-live-dot');
+        if (dot) dot.style.background = 'var(--cl-error-500)';
+      });
 
-    function cargarOrdenesPendientes() {
-        let fragmentUrl = "/cocina/taquero/fragmento_ordenes";
-        console.log(`Recibido evento, actualizando órdenes para Taquero desde ${fragmentUrl}...`);
-        $.ajax({
-            url: fragmentUrl,
-            type: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                $('#ordenes-pendientes-lista').html(response.html);
-                $('#contador-productos-pendientes').text(response.conteo_productos);
-                console.log('Lista de órdenes y contador actualizados para Taqueros.');
-            },
-            error: function(xhr, status, error) {
-                console.error("Error al actualizar la lista de órdenes de Taquero:", error);
+      function cargarOrdenesPendientes() {
+        fetch('/cocina/taquero/fragmento_ordenes')
+          .then(r => r.json())
+          .then(data => {
+            // Rebuild strip from fragment
+            const strip = document.getElementById('main-content');
+            if (strip) {
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = data.html || '';
+              strip.innerHTML = '';
+              while (tempDiv.firstChild) strip.appendChild(tempDiv.firstChild);
+              if (window.lucide) lucide.createIcons();
             }
-        });
-    }
+            const cnt = document.getElementById('contador-productos-pendientes');
+            const hdrCnt = document.getElementById('kdsPendingCount');
+            if (cnt) cnt.textContent = data.conteo_productos || 0;
+            if (hdrCnt) hdrCnt.textContent = data.conteo_ordenes || 0;
+          })
+          .catch(e => console.error('Error cargando órdenes Taquero:', e));
+      }
 
-    socket.on('nueva_orden_cocina', function(data) {
-        console.log('Evento nueva_orden_cocina recibido en Taquero:', data);
-        cargarOrdenesPendientes();
-    });
+      socket.on('nueva_orden_cocina', cargarOrdenesPendientes);
+      socket.on('item_listo_notificacion', cargarOrdenesPendientes);
 
-    socket.on('item_listo_notificacion', function(data) {
-        console.log('Evento item_listo_notificacion recibido en Taquero:', data);
-        cargarOrdenesPendientes();
-    });
+      // Mark item as done — click delegation
+      document.getElementById('main-content').addEventListener('click', function (e) {
+        const btn = e.target.closest('.marcar-listo-btn');
+        if (!btn) return;
+        const detalleId = btn.dataset.detalleId;
+        const ordenId = btn.dataset.ordenId;
+        if (!detalleId || !ordenId) return;
 
-    $('#ordenes-pendientes-lista').on('click', '.marcar-listo-btn', function() {
-        var detalleId = $(this).data('detalle-id');
-        var ordenId = $(this).data('orden-id');
-        if (!detalleId || !ordenId) {
-            console.error("Error: detalleId u ordenId no fueron encontrados en los atributos data- del botón.");
-            alert("Error al obtener datos del ítem. Por favor, recargue la página e intente de nuevo.");
-            return;
-        }
-        console.log(`Intentando marcar como listo: ordenId=${ordenId}, detalleId=${detalleId} para la estación de Taqueros`);
-        $.ajax({
-            url: '/cocina/taqueros/marcar/' + ordenId + '/' + detalleId,
-            type: 'POST',
-            success: function(response) {
-                if (response && (response.message === 'Producto marcado como listo' || response.success)) {
-                    console.log('Respuesta AJAX exitosa para detalleId: ' + detalleId + '. El ítem fue marcado como listo en el backend. Esperando actualización de UI vía Socket.IO.');
-                } else {
-                    let mensajeError = 'Error desconocido al marcar como listo.';
-                    if (response && (response.message || response.mensaje)) {
-                        mensajeError = response.message || response.mensaje;
-                    }
-                    alert('Error al marcar como listo: ' + mensajeError);
-                    console.error('Error en respuesta del servidor (success false o formato inesperado):', response);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error("Error en la petición AJAX para marcar como listo en Taqueros:", status, error, xhr.responseText);
-                alert('Error de comunicación con el servidor al intentar marcar como listo. Por favor, revise la consola para más detalles.');
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        fetch('/cocina/taqueros/marcar/' + ordenId + '/' + detalleId, { method: 'POST' })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success || data.message === 'Producto marcado como listo') {
+              const item = document.getElementById('item-' + detalleId);
+              if (item) { item.classList.add('cl-kds-item--done'); }
             }
-        });
-    });
-});
-</script>
-{% endblock %}
+          })
+          .catch(e => { console.error('Error marcando listo:', e); btn.disabled = false; btn.style.opacity = '1'; });
+      });
+    })();
+  </script>
+  {% endblock %}

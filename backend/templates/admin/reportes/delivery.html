@@ -37,8 +37,8 @@
   <div class="col-md-3">
     {{ kpi_card(
       title=c.canal | replace('_', ' ') | title,
-      value='$' ~ '%.2f'|format(c.total_ventas),
-      subtitle=c.num_ordenes ~ ' órdenes · ' ~ c.porcentaje ~ '%',
+      value=c.total_ventas|money,
+      suffix=' órdenes · ' ~ c.porcentaje ~ '%',
       icon=canal_icons.get(c.canal, 'shopping-bag'),
       color=canal_colors.get(c.canal, 'primary')
     ) }}
@@ -73,8 +73,8 @@
           <tr>
             <td>{{ c.canal | replace('_', ' ') | title }}</td>
             <td class="text-end">{{ c.num_ordenes }}</td>
-            <td class="text-end">${{ '%.2f'|format(c.total_ventas) }}</td>
-            <td class="text-end">${{ '%.2f'|format(c.ticket_promedio) }}</td>
+            <td class="text-end">{{ c.total_ventas|money }}</td>
+            <td class="text-end">{{ c.ticket_promedio|money }}</td>
             <td class="text-end">{{ c.porcentaje }}%</td>
           </tr>
           {% endfor %}
@@ -95,9 +95,9 @@
         <tr>
           <td>{{ c.plataforma | replace('_', ' ') | title }}</td>
           <td class="text-end">{{ c.cantidad }}</td>
-          <td class="text-end">${{ '%.2f'|format(c.total_plataforma) }}</td>
-          <td class="text-end" style="color:var(--cl-danger)">${{ '%.2f'|format(c.comision) }}</td>
-          <td class="text-end fw-bold">${{ '%.2f'|format(c.neto) }}</td>
+          <td class="text-end">{{ c.total_plataforma|money }}</td>
+          <td class="text-end" style="color:var(--cl-danger)">{{ c.comision|money }}</td>
+          <td class="text-end fw-bold">{{ c.neto|money }}</td>
         </tr>
         {% endfor %}
       </tbody>

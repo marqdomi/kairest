@@ -1,0 +1,136 @@
+{% extends 'setup/_layout_setup.html' %}
+
+{% block setup_content %}
+  <h1 class="cl-setup__title">Tu Menú</h1>
+  <p class="cl-setup__subtitle">Elige cómo cargar tus productos.</p>
+
+  <form method="POST" action="{{ url_for('setup.paso3') }}" id="menuForm" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {# ── Option selector ── #}
+    <div style="display:flex;gap:var(--cl-space-3);margin-bottom:var(--cl-space-5);">
+      <label class="cl-option-card" id="optDefault" style="flex:1">
+        <input type="radio" name="opcion_menu" value="default" checked hidden>
+        <div class="cl-option-card__inner">
+          <span style="font-size:2rem">🌮</span>
+          <strong>Menú plantilla</strong>
+          <small>Barbacoa, carnitas, quesadillas, bebidas (~60 productos)</small>
+        </div>
+      </label>
+      <label class="cl-option-card" id="optManual" style="flex:1">
+        <input type="radio" name="opcion_menu" value="manual" hidden>
+        <div class="cl-option-card__inner">
+          <span style="font-size:2rem">✏️</span>
+          <strong>Manual</strong>
+          <small>Agrega tus propios productos uno por uno</small>
+        </div>
+      </label>
+    </div>
+
+    {# ── Manual products section (hidden by default) ── #}
+    <div id="manualSection" style="display:none;">
+      <p style="font-size:var(--cl-text-sm);color:var(--cl-text-secondary);margin-bottom:var(--cl-space-3)">
+        Agrega al menos 1 producto. Puedes agregar más después desde el panel de admin.
+      </p>
+      <div id="productRows">
+        <div class="cl-setup__row">
+          <div class="cl-form-group" style="flex:2">
+            <label class="cl-form-label">Nombre</label>
+            <input type="text" class="cl-form-input" name="prod_nombre[]" placeholder="Ej: Taco de suadero">
+          </div>
+          <div class="cl-form-group" style="flex:1">
+            <label class="cl-form-label">Precio</label>
+            <input type="number" class="cl-form-input" name="prod_precio[]" placeholder="25" step="0.5" min="0">
+          </div>
+          <div class="cl-form-group" style="flex:1">
+            <label class="cl-form-label">Categoría</label>
+            <input type="text" class="cl-form-input" name="prod_categoria[]" placeholder="Tacos" list="catList">
+          </div>
+          <div class="cl-form-group" style="flex:1">
+            <label class="cl-form-label">Estación</label>
+            <select class="cl-form-input" name="prod_estacion[]">
+              <option value="">— Ninguna —</option>
+              <option value="taquero">Taquero</option>
+              <option value="comal">Comal</option>
+              <option value="bebidas">Bebidas</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <datalist id="catList">
+        {% for cat in categorias %}
+        <option value="{{ cat }}">
+        {% endfor %}
+      </datalist>
+
+      <button type="button" class="cl-btn cl-btn--outline" id="addProductBtn"
+              style="width:100%;margin-top:var(--cl-space-2)">
+        + Agregar otro producto
+      </button>
+    </div>
+
+    <div class="cl-setup__actions">
+      <a href="{{ url_for('setup.paso2') }}" class="cl-btn cl-btn--outline">← Atrás</a>
+      <button type="submit" class="cl-btn cl-btn--primary">Siguiente →</button>
+    </div>
+  </form>
+
+  <style>
+    .cl-option-card { cursor: pointer; display: block; }
+    .cl-option-card__inner {
+      border: 2px solid var(--cl-border-color);
+      border-radius: var(--cl-radius-lg);
+      padding: var(--cl-space-4);
+      text-align: center;
+      transition: all .15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: var(--cl-space-1);
+    }
+    .cl-option-card__inner small {
+      font-size: var(--cl-text-xs);
+      color: var(--cl-text-secondary);
+    }
+    .cl-option-card input:checked + .cl-option-card__inner {
+      border-color: var(--cl-red-600);
+      background: rgba(196,30,58,.05);
+      box-shadow: 0 0 0 3px rgba(196,30,58,.15);
+    }
+    [data-bs-theme="dark"] .cl-option-card input:checked + .cl-option-card__inner {
+      background: rgba(196,30,58,.15);
+    }
+  </style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(function(){
+  var radios = document.querySelectorAll('input[name="opcion_menu"]');
+  var manual = document.getElementById('manualSection');
+
+  radios.forEach(function(r){
+    r.addEventListener('change', function(){
+      manual.style.display = r.value === 'manual' ? 'block' : 'none';
+    });
+  });
+
+  // Add product row
+  document.getElementById('addProductBtn').addEventListener('click', function(){
+    var container = document.getElementById('productRows');
+    var row = container.querySelector('.cl-setup__row').cloneNode(true);
+    row.querySelectorAll('input, select').forEach(function(el){ el.value = ''; });
+    // Add remove button
+    var removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn-remove';
+    removeBtn.innerHTML = '✕';
+    removeBtn.title = 'Eliminar';
+    removeBtn.addEventListener('click', function(){ row.remove(); });
+    row.appendChild(removeBtn);
+    container.appendChild(row);
+  });
+})();
+</script>
+{% endblock %}

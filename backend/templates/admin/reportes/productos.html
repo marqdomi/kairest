@@ -64,14 +64,14 @@
   <div class="cl-card">
     <div class="cl-card__body" style="overflow-x:auto;">
       <table class="cl-table">
-        <thead><tr><th>#</th><th>Producto</th><th>Cantidad Vendida</th><th>Ingreso Total</th></tr></thead>
+        <thead><tr><th>#</th><th>Producto</th><th class="text-end">Cantidad Vendida</th><th class="text-end">Ingreso Total</th></tr></thead>
         <tbody>
           {% for row in top_productos %}
           <tr>
             <td>{{ loop.index }}</td>
             <td>{{ row.nombre }}</td>
-            <td>{{ row.cantidad }}</td>
-            <td>${{ '%.2f'|format(row.ingreso) }}</td>
+            <td class="text-end">{{ row.cantidad }}</td>
+            <td class="text-end">{{ row.ingreso|money }}</td>
           </tr>
           {% endfor %}
         </tbody>

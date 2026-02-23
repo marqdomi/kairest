@@ -1,54 +1,166 @@
 {% extends 'layouts/_layout_admin.html' %}
 {% block page_title %}Mesas{% endblock %}
 
+{% block admin_breadcrumb %}
+<div class="cl-breadcrumb">
+  <span>Catálogo</span>
+  <i data-lucide="chevron-right" style="width:13px;height:13px;"></i>
+  <span class="cl-breadcrumb__current">Mesas</span>
+</div>
+{% endblock %}
+
 {% block admin_content %}
-{% from 'components/_page_header.html' import page_header %}
-{% from 'components/_data_table.html' import data_table %}
-{% from 'components/_badge.html' import badge, status_badge %}
 {% from 'components/_modal.html' import confirm_modal %}
 
-{% call page_header('Mesas', breadcrumb=[('Catálogo', ''), ('Mesas', '')]) %}
-  <a href="{{ url_for('admin.mesa_nuevo') }}" class="cl-btn cl-btn--primary">
-    <i data-lucide="plus" class="icon-sm"></i> Nueva Mesa
-  </a>
-{% endcall %}
-
-{% call(row) data_table(
-    items=mesas,
-    columns=[
-      ('Número', 'numero', true),
-      ('Capacidad', 'capacidad', true),
-      ('Zona', 'zona', false),
-      ('Estado', none, false),
-      ('', none, false)
-    ],
-    empty_text='No hay mesas registradas',
-    empty_icon='grid-3x3',
-    search_placeholder='Buscar mesa…',
-    id='tblMesas'
-) %}
-  <td>Mesa {{ row.numero }}</td>
-  <td>{{ row.capacidad }} pers.</td>
-  <td>{{ row.zona or '—' }}</td>
-  <td>{{ status_badge(row.estado) }}</td>
-  <td class="text-end">
-    <a href="{{ url_for('admin.mesa_editar', id=row.id) }}" class="cl-btn cl-btn--sm cl-btn--ghost" title="Editar">
-      <i data-lucide="pencil" class="icon-sm"></i>
+{# ── Page Header ── #}
+<div class="cl-page-hdr">
+  <div>
+    <h1>Mesas</h1>
+    <p>{{ mesas|length }} mesa{{ 's' if mesas|length != 1 else '' }} configurada{{ 's' if mesas|length != 1 else '' }}
+    </p>
+  </div>
+  <div class="cl-page-hdr__right">
+    <a href="{{ url_for('admin.mesa_nuevo') }}" class="cl-btn--v7-primary">
+      <i data-lucide="plus" class="icon-sm"></i> Nueva Mesa
     </a>
-    <button class="cl-btn cl-btn--sm cl-btn--ghost cl-btn--danger"
-            data-bs-toggle="modal" data-bs-target="#deleteModal"
-            data-action="{{ url_for('admin.mesa_eliminar', id=row.id) }}"
-            title="Eliminar">
-      <i data-lucide="trash-2" class="icon-sm"></i>
-    </button>
-  </td>
-{% endcall %}
+  </div>
+</div>
 
-{{ confirm_modal(id='deleteModal', title='¿Eliminar mesa?', body='Esta acción no se puede deshacer.', confirm_text='Eliminar', form_action='#') }}
+{# ── Stats chips ── #}
+{% set mesas_libres = mesas|selectattr('estado', 'equalto', 'libre')|list|length %}
+{% set mesas_ocupadas = mesas|selectattr('estado', 'equalto', 'ocupada')|list|length %}
+{% set mesas_reservadas = mesas|selectattr('estado', 'equalto', 'reservada')|list|length %}
+<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+  <div class="cl-chip cl-chip--neutral">
+    <i data-lucide="grid-3x3" style="width:13px;height:13px;"></i>
+    Total: {{ mesas|length }}
+  </div>
+  <div class="cl-chip cl-chip--green">
+    <i data-lucide="check-circle" style="width:13px;height:13px;"></i>
+    Libres: {{ mesas_libres }}
+  </div>
+  <div class="cl-chip cl-chip--red">
+    <i data-lucide="users" style="width:13px;height:13px;"></i>
+    Ocupadas: {{ mesas_ocupadas }}
+  </div>
+  {% if mesas_reservadas > 0 %}
+  <div class="cl-chip cl-chip--yellow">
+    <i data-lucide="calendar-clock" style="width:13px;height:13px;"></i>
+    Reservadas: {{ mesas_reservadas }}
+  </div>
+  {% endif %}
+</div>
+
+{# ── Table Card ── #}
+<div class="cl-card">
+  <div style="padding:16px 20px;border-bottom:1px solid var(--cl-border-color);">
+    <div class="cl-table-toolbar">
+      <div class="cl-table-search">
+        <i data-lucide="search" style="width:14px;height:14px;color:var(--cl-text-tertiary);flex-shrink:0;"></i>
+        <input type="text" id="searchMesas" placeholder="Buscar mesa, zona…" autocomplete="off"
+          aria-label="Buscar mesas">
+      </div>
+      <div class="cl-filter-row" style="margin:0;">
+        <button class="cl-filter-pill active" data-estado="">Todas</button>
+        <button class="cl-filter-pill" data-estado="libre">Libres</button>
+        <button class="cl-filter-pill" data-estado="ocupada">Ocupadas</button>
+        <button class="cl-filter-pill" data-estado="reservada">Reservadas</button>
+      </div>
+    </div>
+  </div>
+
+  {% if mesas %}
+  <div style="overflow-x:auto;">
+    <table class="cl-table--v7" id="tblMesas" aria-label="Lista de mesas">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Mesa</th>
+          <th>Capacidad</th>
+          <th>Zona</th>
+          <th>Estado</th>
+          <th style="text-align:right;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in mesas %}
+        {% set estado_badge_class = 'cl-status--ready' if m.estado == 'libre' else ('cl-status--urgent' if m.estado ==
+        'ocupada' else 'cl-status--pending') %}
+        <tr data-estado="{{ m.estado }}">
+          <td style="color:var(--cl-text-tertiary);font-size:12px;">{{ loop.index }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div
+                style="width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid var(--cl-border-color);display:flex;align-items:center;justify-content:center;font-family:var(--cl-font-mono);font-weight:800;font-size:14px;">
+                {{ m.numero }}
+              </div>
+              <span style="font-weight:600;">Mesa {{ m.numero }}</span>
+            </div>
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:5px;color:var(--cl-text-secondary);">
+              <i data-lucide="users" style="width:12px;height:12px;"></i>
+              {{ m.capacidad }} pers.
+            </div>
+          </td>
+          <td>{{ m.zona or '—' }}</td>
+          <td><span class="cl-status {{ estado_badge_class }}">{{ m.estado|capitalize }}</span></td>
+          <td style="text-align:right;">
+            <div style="display:flex;justify-content:flex-end;gap:6px;">
+              <a href="{{ url_for('admin.mesa_editar', id=m.id) }}" class="cl-btn--v7-outline cl-btn--sm"
+                title="Editar Mesa {{ m.numero }}">
+                <i data-lucide="pencil" style="width:13px;height:13px;"></i>
+              </a>
+              <button class="cl-btn--v7-outline cl-btn--sm"
+                style="color:var(--cl-error-500);border-color:rgba(240,68,56,0.2);" data-bs-toggle="modal"
+                data-bs-target="#deleteModal" data-action="{{ url_for('admin.mesa_eliminar', id=m.id) }}"
+                data-name="Mesa {{ m.numero }}" title="Eliminar Mesa {{ m.numero }}">
+                <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="display:flex;flex-direction:column;align-items:center;padding:48px;gap:12px;opacity:.45;">
+    <i data-lucide="grid-3x3" style="width:40px;height:40px;color:var(--cl-text-tertiary);"></i>
+    <p style="font-size:14px;color:var(--cl-text-tertiary);margin:0;">No hay mesas configuradas</p>
+    <a href="{{ url_for('admin.mesa_nuevo') }}" class="cl-btn--v7-primary" style="opacity:1;">
+      <i data-lucide="plus" class="icon-sm"></i> Crear primera mesa
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+{{ confirm_modal(id='deleteModal', title='¿Eliminar mesa?', body='Esta acción no se puede deshacer.',
+confirm_text='Eliminar', form_action='#') }}
 
 <script>
-document.getElementById('deleteModal').addEventListener('show.bs.modal', function(e){
-  this.querySelector('form').setAttribute('action', e.relatedTarget.getAttribute('data-action'));
-});
+  document.getElementById('deleteModal').addEventListener('show.bs.modal', function (e) {
+    this.querySelector('form').setAttribute('action', e.relatedTarget.getAttribute('data-action'));
+    const name = e.relatedTarget.getAttribute('data-name');
+    this.querySelector('.modal-body').textContent = `¿Eliminar "${name}"? Esta acción no se puede deshacer.`;
+  });
+  const searchMesas = document.getElementById('searchMesas');
+  const tblMesas = document.getElementById('tblMesas');
+  if (searchMesas && tblMesas) {
+    searchMesas.addEventListener('input', function () {
+      const q = this.value.toLowerCase();
+      tblMesas.querySelectorAll('tbody tr').forEach(r => r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none');
+    });
+  }
+  document.querySelectorAll('.cl-filter-pill[data-estado]').forEach(btn => {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.cl-filter-pill[data-estado]').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      const estado = this.dataset.estado;
+      tblMesas && tblMesas.querySelectorAll('tbody tr').forEach(r => {
+        r.style.display = !estado || r.dataset.estado === estado ? '' : 'none';
+      });
+    });
+  });
 </script>
 {% endblock %}

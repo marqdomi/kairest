@@ -1,52 +1,146 @@
 {% extends 'layouts/_layout_admin.html' %}
 {% block page_title %}Usuarios{% endblock %}
 
+{% block admin_breadcrumb %}
+<div class="cl-breadcrumb">
+  <span>Configuración</span>
+  <i data-lucide="chevron-right" style="width:13px;height:13px;"></i>
+  <span class="cl-breadcrumb__current">Usuarios</span>
+</div>
+{% endblock %}
+
 {% block admin_content %}
-{% from 'components/_page_header.html' import page_header %}
-{% from 'components/_data_table.html' import data_table %}
-{% from 'components/_badge.html' import badge %}
 {% from 'components/_modal.html' import confirm_modal %}
 
-{% call page_header('Usuarios', breadcrumb=[('Configuración', ''), ('Usuarios', '')]) %}
-  <a href="{{ url_for('admin.usuario_nuevo') }}" class="cl-btn cl-btn--primary">
-    <i data-lucide="plus" class="icon-sm"></i> Nuevo Usuario
-  </a>
-{% endcall %}
-
-{% call(row) data_table(
-    items=usuarios,
-    columns=[
-      ('Nombre', 'nombre', true),
-      ('Email', 'email', true),
-      ('Rol', 'rol', true),
-      ('', none, false)
-    ],
-    empty_text='No hay usuarios registrados',
-    empty_icon='users',
-    search_placeholder='Buscar usuario…',
-    id='tblUsuarios'
-) %}
-  <td>{{ row.nombre }}</td>
-  <td>{{ row.email }}</td>
-  <td>{{ badge(row.rol|capitalize, 'info') }}</td>
-  <td class="text-end">
-    <a href="{{ url_for('admin.usuario_editar', id=row.id) }}" class="cl-btn cl-btn--sm cl-btn--ghost" title="Editar">
-      <i data-lucide="pencil" class="icon-sm"></i>
+{# ── Page Header ── #}
+<div class="cl-page-hdr">
+  <div>
+    <h1>Usuarios</h1>
+    <p>{{ usuarios|length }} usuario{{ 's' if usuarios|length != 1 else '' }} en el sistema</p>
+  </div>
+  <div class="cl-page-hdr__right">
+    <a href="{{ url_for('admin.usuario_nuevo') }}" class="cl-btn--v7-primary">
+      <i data-lucide="user-plus" class="icon-sm"></i> Nuevo Usuario
     </a>
-    <button class="cl-btn cl-btn--sm cl-btn--ghost cl-btn--danger"
-            data-bs-toggle="modal" data-bs-target="#deleteModal"
-            data-action="{{ url_for('admin.usuario_eliminar', id=row.id) }}"
-            title="Eliminar">
-      <i data-lucide="trash-2" class="icon-sm"></i>
-    </button>
-  </td>
-{% endcall %}
+  </div>
+</div>
 
-{{ confirm_modal(id='deleteModal', title='¿Eliminar usuario?', body='Esta acción no se puede deshacer.', confirm_text='Eliminar', form_action='#') }}
+{# ── Table Card ── #}
+<div class="cl-card">
+  <div style="padding:16px 20px;border-bottom:1px solid var(--cl-border-color);">
+    <div class="cl-table-toolbar">
+      <div class="cl-table-search">
+        <i data-lucide="search" style="width:14px;height:14px;color:var(--cl-text-tertiary);flex-shrink:0;"></i>
+        <input type="text" id="searchUsuarios" placeholder="Buscar por nombre o email…" autocomplete="off"
+          aria-label="Buscar usuarios">
+      </div>
+      <div class="cl-filter-row" style="margin:0;">
+        <button class="cl-filter-pill active" data-rol="">Todos</button>
+        <button class="cl-filter-pill" data-rol="admin">Admin</button>
+        <button class="cl-filter-pill" data-rol="mesero">Mesero</button>
+        <button class="cl-filter-pill" data-rol="cocina">Cocina</button>
+        <button class="cl-filter-pill" data-rol="superadmin">Superadmin</button>
+      </div>
+    </div>
+  </div>
+
+  {% if usuarios %}
+  <div style="overflow-x:auto;">
+    <table class="cl-table--v7" id="tblUsuarios" aria-label="Lista de usuarios">
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Email</th>
+          <th>Rol</th>
+          <th style="text-align:right;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in usuarios %}
+        {% set rol_color = {
+        'superadmin': 'red',
+        'admin': 'gold',
+        'mesero': 'blue',
+        'cocina': 'yellow'
+        }.get(u.rol, 'gray') %}
+        <tr data-rol="{{ u.rol }}">
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="cl-user-avatar">
+                {{ u.nombre[0]|upper }}{{ u.nombre.split(' ')[1][0]|upper if u.nombre.split(' ')|length > 1 else '' }}
+              </div>
+              <div>
+                <div style="font-weight:600;color:var(--cl-text-primary);">{{ u.nombre }}</div>
+                {% if u.nombre == current_user.nombre %}
+                <div style="font-size:10px;color:var(--cl-text-tertiary);">Tú</div>
+                {% endif %}
+              </div>
+            </div>
+          </td>
+          <td style="color:var(--cl-text-tertiary);">{{ u.email }}</td>
+          <td>
+            <span class="cl-badge cl-badge--{{ rol_color }}">{{ u.rol|capitalize }}</span>
+          </td>
+          <td style="text-align:right;">
+            <div style="display:flex;justify-content:flex-end;gap:6px;">
+              <a href="{{ url_for('admin.usuario_editar', id=u.id) }}" class="cl-btn--v7-outline cl-btn--sm"
+                title="Editar {{ u.nombre }}">
+                <i data-lucide="pencil" style="width:13px;height:13px;"></i>
+              </a>
+              {% if u.nombre != current_user.nombre %}
+              <button class="cl-btn--v7-outline cl-btn--sm"
+                style="color:var(--cl-error-500);border-color:rgba(240,68,56,0.2);" data-bs-toggle="modal"
+                data-bs-target="#deleteModal" data-action="{{ url_for('admin.usuario_eliminar', id=u.id) }}"
+                data-name="{{ u.nombre }}" title="Eliminar {{ u.nombre }}">
+                <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+              </button>
+              {% else %}
+              <button class="cl-btn--v7-outline cl-btn--sm" disabled title="No puedes eliminarte a ti mismo"
+                style="opacity:.3;cursor:not-allowed;">
+                <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+              </button>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="display:flex;flex-direction:column;align-items:center;padding:48px;gap:12px;opacity:.45;">
+    <i data-lucide="users" style="width:40px;height:40px;color:var(--cl-text-tertiary);"></i>
+    <p style="font-size:14px;color:var(--cl-text-tertiary);margin:0;">No hay usuarios registrados</p>
+  </div>
+  {% endif %}
+</div>
+
+{{ confirm_modal(id='deleteModal', title='¿Eliminar usuario?', body='Esta acción no se puede deshacer.',
+confirm_text='Eliminar', form_action='#') }}
 
 <script>
-document.getElementById('deleteModal').addEventListener('show.bs.modal', function(e){
-  this.querySelector('form').setAttribute('action', e.relatedTarget.getAttribute('data-action'));
-});
+  document.getElementById('deleteModal').addEventListener('show.bs.modal', function (e) {
+    this.querySelector('form').setAttribute('action', e.relatedTarget.getAttribute('data-action'));
+    const name = e.relatedTarget.getAttribute('data-name');
+    this.querySelector('.modal-body').textContent = `¿Eliminar usuario "${name}"? Esta acción no se puede deshacer.`;
+  });
+  const searchU = document.getElementById('searchUsuarios');
+  const tblU = document.getElementById('tblUsuarios');
+  if (searchU && tblU) {
+    searchU.addEventListener('input', function () {
+      const q = this.value.toLowerCase();
+      tblU.querySelectorAll('tbody tr').forEach(r => r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none');
+    });
+  }
+  document.querySelectorAll('.cl-filter-pill[data-rol]').forEach(btn => {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.cl-filter-pill[data-rol]').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      const rol = this.dataset.rol;
+      tblU && tblU.querySelectorAll('tbody tr').forEach(r => {
+        r.style.display = !rol || r.dataset.rol === rol ? '' : 'none';
+      });
+    });
+  });
 </script>
 {% endblock %}

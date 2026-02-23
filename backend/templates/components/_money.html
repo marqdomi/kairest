@@ -1,0 +1,9 @@
+{% macro format_money(amount) %}
+{% set amount_str = '%.2f'|format(amount|float) %}
+{% set parts = amount_str.split('.') %}
+{% set enteros = parts[0] %}
+{% set decimales = parts[1] %}
+<span class="cl-money">
+  <span class="cl-money-symbol">$</span>{{ enteros }}<span class="cl-money-decimal">.{{ decimales }}</span>
+</span>
+{% endmacro %}

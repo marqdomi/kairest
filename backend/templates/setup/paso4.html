@@ -1,0 +1,55 @@
+{% extends 'setup/_layout_setup.html' %}
+
+{% block setup_content %}
+  <h1 class="cl-setup__title">Mesas</h1>
+  <p class="cl-setup__subtitle">¿Cuántas mesas o posiciones tiene tu local?</p>
+
+  <form method="POST" action="{{ url_for('setup.paso4') }}" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="cl-form-group" style="text-align:center">
+      <label class="cl-form-label" for="cantidad_mesas">Cantidad de mesas</label>
+      <div style="display:flex;align-items:center;justify-content:center;gap:var(--cl-space-3);margin-top:var(--cl-space-2)">
+        <button type="button" class="cl-btn cl-btn--outline" id="btnMinus"
+                style="width:48px;height:48px;font-size:1.5rem;padding:0">−</button>
+        <input type="number" class="cl-form-input" name="cantidad_mesas" id="cantidad_mesas"
+               value="8" min="1" max="30"
+               style="width:80px;text-align:center;font-size:var(--cl-text-xl);font-weight:var(--cl-font-semibold)">
+        <button type="button" class="cl-btn cl-btn--outline" id="btnPlus"
+                style="width:48px;height:48px;font-size:1.5rem;padding:0">+</button>
+      </div>
+      <small style="display:block;margin-top:var(--cl-space-2);font-size:var(--cl-text-xs);color:var(--cl-text-secondary)">
+        Puedes agregar o modificar mesas después desde el panel de admin.
+      </small>
+    </div>
+
+    {% if mesas_existentes > 0 %}
+    <div class="cl-toast cl-toast--info" role="alert"
+         style="position:relative;margin-top:var(--cl-space-4)">
+      <span>Ya existen {{ mesas_existentes }} mesas. Solo se crearán las que falten.</span>
+    </div>
+    {% endif %}
+
+    <div class="cl-setup__actions">
+      <a href="{{ url_for('setup.paso3') }}" class="cl-btn cl-btn--outline">← Atrás</a>
+      <button type="submit" class="cl-btn cl-btn--primary">Siguiente →</button>
+    </div>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(function(){
+  var input = document.getElementById('cantidad_mesas');
+  document.getElementById('btnMinus').addEventListener('click', function(){
+    var v = parseInt(input.value) || 8;
+    input.value = Math.max(1, v - 1);
+  });
+  document.getElementById('btnPlus').addEventListener('click', function(){
+    var v = parseInt(input.value) || 8;
+    input.value = Math.min(30, v + 1);
+  });
+})();
+</script>
+{% endblock %}

@@ -27,8 +27,14 @@
   Chart.defaults.responsive = true;
   Chart.defaults.maintainAspectRatio = false;
   Chart.defaults.plugins.legend.labels.usePointStyle = true;
-  Chart.defaults.plugins.tooltip.cornerRadius = 6;
-  Chart.defaults.plugins.tooltip.padding = 10;
+  Chart.defaults.plugins.tooltip.cornerRadius = 8;
+  Chart.defaults.plugins.tooltip.padding = 12;
+  Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(16, 24, 40, 0.9)';
+  Chart.defaults.plugins.tooltip.titleFont = { size: 14, weight: 'bold' };
+  Chart.defaults.plugins.tooltip.bodyFont = { size: 13 };
+  Chart.defaults.plugins.tooltip.boxPadding = 6;
+  Chart.defaults.scale.grid.color = 'rgba(0, 0, 0, 0.05)';
+  Chart.defaults.scale.grid.drawBorder = false;
 
   /* ─── Helpers ──────────────────────────────────── */
   function $(sel) { return document.querySelector(sel); }
@@ -36,6 +42,15 @@
 
   function currency(v) {
     return '$' + Number(v).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function createGradient(ctx, colorHex) {
+    const canvas = ctx.canvas || ctx;
+    const context = canvas.getContext('2d');
+    const gradient = context.createLinearGradient(0, 0, 0, canvas.height || 400);
+    gradient.addColorStop(0, colorHex + '80'); // 50% opacity
+    gradient.addColorStop(1, colorHex + '00'); // 0% opacity
+    return gradient;
   }
 
   /** Fetch JSON from API endpoint with current date range. */
@@ -94,11 +109,12 @@
               label: 'Ventas ($)',
               data: data.por_dia.totales,
               borderColor: COLORS.primary,
-              backgroundColor: COLORS.primary + '33',
+              backgroundColor: createGradient(ctxDia, COLORS.primary),
               fill: true,
-              tension: 0.3,
+              tension: 0.4,
               pointRadius: 4,
               pointHoverRadius: 6,
+              borderWidth: 3,
             }],
           },
           options: {
@@ -108,7 +124,11 @@
               },
             },
             scales: {
-              y: { ticks: { callback: v => currency(v) } },
+              x: { grid: { display: false } },
+              y: { 
+                grid: { borderDash: [4, 4] },
+                ticks: { callback: v => currency(v) } 
+              },
             },
           },
         });

@@ -1,0 +1,439 @@
+/* ═══════════════════════════════════════════════════
+   CasaLeones POS — v7 KDS (Kitchen Display System)
+   Always dark, full-screen, urgency-first design
+   ═══════════════════════════════════════════════════ */
+
+/* Layout: body full-screen, no scroll */
+.kds-body {
+    background: #050508;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ─── KDS HEADER ─── */
+.cl-kds-header {
+    height: 60px;
+    background: #08090E;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    flex-shrink: 0;
+}
+
+.cl-kds-station {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 16px;
+    background: rgba(196, 30, 58, 0.15);
+    border: 1px solid rgba(196, 30, 58, 0.35);
+    border-radius: var(--cl-radius-full);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #FCA5A5;
+}
+
+.cl-kds-station__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--cl-red-500);
+    animation: cl-urgentpulse 2s infinite;
+}
+
+.cl-kds-pending {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: var(--cl-radius-full);
+    font-size: 13px;
+    font-weight: var(--cl-font-semibold);
+    color: var(--cl-text-secondary);
+}
+
+.cl-kds-pending__num {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--cl-text-primary);
+    font-family: var(--cl-font-mono);
+}
+
+.cl-kds-legend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cl-kds-legend__item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: var(--cl-font-semibold);
+    color: var(--cl-text-tertiary);
+    padding: 0 8px;
+}
+
+.cl-kds-legend__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.cl-kds-clock {
+    font-family: var(--cl-font-mono);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--cl-text-secondary);
+    letter-spacing: 0.04em;
+}
+
+/* ─── KDS CARDS STRIP ─── */
+.cl-kds-strip {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 16px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    scroll-snap-type: x mandatory;
+}
+
+.cl-kds-strip::-webkit-scrollbar {
+    height: 4px;
+}
+
+.cl-kds-strip::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+/* ─── KDS ORDER CARD ─── */
+.cl-kds-card {
+    width: 280px;
+    min-width: 280px;
+    border-radius: var(--cl-radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    scroll-snap-align: start;
+    transition: transform var(--cl-transition-spring), box-shadow var(--cl-transition-base);
+}
+
+.cl-kds-card:hover {
+    transform: translateY(-4px);
+}
+
+/* Urgency variants */
+.cl-kds-card--fresh {
+    background: rgba(18, 183, 106, 0.08);
+    border-color: rgba(18, 183, 106, 0.3);
+}
+
+.cl-kds-card--normal {
+    background: rgba(107, 209, 103, 0.08);
+    border-color: rgba(107, 209, 103, 0.3);
+}
+
+.cl-kds-card--warming {
+    background: rgba(247, 144, 9, 0.10);
+    border-color: rgba(247, 144, 9, 0.4);
+}
+
+.cl-kds-card--hot {
+    background: rgba(232, 104, 37, 0.10);
+    border-color: rgba(232, 104, 37, 0.45);
+}
+
+.cl-kds-card--urgent {
+    background: rgba(240, 68, 56, 0.10);
+    border-color: rgba(240, 68, 56, 0.55);
+}
+
+.cl-kds-card--critical {
+    background: rgba(180, 35, 24, 0.12);
+    border-color: rgba(180, 35, 24, 0.7);
+    animation: cl-cardpulse 1.2s infinite;
+}
+
+@keyframes cl-cardpulse {
+
+    0%,
+    100% {
+        border-color: rgba(180, 35, 24, 0.7);
+        box-shadow: 0 0 0 0 rgba(180, 35, 24, 0);
+    }
+
+    50% {
+        border-color: rgba(180, 35, 24, 0.95);
+        box-shadow: 0 0 0 6px rgba(180, 35, 24, 0.1);
+    }
+}
+
+/* New card animation */
+.cl-kds-card--new {
+    animation: cl-slidein .5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Card header */
+.cl-kds-card__hdr {
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cl-kds-card__num {
+    font-family: var(--cl-font-mono);
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1;
+}
+
+/* Number colors by urgency */
+.cl-kds-card--fresh .cl-kds-card__num,
+.cl-kds-card--normal .cl-kds-card__num {
+    color: var(--cl-kds-fresh, #12B76A);
+}
+
+.cl-kds-card--warming .cl-kds-card__num {
+    color: var(--cl-kds-warming, #F79009);
+}
+
+.cl-kds-card--hot .cl-kds-card__num {
+    color: var(--cl-kds-hot, #E86825);
+}
+
+.cl-kds-card--urgent .cl-kds-card__num {
+    color: var(--cl-kds-urgent, #F04438);
+}
+
+.cl-kds-card--critical .cl-kds-card__num {
+    color: #FCA5A5;
+}
+
+.cl-kds-card__meta {
+    font-size: 12px;
+    color: var(--cl-text-tertiary);
+    margin-top: 3px;
+}
+
+.cl-kds-card__hdr-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+/* Timer */
+.cl-kds-timer {
+    font-family: var(--cl-font-mono);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.cl-kds-timer--fresh {
+    color: var(--cl-kds-fresh);
+}
+
+.cl-kds-timer--normal {
+    color: var(--cl-kds-normal);
+}
+
+.cl-kds-timer--warming {
+    color: var(--cl-kds-warming);
+}
+
+.cl-kds-timer--hot {
+    color: var(--cl-kds-hot);
+}
+
+.cl-kds-timer--urgent {
+    color: var(--cl-kds-urgent);
+    animation: cl-urgentpulse 1s infinite;
+}
+
+.cl-kds-timer--critical {
+    color: #FCA5A5;
+    animation: cl-urgentpulse .5s infinite;
+}
+
+.cl-kds-mesa-chip {
+    font-size: 11px;
+    font-weight: var(--cl-font-semibold);
+    padding: 3px 9px;
+    border-radius: var(--cl-radius-full);
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--cl-text-secondary);
+}
+
+/* Card body */
+.cl-kds-card__body {
+    padding: 14px 16px;
+    flex: 1;
+}
+
+.cl-kds-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cl-kds-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cl-kds-item--done {
+    opacity: .4;
+}
+
+.cl-kds-item__qty {
+    font-family: var(--cl-font-mono);
+    font-size: 16px;
+    font-weight: 900;
+    min-width: 24px;
+    line-height: 1;
+    color: var(--cl-text-primary);
+    flex-shrink: 0;
+}
+
+.cl-kds-item__name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--cl-text-primary);
+    flex: 1;
+    line-height: 1.3;
+}
+
+.cl-kds-item__note {
+    margin-top: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+    padding: 5px 8px;
+    background: rgba(247, 144, 9, 0.12);
+    border: 1px solid rgba(247, 144, 9, 0.2);
+    border-radius: 6px;
+    font-size: 11px;
+    color: #FCD34D;
+    font-weight: var(--cl-font-semibold);
+}
+
+/* Check circle */
+.cl-kds-check {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--cl-transition-fast);
+}
+
+.cl-kds-check:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.cl-kds-check--done {
+    background: var(--cl-success-500);
+    border-color: var(--cl-success-500);
+}
+
+/* Card footer */
+.cl-kds-card__footer {
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    display: flex;
+    gap: 8px;
+}
+
+.cl-kds-btn {
+    flex: 1;
+    padding: 13px;
+    border-radius: 10px;
+    border: none;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: all var(--cl-transition-fast);
+}
+
+.cl-kds-btn--done {
+    background: var(--cl-success-500);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(18, 183, 106, 0.4);
+}
+
+.cl-kds-btn--done:hover {
+    opacity: .88;
+    transform: scale(1.02);
+}
+
+.cl-kds-btn--skip {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--cl-text-tertiary);
+}
+
+.cl-kds-btn--skip:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--cl-text-secondary);
+}
+
+/* ─── KDS FOOTER ─── */
+.cl-kds-footer {
+    height: 52px;
+    background: #08090E;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    flex-shrink: 0;
+}
+
+.cl-kds-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.cl-kds-stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--cl-text-tertiary);
+}
+
+.cl-kds-stat strong {
+    font-family: var(--cl-font-mono);
+    color: var(--cl-success-500);
+}

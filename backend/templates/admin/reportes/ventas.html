@@ -34,9 +34,9 @@
 {# KPI Cards #}
 {% from 'components/_kpi_card.html' import kpi_card %}
 <div class="cl-dashboard-kpi mb-4" style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--cl-space-4);">
-  {{ kpi_card('Total Ventas', '$' ~ '%.2f'|format(total_ventas), icon='dollar-sign', variant='primary') }}
-  {{ kpi_card('# Ventas', num_ventas, icon='receipt', variant='success') }}
-  {{ kpi_card('Ticket Promedio', '$' ~ '%.2f'|format(ticket_promedio), icon='ticket', variant='warning') }}
+  {{ kpi_card('Total Ventas', total_ventas|money, icon='dollar-sign', color='primary') }}
+  {{ kpi_card('# Ventas', num_ventas, icon='receipt', color='success') }}
+  {{ kpi_card('Ticket Promedio', ticket_promedio|money, icon='ticket', color='warning') }}
 </div>
 
 {# Toggle #}
@@ -72,14 +72,14 @@
   <div class="cl-card">
     <div class="cl-card__body" style="overflow-x:auto;">
       <table class="cl-table">
-        <thead><tr><th>Día</th><th>Total</th><th># Ventas</th><th>Promedio</th></tr></thead>
+        <thead><tr><th>Día</th><th class="text-end">Total</th><th class="text-end"># Ventas</th><th class="text-end">Promedio</th></tr></thead>
         <tbody>
           {% for row in ventas_por_dia %}
           <tr>
             <td>{{ row.dia }}</td>
-            <td>${{ '%.2f'|format(row.total) }}</td>
-            <td>{{ row.cantidad }}</td>
-            <td>${{ '%.2f'|format(row.total / row.cantidad if row.cantidad else 0) }}</td>
+            <td class="text-end">{{ row.total|money }}</td>
+            <td class="text-end">{{ row.cantidad }}</td>
+            <td class="text-end">{{ (row.total / row.cantidad if row.cantidad else 0)|money }}</td>
           </tr>
           {% endfor %}
         </tbody>

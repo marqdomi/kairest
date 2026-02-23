@@ -46,13 +46,13 @@
   <div class="cl-card">
     <div class="cl-card__body" style="overflow-x:auto;">
       <table class="cl-table">
-        <thead><tr><th>Ingrediente</th><th>Unidad</th><th>Total Merma</th></tr></thead>
+        <thead><tr><th>Ingrediente</th><th>Unidad</th><th class="text-end">Total Merma</th></tr></thead>
         <tbody>
           {% for row in mermas %}
           <tr>
             <td>{{ row.nombre }}</td>
             <td>{{ row.unidad }}</td>
-            <td class="fw-bold" style="color:var(--cl-danger)">{{ '%.4f'|format(row.total_merma) }}</td>
+            <td class="text-end fw-bold" style="color:var(--cl-danger)">{{ '%.4f'|format(row.total_merma) }}</td>
           </tr>
           {% endfor %}
         </tbody>

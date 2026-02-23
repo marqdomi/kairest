@@ -45,16 +45,16 @@
   <div class="cl-card">
     <div class="cl-card__body" style="overflow-x:auto;">
       <table class="cl-table">
-        <thead><tr><th>#</th><th>Mesero</th><th># Ventas</th><th>Total Ventas</th><th>Ticket Promedio</th><th>Propinas</th></tr></thead>
+        <thead><tr><th>#</th><th>Mesero</th><th class="text-end"># Ventas</th><th class="text-end">Total Ventas</th><th class="text-end">Ticket Promedio</th><th class="text-end">Propinas</th></tr></thead>
         <tbody>
           {% for row in datos_meseros %}
           <tr>
             <td>{{ loop.index }}</td>
             <td>{{ row.nombre }}</td>
-            <td>{{ row.num_ventas }}</td>
-            <td>${{ '%.2f'|format(row.total_ventas) }}</td>
-            <td>${{ '%.2f'|format(row.total_ventas / row.num_ventas if row.num_ventas else 0) }}</td>
-            <td style="color:var(--cl-success)">${{ '%.2f'|format(propinas_map.get(row.nombre, 0)) }}</td>
+            <td class="text-end">{{ row.num_ventas }}</td>
+            <td class="text-end">{{ row.total_ventas|money }}</td>
+            <td class="text-end">{{ (row.total_ventas / row.num_ventas if row.num_ventas else 0)|money }}</td>
+            <td class="text-end" style="color:var(--cl-success)">{{ propinas_map.get(row.nombre, 0)|money }}</td>
           </tr>
           {% endfor %}
         </tbody>

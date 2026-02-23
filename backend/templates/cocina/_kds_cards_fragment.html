@@ -1,50 +1,76 @@
-{# KDS Cards Fragment — returned by fragmento_ordenes AJAX endpoint.
-   Rendered inside .cl-kds__grid container.
-   Variables: ordenes_data (dict: Orden → [OrdenDetalle]) #}
+{# KDS Cards Fragment — v7
+Returned by fragmento_ordenes AJAX endpoint.
+Rendered inside .cl-kds-strip container.
+Variables: ordenes_data (dict: Orden → [OrdenDetalle]) #}
 {% if ordenes_data %}
-  {% for orden, detalles in ordenes_data.items() %}
-  <div class="kds-card orden-timer-card kds-card--new" id="kds-orden-{{ orden.id }}"
-       data-tiempo-registro="{{ orden.tiempo_registro.isoformat() }}"
-       data-orden-id="{{ orden.id }}">
-    <div class="kds-card__header">
-      <span class="kds-card__order-num">#{{ orden.id }}</span>
-      <div class="kds-card__meta">
-        <span class="kds-card__mesa">
-          {% if orden.es_para_llevar %}
-            <span class="kds-card__para-llevar">🛍 Para Llevar</span>
-          {% else %}
-            Mesa {{ orden.mesa.numero if orden.mesa else '—' }}
-          {% endif %}
-        </span>
-        <span class="kds-card__timer timer-badge" data-timer-orden="{{ orden.id }}">00:00</span>
+{% for orden, detalles in ordenes_data.items() %}
+{% set mins = ((now_utc - orden.tiempo_registro).total_seconds() / 60)|int if now_utc is defined else 0 %}
+{% if mins < 5 %}{% set urgency='fresh' %} {% elif mins < 10 %}{% set urgency='normal' %} {% elif mins < 15 %}{% set
+  urgency='warming' %} {% elif mins < 20 %}{% set urgency='hot' %} {% elif mins < 25 %}{% set urgency='urgent' %} {%
+  else %}{% set urgency='critical' %}{% endif %} <div class="cl-kds-card cl-kds-card--{{ urgency }} cl-kds-card--new"
+  id="kds-orden-{{ orden.id }}" data-tiempo-registro="{{ orden.tiempo_registro.isoformat() }}"
+  data-orden-id="{{ orden.id }}">
+
+  {# Card header #}
+  <div class="cl-kds-card__hdr">
+    <div>
+      <div class="cl-kds-card__num">#{{ orden.id }}</div>
+      <div class="cl-kds-card__meta">
+        {% if orden.es_para_llevar %}
+        🛍 Para Llevar
+        {% else %}
+        Mesa {{ orden.mesa.numero if orden.mesa else '—' }}
+        {% if orden.mesero %}· {{ orden.mesero.nombre.split()[0] }}{% endif %}
+        {% endif %}
       </div>
     </div>
-    <div class="kds-card__body">
+    <div class="cl-kds-card__hdr-right">
+      <span class="cl-kds-timer cl-kds-timer--{{ urgency }}" data-timer-orden="{{ orden.id }}">00:00</span>
+      <span class="cl-kds-mesa-chip">{{ detalles|length }} ítem{{ 's' if detalles|length != 1 }}</span>
+    </div>
+  </div>
+
+  {# Card body — items #}
+  <div class="cl-kds-card__body">
+    <div class="cl-kds-items">
       {% for item in detalles %}
-      <div class="kds-item" id="kds-item-{{ item.id }}">
-        <div>
-          <span class="kds-item__name">{{ item.producto.nombre }}</span>
+      <div class="cl-kds-item" id="kds-item-{{ item.id }}">
+        <div class="cl-kds-item__qty">×{{ item.cantidad }}</div>
+        <div style="flex:1;">
+          <div class="cl-kds-item__name">{{ item.producto.nombre }}</div>
           {% if item.notas %}
-          <span class="kds-item__notes">{{ item.notas }}</span>
+          <div class="cl-kds-item__note">
+            <i data-lucide="alert-circle" style="width:10px;height:10px;flex-shrink:0;"></i>
+            {{ item.notas }}
+          </div>
           {% endif %}
         </div>
-        <span class="kds-item__qty">×{{ item.cantidad }}</span>
       </div>
       {% endfor %}
     </div>
-    <div class="kds-card__footer">
-      <button class="kds-btn-listo" data-orden-id="{{ orden.id }}"
-              onclick="marcarTodosListos(this, {{ orden.id }}, [{% for item in detalles %}{{ item.id }}{% if not loop.last %},{% endif %}{% endfor %}])">
-        <i data-lucide="check-circle" style="width:28px;height:28px;"></i>
-        LISTO
-      </button>
-    </div>
+  </div>
+
+  {# Card footer — done button #}
+  <div class="cl-kds-card__footer">
+    <button class="cl-kds-btn cl-kds-btn--done" data-orden-id="{{ orden.id }}"
+      onclick="marcarTodosListos(this, {{ orden.id }}, [{% for item in detalles %}{{ item.id }}{% if not loop.last %},{% endif %}{% endfor %}])"
+      aria-label="Marcar orden #{{ orden.id }} como lista">
+      <i data-lucide="check-circle" style="width:18px;height:18px;"></i>
+      LISTO
+    </button>
+    <button class="cl-kds-btn cl-kds-btn--skip" onclick="this.closest('.cl-kds-card').style.opacity='0.4'"
+      title="Pausar">
+      <i data-lucide="pause" style="width:16px;height:16px;"></i>
+    </button>
+  </div>
   </div>
   {% endfor %}
-{% else %}
-<div class="cl-kds__empty">
-  <i data-lucide="chef-hat"></i>
-  <p style="font-size:clamp(18px,2vw,28px);margin-top:16px;">No hay órdenes pendientes</p>
-  <p style="font-size:14px;opacity:.5;">Las nuevas órdenes aparecerán automáticamente</p>
-</div>
-{% endif %}
+  {% else %}
+  <div
+    style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;min-height:60vh;gap:16px;opacity:.35;">
+    <i data-lucide="chef-hat" style="width:72px;height:72px;color:var(--cl-text-tertiary);"></i>
+    <p style="font-size:18px;font-weight:600;color:var(--cl-text-tertiary);margin:0;">No hay órdenes pendientes</p>
+    <p style="font-size:13px;color:var(--cl-text-tertiary);opacity:.7;margin:0;">Las nuevas órdenes aparecerán
+      automáticamente</p>
+  </div>
+  {% endif %}

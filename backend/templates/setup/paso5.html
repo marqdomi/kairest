@@ -1,0 +1,77 @@
+{% extends 'setup/_layout_setup.html' %}
+
+{% block setup_content %}
+  <h1 class="cl-setup__title">Tu Equipo</h1>
+  <p class="cl-setup__subtitle">Agrega a las personas que usarán el sistema. Puedes omitir este paso.</p>
+
+  <form method="POST" action="{{ url_for('setup.paso5') }}" id="teamForm" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div id="userRows">
+      <div class="cl-setup__row" style="flex-wrap:wrap">
+        <div class="cl-form-group" style="flex:2;min-width:140px">
+          <label class="cl-form-label">Nombre</label>
+          <input type="text" class="cl-form-input" name="user_nombre[]" placeholder="María">
+        </div>
+        <div class="cl-form-group" style="flex:2;min-width:140px">
+          <label class="cl-form-label">Email</label>
+          <input type="email" class="cl-form-input" name="user_email[]" placeholder="maria@correo.com">
+        </div>
+        <div class="cl-form-group" style="flex:1;min-width:120px">
+          <label class="cl-form-label">Contraseña</label>
+          <input type="text" class="cl-form-input" name="user_password[]" placeholder="••••••">
+        </div>
+        <div class="cl-form-group" style="flex:1;min-width:100px">
+          <label class="cl-form-label">Rol</label>
+          <select class="cl-form-input" name="user_rol[]">
+            <option value="mesero">Mesero</option>
+            <option value="taquero">Taquero</option>
+            <option value="comal">Comal</option>
+            <option value="bebidas">Bebidas</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button type="button" class="cl-btn cl-btn--outline" id="addUserBtn"
+            style="width:100%;margin-top:var(--cl-space-2)">
+      + Agregar otra persona
+    </button>
+
+    <div class="cl-setup__actions" style="margin-top:var(--cl-space-5)">
+      <a href="{{ url_for('setup.paso4') }}" class="cl-btn cl-btn--outline">← Atrás</a>
+      <button type="submit" class="cl-btn cl-btn--primary" name="action" value="add">
+        Finalizar →
+      </button>
+    </div>
+
+    <div style="text-align:center;margin-top:var(--cl-space-3)">
+      <a href="{{ url_for('setup.completar') }}" style="font-size:var(--cl-text-sm);color:var(--cl-text-secondary)">
+        Omitir este paso
+      </a>
+    </div>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(function(){
+  document.getElementById('addUserBtn').addEventListener('click', function(){
+    var container = document.getElementById('userRows');
+    var row = container.querySelector('.cl-setup__row').cloneNode(true);
+    row.querySelectorAll('input, select').forEach(function(el){ el.value = ''; });
+    // Add remove button
+    var removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn-remove';
+    removeBtn.innerHTML = '✕';
+    removeBtn.title = 'Eliminar';
+    removeBtn.addEventListener('click', function(){ row.remove(); });
+    row.appendChild(removeBtn);
+    container.appendChild(row);
+  });
+})();
+</script>
+{% endblock %}

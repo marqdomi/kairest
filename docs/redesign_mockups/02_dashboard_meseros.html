@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Meseros — CasaLeones Redesign</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --bg: #0A0B10;
+            --bg-card: #13151F;
+            --bg-topbar: rgba(10, 11, 16, 0.95);
+            --border: rgba(255, 255, 255, 0.06);
+            --red: #C41E3A;
+            --red-400: #E5535A;
+            --red-glow: rgba(196, 30, 58, 0.2);
+            --gold: #C29E59;
+            --green: #12B76A;
+            --green-glow: rgba(18, 183, 106, 0.15);
+            --yellow: #F79009;
+            --yellow-glow: rgba(247, 144, 9, 0.12);
+            --red-err: #F04438;
+            --red-err-glow: rgba(240, 68, 56, 0.12);
+            --blue: #2E90FA;
+            --text-1: #F2F4F7;
+            --text-2: #98A2B3;
+            --text-3: #475467;
+            --topbar-h: 58px;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text-1);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            font-size: 14px;
+        }
+
+        /* TOPBAR */
+        .topbar {
+            height: var(--topbar-h);
+            background: var(--bg-topbar);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-logo {
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            background: linear-gradient(135deg, var(--red), #8B1525);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+        }
+
+        .brand-name {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 2px;
+        }
+
+        .nav-tab {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 7px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-3);
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .nav-tab:hover {
+            color: var(--text-1);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-tab.active {
+            color: var(--text-1);
+            background: rgba(255, 255, 255, 0.08);
+            font-weight: 600;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-2);
+            transition: all .15s;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.09);
+            color: var(--text-1);
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 12px 5px 5px;
+            border-radius: 100px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .avatar {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--red), var(--gold));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .user-label {
+            font-size: 12.5px;
+            font-weight: 600;
+        }
+
+        /* MAIN */
+        main {
+            padding: 20px 20px 100px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* PAGE HEADER */
+        .page-hdr {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .page-hdr-left h1 {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .counters {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .chip--neutral {
+            background: rgba(255, 255, 255, 0.07);
+            color: var(--text-2);
+            border: 1px solid var(--border);
+        }
+
+        .chip--yellow {
+            background: rgba(247, 144, 9, 0.12);
+            color: var(--yellow);
+            border: 1px solid rgba(247, 144, 9, 0.2);
+        }
+
+        .chip--green {
+            background: rgba(18, 183, 106, 0.12);
+            color: var(--green);
+            border: 1px solid rgba(18, 183, 106, 0.2);
+        }
+
+        .chip--red {
+            background: rgba(240, 68, 56, 0.1);
+            color: var(--red-err);
+            border: 1px solid rgba(240, 68, 56, 0.2);
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 18px;
+            border-radius: 10px;
+            border: none;
+            background: linear-gradient(135deg, var(--red), #A6192E);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(196, 30, 58, 0.4);
+            transition: transform .15s, box-shadow .15s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(196, 30, 58, 0.45);
+        }
+
+        .btn-outline {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-2);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-1);
+        }
+
+        /* FILTER PILLS */
+        .filter-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-pill {
+            padding: 6px 14px;
+            border-radius: 100px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-3);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .filter-pill:hover {
+            color: var(--text-1);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .filter-pill.active {
+            background: var(--red-glow);
+            color: var(--red-400);
+            border-color: rgba(196, 30, 58, 0.3);
+        }
+
+        /* ORDERS GRID */
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 14px;
+        }
+
+        /* ORDER CARD */
+        .order-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), box-shadow .2s, border-color .15s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .order-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .order-card--fresh {
+            border-left: 3px solid var(--green);
+        }
+
+        .order-card--fresh:hover {
+            border-color: var(--green);
+            box-shadow: 0 16px 40px rgba(18, 183, 106, 0.15);
+        }
+
+        .order-card--warning {
+            border-left: 3px solid var(--yellow);
+        }
+
+        .order-card--warning:hover {
+            border-color: var(--yellow);
+            box-shadow: 0 16px 40px rgba(247, 144, 9, 0.15);
+        }
+
+        .order-card--urgent {
+            border-left: 3px solid var(--red-err);
+        }
+
+        .order-card--urgent:hover {
+            border-color: var(--red-err);
+            box-shadow: 0 16px 40px rgba(240, 68, 56, 0.2);
+        }
+
+        .order-card--done {
+            border-left: 3px solid var(--blue);
+        }
+
+        .order-card--done:hover {
+            border-color: var(--blue);
+            box-shadow: 0 16px 40px rgba(46, 144, 250, 0.15);
+        }
+
+        /* Card new animation */
+        .order-card--new {
+            animation: slideIn .4s cubic-bezier(.34, 1.56, .64, 1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .card-hdr {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-hdr-left {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .order-num {
+            font-size: 17px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: -0.02em;
+        }
+
+        .order-loc {
+            font-size: 12px;
+            color: var(--text-3);
+        }
+
+        .order-loc svg {
+            display: inline-block;
+            vertical-align: -2px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .status--pending {
+            background: rgba(247, 144, 9, 0.12);
+            color: var(--yellow);
+        }
+
+        .status--kitchen {
+            background: rgba(46, 144, 250, 0.12);
+            color: var(--blue);
+        }
+
+        .status--ready {
+            background: rgba(18, 183, 106, 0.12);
+            color: var(--green);
+        }
+
+        .status--done {
+            background: rgba(46, 144, 250, 0.08);
+            color: var(--blue);
+        }
+
+        .card-body {
+            padding: 12px 16px;
+        }
+
+        .items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .item-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .item-name {
+            flex: 1;
+            color: var(--text-2);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .item-qty {
+            color: var(--text-3);
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .item-status {
+            flex-shrink: 0;
+        }
+
+        .dot-green {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+
+        .dot-yellow {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--yellow);
+        }
+
+        .dot-gray {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-3);
+        }
+
+        .card-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-3);
+        }
+
+        .meta-timer {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .timer-badge {
+            padding: 2px 8px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .timer--fresh {
+            background: rgba(18, 183, 106, 0.12);
+            color: var(--green);
+        }
+
+        .timer--warning {
+            background: rgba(247, 144, 9, 0.12);
+            color: var(--yellow);
+        }
+
+        .timer--urgent {
+            background: rgba(240, 68, 56, 0.12);
+            color: var(--red-err);
+            animation: pulse-urgent 1s infinite;
+        }
+
+        @keyframes pulse-urgent {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .6;
+            }
+        }
+
+        .card-footer {
+            display: flex;
+            gap: 8px;
+            padding: 10px 14px 14px;
+        }
+
+        .btn-sm {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border-radius: 9px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+            border: none;
+        }
+
+        .btn-sm--outline {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text-2);
+        }
+
+        .btn-sm--outline:hover {
+            background: rgba(255, 255, 255, 0.09);
+            color: var(--text-1);
+        }
+
+        .btn-sm--gold {
+            background: linear-gradient(135deg, var(--gold), #A48445);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(194, 158, 89, 0.35);
+        }
+
+        .btn-sm--gold:disabled {
+            opacity: .35;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn-sm--gold:not(:disabled):hover {
+            opacity: .88;
+        }
+
+        /* FAB */
+        .fab-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .fab-secondary {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px 8px 14px;
+            border-radius: 100px;
+            background: rgba(15, 17, 26, 0.95);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: var(--text-2);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        .fab-secondary:hover {
+            color: var(--text-1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .fab-main {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 13px 22px;
+            border-radius: 100px;
+            background: linear-gradient(135deg, var(--red), #A6192E);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 8px 28px rgba(196, 30, 58, 0.55);
+            transition: transform .15s, box-shadow .15s;
+        }
+
+        .fab-main:hover {
+            transform: scale(1.04);
+            box-shadow: 0 12px 36px rgba(196, 30, 58, 0.65);
+        }
+
+        /* BACK LINK */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-3);
+            font-size: 12px;
+            text-decoration: none;
+            padding: 6px 0;
+            transition: color .15s;
+        }
+
+        .back-link:hover {
+            color: var(--text-1);
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <div class="topbar-left">
+            <div class="brand">
+                <div class="brand-logo">🦁</div>
+                <span class="brand-name">CasaLeones</span>
+            </div>
+            <div style="width:1px;height:20px;background:var(--border);"></div>
+            <nav class="nav-tabs">
+                <div class="nav-tab active">
+                    <i data-lucide="clipboard-list" style="width:14px;height:14px;"></i>
+                    Mis Órdenes
+                </div>
+                <div class="nav-tab">
+                    <i data-lucide="map" style="width:14px;height:14px;"></i>
+                    Mapa de Mesas
+                </div>
+                <div class="nav-tab">
+                    <i data-lucide="history" style="width:14px;height:14px;"></i>
+                    Historial
+                </div>
+            </nav>
+        </div>
+        <div class="topbar-right">
+            <div class="icon-btn">🌙</div>
+            <div class="icon-btn">
+                <i data-lucide="bell" style="width:14px;height:14px;"></i>
+            </div>
+            <div class="user-chip">
+                <div class="avatar">AG</div>
+                <span class="user-label">Ana García</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN -->
+    <main>
+        <a href="index.html" class="back-link">
+            <i data-lucide="arrow-left" style="width:12px;height:12px;"></i>
+            Volver al índice
+        </a>
+
+        <!-- PAGE HEADER -->
+        <div class="page-hdr">
+            <div class="page-hdr-left">
+                <h1>Mis Órdenes</h1>
+                <div class="counters">
+                    <span class="chip chip--neutral">
+                        <i data-lucide="clipboard-list" style="width:11px;height:11px;"></i>
+                        12 activas
+                    </span>
+                    <span class="chip chip--yellow">
+                        <i data-lucide="clock" style="width:11px;height:11px;"></i>
+                        7 en cocina
+                    </span>
+                    <span class="chip chip--green">
+                        <i data-lucide="check-circle" style="width:11px;height:11px;"></i>
+                        3 listas
+                    </span>
+                    <span class="chip chip--red">
+                        <i data-lucide="alert-triangle" style="width:11px;height:11px;"></i>
+                        2 urgentes
+                    </span>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <button class="btn-outline">
+                    <i data-lucide="refresh-cw" style="width:13px;height:13px;"></i>
+                    Actualizar
+                </button>
+            </div>
+        </div>
+
+        <!-- FILTERS -->
+        <div class="filter-row">
+            <button class="filter-pill active">Todas</button>
+            <button class="filter-pill">En Cocina</button>
+            <button class="filter-pill">Listas para Entregar</button>
+            <button class="filter-pill">Urgentes</button>
+            <button class="filter-pill">Mesa</button>
+            <button class="filter-pill">Para Llevar</button>
+        </div>
+
+        <!-- ORDERS GRID — sample 9 cards -->
+        <div class="orders-grid">
+
+            <!-- Card 1: fresh, ready -->
+            <div class="order-card order-card--done order-card--new">
+                <div class="card-hdr">
+                    <div class="card-hdr-left">
+                        <span class="order-num">#1048</span>
+                        <span class="order-loc">
+                            <i data-lucide="armchair" style="width:11px;height:11px;"></i> Mesa 12
+                        </span>
+                    </div>
+                    <span class="status-badge status--ready">
+                        <i data-lucide="check-circle" style="width:10px;height:10px;"></i> Lista
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="items-list">
+                        <div class="item-row">
+                            <div class="dot-green"></div>
+                            <span class="item-name">Taco Birria Especial</span>
+                            <span class="item-qty">×3</span>
+                        </div>
+                        <div class="item-row">
+                            <div class="dot-green"></div>
+                            <span class="item-name">Agua Fresca Jamaica</span>
+                            <span class="item-qty">×2</span>
+                        </div>
+                        <div class="item-row">
+                            <div class="dot-green"></div>
+                            <span class="item-name">Consomé de Res</span>
+                            <span class="item-qty">×1</span>
+                        </div>
+                    </div>
+                    <div class="card-meta">
+                        <div class="meta-timer">
+                            <i data-lucide="clock" style="width:11px;height:11px;"></i>
+                            14:32
+                        </div>
+                        <span>4 items</span>
+                        <span class="timer-badge timer--fresh">6 min</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-sm btn-sm--outline">
+                        <i data-lucide="pencil" style="width:12px;height:12px;"></i> Modificar
+                    </button>
+                    <button class="btn-sm btn-sm--gold">
+                        <i data-lucide="credit-card" style="width:12px;height:12px;"></i> Cobrar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 2: kitchen -->
+            <div class="order-card order-card--fresh">
+                <div class="card-hdr">
+                    <div class="card-hdr-left">
+                        <span class="order-num">#1047</span>
+                        <span class="order-loc">
+                            <i data-lucide="armchair" style="width:11px;height:11px;"></i> Mesa 5
+                        </span>
+                    </div>
+                    <span class="status-badge status--kitchen">
+                        <i data-lucide="chef-hat" style="width:10px;height:10px;"></i> En cocina
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="items-list">
+                        <div class="item-row">
+                            <div class="dot-yellow"></div>
+                            <span class="item-name">Queso Fundido con Chorizo</span>
+                            <span class="item-qty">×1</span>
+                        </div>
+                        <div class="item-row">
+                            <div class="dot-yellow"></div>
+                            <span class="item-name">Tlayuda Oaxaqueña</span>
+                            <span class="item-qty">×2</span>
+                        </div>
+                        <div class="item-row">
+                            <div class="dot-green"></div>
+                            <span class="item-name">Cerveza Artesanal</span>
+                            <span class="item-qty">×3</span>
+                        </div>
+                    </div>
+                    <div class="card-meta">
+                        <div class="meta-timer">
+                            <i data-lucide="clock" style="width:11px;height:11px;"></i>
+                            14:25
+                        </div>
+                        <span>6 items</span>
+                        <span class="timer-badge timer--fresh">8 min</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-sm btn-sm--outline">
+                        <i data-lucide="pencil" style="width:12px;height:12px;"></i> Modificar
+                    </button>
+                    <button class="btn-sm btn-sm--gold" disabled>
+                        <i data-lucide="credit-card" style="width:12px;height:12px;"></i> Cobrar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 3: warning time -->
+            <div class="order-card order-card--warning">
+                <div class="card-hdr">
+                    <div class="card-hdr-left">
+                        <span class="order-num">#1046</span>
+                        <span class="order-loc">
+                            <i data-lucide="armchair" style="width:11px;height:11px;"></i> Mesa 8
+                        </span>
+                    </div>
+                    <span class="status-badge status--kitchen">
+                        <i data-lucide="chef-hat" style="width:10px;height:10px;"></i> En cocina
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="items-list">
+                        <div class="item-row">
+                            <div class="dot-yellow"></div>
+                            <span class="item-name">Tacos Acorazados</span>
+                            <span class="item-qty">×4</span>
+                        </div>
+                        <div class="item-row">
+                            <div class="dot-yellow"></div>
+                            <span class="item-name">Orden Tostadas</span>
+                            <span class="item-qty">×2</span>
+                        </div>
+                        <div class="item-row">
+                            <div class="dot-green"></div>
+                            <span class="item-name">Refresco</span>
+                            <span class="item-qty">×4</span>
+                        </div>
+                        <span style="font-size:11px;color:var(--text-3);">+2 más...</span>
+                    </div>
+                    <div class="card-meta">
+                        <div class="meta-timer">
+                            <i data-lucide="clock" style="width:11px;height:11px;"></i>
+                            14:07
+                        </div>
+                        <span>8 items</span>
+                        <span class="timer-badge timer--warning">⚠ 15 min</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-sm btn-sm--outline">
+                        <i data-lucide="pencil" style="width:12px;height:12px;"></i> Modificar
+                    </button>
+                    <button class="btn-sm btn-sm--gold" disabled>
+                        <i data-lucide="credit-card" style="width:12px;height:12px;"></i> Cobrar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 4: URGENT -->
+            <div class="order-card order-card--urgent">
+                <div class="card-hdr">
+                    <div class="card-hdr-left">
+                        <span class="order-num">#1043</span>
+                        <span class="order-loc">
+                            <i data-lucide="armchair" style="width:11px;height:11px;"></i> Mesa 2
+                        </span>
+                    </div>
+                    <span class="status-badge status--pending">
+                        <i data-lucide="alert-triangle" style="width:10px;height:10px;"></i> Retrasada
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="items-list">
+                        <div class="item-row">
+                            <div class="dot-yellow"></div>
+                            <span class="item-name">Molcajete Norteño</span>
+                            <span class="item-qty">×1</span>
+                        </div>
+                        <div class="item-row">
+                            <div class="dot-yellow"></div>
+                            <span class="item-name">Costillas BBQ</span>
+                            <span class="item-qty">×2</span>
+                        </div>
+                    </div>
+                    <div class="card-meta">
+                        <div class="meta-timer">
+                            <i data-lucide="clock" style="width:11px;height:11px;"></i>
+                            13:52
+                        </div>
+                        <span>3 items</span>
+                        <span class="timer-badge timer--urgent">🔴 28 min</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-sm btn-sm--outline">
+                        <i data-lucide="pencil" style="width:12px;height:12px;"></i> Modificar
+                    </button>
+                    <button class="btn-sm btn-sm--gold" disabled>
+                        <i data-lucide="credit-card" style="width:12px;height:12px;"></i> Cobrar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 5: Para llevar, ready to charge -->
+            <div class="order-card order-card--done">
+                <div class="card-hdr">
+                    <div class="card-hdr-left">
+                        <span class="order-num">#1044</span>
+                        <span class="order-loc">
+                            <i data-lucide="package" style="width:11px;height:11px;"></i> Para llevar
+                        </span>
+                    </div>
+                    <span class="status-badge status--ready">
+                        <i data-lucide="check-circle" style="width:10px;height:10px;"></i> Lista
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="items-list">
+                        <div class="item-row">
+                            <div class="dot-green"></div>
+                            <span class="item-name">Torta de Milanesa Ahogada</span>
+                            <span class="item-qty">×1</span>
+                        </div>
+                        <div class="item-row">
+                            <div class="dot-green"></div>
+                            <span class="item-name">Papas Fritas</span>
+                            <span class="item-qty">×1</span>
+                        </div>
+                    </div>
+                    <div class="card-meta">
+                        <div class="meta-timer">
+                            <i data-lucide="clock" style="width:11px;height:11px;"></i>14:28
+                        </div>
+                        <span>2 items</span>
+                        <span class="timer-badge timer--fresh">4 min</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-sm btn-sm--outline"><i data-lucide="pencil" style="width:12px;height:12px;"></i>
+                        Modificar</button>
+                    <button class="btn-sm btn-sm--gold"><i data-lucide="credit-card"
+                            style="width:12px;height:12px;"></i> Cobrar</button>
+                </div>
+            </div>
+
+            <!-- Card 6 -->
+            <div class="order-card order-card--fresh">
+                <div class="card-hdr">
+                    <div class="card-hdr-left">
+                        <span class="order-num">#1045</span>
+                        <span class="order-loc"><i data-lucide="armchair" style="width:11px;height:11px;"></i> Mesa
+                            15</span>
+                    </div>
+                    <span class="status-badge status--kitchen"><i data-lucide="chef-hat"
+                            style="width:10px;height:10px;"></i> En cocina</span>
+                </div>
+                <div class="card-body">
+                    <div class="items-list">
+                        <div class="item-row">
+                            <div class="dot-yellow"></div><span class="item-name">Entrecot a la Parrilla</span><span
+                                class="item-qty">×1</span>
+                        </div>
+                        <div class="item-row">
+                            <div class="dot-yellow"></div><span class="item-name">Ensalada César</span><span
+                                class="item-qty">×2</span>
+                        </div>
+                        <div class="item-row">
+                            <div class="dot-green"></div><span class="item-name">Vino Tinto (copa)</span><span
+                                class="item-qty">×2</span>
+                        </div>
+                    </div>
+                    <div class="card-meta">
+                        <div class="meta-timer"><i data-lucide="clock" style="width:11px;height:11px;"></i>14:23</div>
+                        <span>5 items</span>
+                        <span class="timer-badge timer--fresh">10 min</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-sm btn-sm--outline"><i data-lucide="pencil" style="width:12px;height:12px;"></i>
+                        Modificar</button>
+                    <button class="btn-sm btn-sm--gold" disabled><i data-lucide="credit-card"
+                            style="width:12px;height:12px;"></i> Cobrar</button>
+                </div>
+            </div>
+
+            <!-- Card 7 -->
+            <div class="order-card order-card--fresh">
+                <div class="card-hdr">
+                    <div class="card-hdr-left"><span class="order-num">#1049</span><span class="order-loc"><i
+                                data-lucide="armchair" style="width:11px;height:11px;"></i> Mesa 7</span></div>
+                    <span class="status-badge status--pending"><i data-lucide="clock"
+                            style="width:10px;height:10px;"></i> Pendiente</span>
+                </div>
+                <div class="card-body">
+                    <div class="items-list">
+                        <div class="item-row">
+                            <div class="dot-gray"></div><span class="item-name">Pozole Rojo</span><span
+                                class="item-qty">×2</span>
+                        </div>
+                        <div class="item-row">
+                            <div class="dot-gray"></div><span class="item-name">Tlacoyo de Habas</span><span
+                                class="item-qty">×1</span>
+                        </div>
+                    </div>
+                    <div class="card-meta">
+                        <div class="meta-timer"><i data-lucide="clock" style="width:11px;height:11px;"></i>14:36</div>
+                        <span>3 items</span>
+                        <span class="timer-badge timer--fresh">2 min</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-sm btn-sm--outline"><i data-lucide="pencil" style="width:12px;height:12px;"></i>
+                        Modificar</button>
+                    <button class="btn-sm btn-sm--gold" disabled><i data-lucide="credit-card"
+                            style="width:12px;height:12px;"></i> Cobrar</button>
+                </div>
+            </div>
+
+            <!-- Card 8 -->
+            <div class="order-card order-card--warning">
+                <div class="card-hdr">
+                    <div class="card-hdr-left"><span class="order-num">#1041</span><span class="order-loc"><i
+                                data-lucide="armchair" style="width:11px;height:11px;"></i> Mesa 1</span></div>
+                    <span class="status-badge status--kitchen"><i data-lucide="chef-hat"
+                            style="width:10px;height:10px;"></i> En cocina</span>
+                </div>
+                <div class="card-body">
+                    <div class="items-list">
+                        <div class="item-row">
+                            <div class="dot-yellow"></div><span class="item-name">Chiles en Nogada</span><span
+                                class="item-qty">×3</span>
+                        </div>
+                        <div class="item-row">
+                            <div class="dot-yellow"></div><span class="item-name">Sopa de Lima</span><span
+                                class="item-qty">×2</span>
+                        </div>
+                        <span style="font-size:11px;color:var(--text-3);">+3 más...</span>
+                    </div>
+                    <div class="card-meta">
+                        <div class="meta-timer"><i data-lucide="clock" style="width:11px;height:11px;"></i>14:18</div>
+                        <span>7 items</span>
+                        <span class="timer-badge timer--warning">⚠ 18 min</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-sm btn-sm--outline"><i data-lucide="pencil" style="width:12px;height:12px;"></i>
+                        Modificar</button>
+                    <button class="btn-sm btn-sm--gold" disabled><i data-lucide="credit-card"
+                            style="width:12px;height:12px;"></i> Cobrar</button>
+                </div>
+            </div>
+
+            <!-- Card 9: URGENT -->
+            <div class="order-card order-card--urgent">
+                <div class="card-hdr">
+                    <div class="card-hdr-left"><span class="order-num">#1039</span><span class="order-loc"><i
+                                data-lucide="package" style="width:11px;height:11px;"></i> Para llevar</span></div>
+                    <span class="status-badge status--pending"><i data-lucide="alert-triangle"
+                            style="width:10px;height:10px;"></i> Retrasada</span>
+                </div>
+                <div class="card-body">
+                    <div class="items-list">
+                        <div class="item-row">
+                            <div class="dot-yellow"></div><span class="item-name">Caldo de Gallina</span><span
+                                class="item-qty">×1</span>
+                        </div>
+                        <div class="item-row">
+                            <div class="dot-yellow"></div><span class="item-name">Enchiladas Verdes</span><span
+                                class="item-qty">×2</span>
+                        </div>
+                    </div>
+                    <div class="card-meta">
+                        <div class="meta-timer"><i data-lucide="clock" style="width:11px;height:11px;"></i>13:58</div>
+                        <span>3 items</span>
+                        <span class="timer-badge timer--urgent">🔴 22 min</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-sm btn-sm--outline"><i data-lucide="pencil" style="width:12px;height:12px;"></i>
+                        Modificar</button>
+                    <button class="btn-sm btn-sm--gold" disabled><i data-lucide="credit-card"
+                            style="width:12px;height:12px;"></i> Cobrar</button>
+                </div>
+            </div>
+
+        </div><!-- end orders-grid -->
+    </main>
+
+    <!-- FAB -->
+    <div class="fab-container">
+        <button class="fab-secondary">
+            <i data-lucide="package" style="width:14px;height:14px;"></i>
+            Para Llevar
+        </button>
+        <button class="fab-main">
+            <i data-lucide="plus" style="width:18px;height:18px;"></i>
+            Nueva Orden
+        </button>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        document.querySelectorAll('.filter-pill').forEach(p => {
+            p.addEventListener('click', () => {
+                document.querySelectorAll('.filter-pill').forEach(x => x.classList.remove('active'));
+                p.classList.add('active');
+            });
+        });
+        document.querySelectorAll('.nav-tab').forEach(t => {
+            t.addEventListener('click', () => {
+                document.querySelectorAll('.nav-tab').forEach(x => x.classList.remove('active'));
+                t.classList.add('active');
+            });
+        });
+    </script>
+</body>
+
+</html>
