@@ -103,6 +103,6 @@
 </div>
 {% else %}
 {% from 'components/_empty_state.html' import empty_state %}
-{{ empty_state('file-minus', 'No hay notas de crédito para esta factura.') }}
+{{ empty_state('No hay notas de crédito para esta factura.', icon='file-minus') }}
 {% endif %}
 {% endblock %}

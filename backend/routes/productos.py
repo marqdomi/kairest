@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from backend.models.models import Producto
+from backend.models.models import Producto, Estacion
 from backend.extensions import db
 from backend.forms.producto_form import ProductoForm
 from backend.utils import login_required
@@ -16,6 +16,7 @@ def listar_productos():
 @login_required(roles=['admin','superadmin'])
 def crear_producto():
     form = ProductoForm()
+    form.estacion.choices = [(e.nombre, e.nombre.title()) for e in Estacion.query.order_by(Estacion.nombre).all()]
     if form.validate_on_submit():
         p = Producto(
             nombre=form.nombre.data,
@@ -33,6 +34,7 @@ def crear_producto():
 def editar_producto(id):
     p = Producto.query.get_or_404(id)
     form = ProductoForm(obj=p)
+    form.estacion.choices = [(e.nombre, e.nombre.title()) for e in Estacion.query.order_by(Estacion.nombre).all()]
     if form.validate_on_submit():
         form.populate_obj(p)
         db.session.commit()

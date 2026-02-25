@@ -1,6 +1,6 @@
 """Tests for the onboarding wizard (setup), seeder, and modo sistema."""
 import pytest
-from backend.models.models import ConfiguracionSistema, Sucursal, Usuario, Producto, Mesa, Categoria
+from backend.models.models import ConfiguracionSistema, Sucursal, Usuario, Producto, Mesa, Categoria, Estacion
 
 
 class TestConfiguracionSistema:
@@ -79,6 +79,10 @@ class TestSetupWizard:
 
     def test_paso2_renders(self, client, app, db):
         with app.app_context():
+            # Create prerequisite: sucursal from paso1
+            ConfiguracionSistema.set('nombre_negocio', 'Test')
+            db.session.add(Sucursal(nombre='Test'))
+            db.session.commit()
             response = client.get('/setup/paso/2')
             assert response.status_code == 200
             assert 'Administrador' in response.data.decode()
@@ -103,6 +107,10 @@ class TestSetupWizard:
 
     def test_paso2_password_mismatch(self, client, app, db):
         with app.app_context():
+            # Create prerequisite: sucursal from paso1
+            ConfiguracionSistema.set('nombre_negocio', 'Test')
+            db.session.add(Sucursal(nombre='Test'))
+            db.session.commit()
             response = client.post('/setup/paso/2', data={
                 'nombre': 'Test',
                 'email': 'admin@test.com',
@@ -114,14 +122,28 @@ class TestSetupWizard:
 
     def test_paso3_renders(self, client, app, db):
         with app.app_context():
+            # Create prerequisite: sucursal + superadmin
+            ConfiguracionSistema.set('nombre_negocio', 'Test')
+            db.session.add(Sucursal(nombre='Test'))
+            u = Usuario(nombre='Admin', email='a@a.com', rol='superadmin')
+            u.set_password('TestPass123!')
+            db.session.add(u)
+            db.session.commit()
             response = client.get('/setup/paso/3')
             assert response.status_code == 200
-            assert 'Tu Menú' in response.data.decode()
+            assert 'Tu Menu' in response.data.decode()
 
     def test_paso3_default_menu(self, client, app, db):
         with app.app_context():
+            # Create prerequisite: sucursal + superadmin
+            ConfiguracionSistema.set('nombre_negocio', 'Test')
+            db.session.add(Sucursal(nombre='Test'))
+            u = Usuario(nombre='Admin', email='a@a.com', rol='superadmin')
+            u.set_password('TestPass123!')
+            db.session.add(u)
+            db.session.commit()
             response = client.post('/setup/paso/3', data={
-                'opcion_menu': 'default',
+                'opcion_menu': 'taqueria',
             }, follow_redirects=False)
             assert response.status_code == 302
             # Should have created products
@@ -130,12 +152,30 @@ class TestSetupWizard:
 
     def test_paso4_renders(self, client, app, db):
         with app.app_context():
+            # Create prerequisite: superadmin + at least 1 product
+            u = Usuario(nombre='Admin', email='a@a.com', rol='superadmin')
+            u.set_password('TestPass123!')
+            db.session.add(u)
+            cat = Categoria(nombre='General')
+            db.session.add(cat)
+            db.session.flush()
+            db.session.add(Producto(nombre='Test', precio=10, categoria_id=cat.id))
+            db.session.commit()
             response = client.get('/setup/paso/4')
             assert response.status_code == 200
             assert 'Mesas' in response.data.decode()
 
     def test_paso4_creates_mesas(self, client, app, db):
         with app.app_context():
+            # Create prerequisite: superadmin + product
+            u = Usuario(nombre='Admin', email='a@a.com', rol='superadmin')
+            u.set_password('TestPass123!')
+            db.session.add(u)
+            cat = Categoria(nombre='General')
+            db.session.add(cat)
+            db.session.flush()
+            db.session.add(Producto(nombre='Test', precio=10, categoria_id=cat.id))
+            db.session.commit()
             response = client.post('/setup/paso/4', data={
                 'cantidad_mesas': '5',
             }, follow_redirects=False)
@@ -144,13 +184,33 @@ class TestSetupWizard:
 
     def test_paso5_renders(self, client, app, db):
         with app.app_context():
+            # Create prerequisite: superadmin + product + mesas
+            u = Usuario(nombre='Admin', email='a@a.com', rol='superadmin')
+            u.set_password('TestPass123!')
+            db.session.add(u)
+            cat = Categoria(nombre='General')
+            db.session.add(cat)
+            db.session.flush()
+            db.session.add(Producto(nombre='Test', precio=10, categoria_id=cat.id))
+            db.session.add(Mesa(numero='1', capacidad=4))
+            db.session.commit()
             response = client.get('/setup/paso/5')
             assert response.status_code == 200
             assert 'Tu Equipo' in response.data.decode()
 
     def test_completar_marks_onboarding_done(self, client, app, db):
         with app.app_context():
-            response = client.get('/setup/completar', follow_redirects=False)
+            # Create prerequisite data so completar endpoint works
+            u = Usuario(nombre='Admin', email='a@a.com', rol='superadmin')
+            u.set_password('TestPass123!')
+            db.session.add(u)
+            cat = Categoria(nombre='General')
+            db.session.add(cat)
+            db.session.flush()
+            db.session.add(Producto(nombre='Test', precio=10, categoria_id=cat.id))
+            db.session.add(Mesa(numero='1', capacidad=4))
+            db.session.commit()
+            response = client.post('/setup/completar', follow_redirects=False)
             assert response.status_code == 302
             assert ConfiguracionSistema.get_bool('onboarding_completado') is True
             assert ConfiguracionSistema.get('modo_sistema') == 'basico'

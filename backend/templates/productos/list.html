@@ -1,33 +1,54 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="card mb-4">
-  <div class="card-header bg-primary text-white">
-    Productos
-    <a href="{{ url_for('productos.crear_producto') }}" class="btn btn-success btn-sm float-end">Nuevo</a>
+{% extends 'layouts/_layout_admin.html' %}
+{% block page_title %}Productos{% endblock %}
+{% block admin_content %}
+<div class="cl-page-header" style="margin-bottom:var(--cl-space-5);">
+  <div>
+    <h1 class="cl-page-header__title" style="display:flex;align-items:center;gap:10px;">
+      <i data-lucide="package" class="icon-md"></i> Productos
+    </h1>
   </div>
-  <div class="card-body">
+  <a href="{{ url_for('productos.crear_producto') }}" class="cl-btn cl-btn--sm cl-btn--primary" style="display:flex;align-items:center;gap:6px;">
+    <i data-lucide="plus" style="width:14px;height:14px;"></i> Nuevo Producto
+  </a>
+</div>
+
+<div class="cl-card">
+  <div class="cl-card__body p-0">
     <div class="table-responsive">
-      <table class="table table-striped table-hover mb-0">
-  <thead>
-    <tr><th>Nombre</th><th>Precio</th><th>Categoría</th><th>Estación</th><th>Acciones</th></tr>
-  </thead>
-  <tbody>
-    {% for p in productos %}
-    <tr>
-      <td>{{ p.nombre }}</td>
-      <td>{{ p.precio_unitario }}</td>
-      <td>{{ p.categoria }}</td>
-      <td>{{ p.estacion }}</td>
-      <td>
-        <a href="{{ url_for('productos.editar_producto', id=p.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
-        <form method="post" action="{{ url_for('productos.eliminar_producto', id=p.id) }}" style="display:inline" 
-              onsubmit="return confirm('¿Eliminar producto?');">
-          <button class="btn btn-sm btn-outline-danger">Eliminar</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
+      <table class="cl-table">
+        <thead>
+          <tr><th>Nombre</th><th>Precio</th><th>Categoría</th><th>Estación</th><th>Acciones</th></tr>
+        </thead>
+        <tbody>
+          {% for p in productos %}
+          <tr>
+            <td>{{ p.nombre }}</td>
+            <td>${{ '%.2f'|format(p.precio_unitario) }}</td>
+            <td>{{ p.categoria }}</td>
+            <td>{{ p.estacion }}</td>
+            <td>
+              <div class="d-flex gap-1">
+                <a href="{{ url_for('productos.editar_producto', id=p.id) }}" class="cl-btn cl-btn--sm cl-btn--outline" title="Editar">
+                  <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+                </a>
+                <form method="post" action="{{ url_for('productos.eliminar_producto', id=p.id) }}" style="display:inline"
+                      onsubmit="return confirm('¿Eliminar producto?');">
+                  <button class="cl-btn cl-btn--sm cl-btn--danger-outline" title="Eliminar">
+                    <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" class="text-center text-muted py-4">
+              <i data-lucide="inbox" style="width:24px;height:24px;opacity:.5;"></i><br>
+              No hay productos
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
       </table>
     </div>
   </div>

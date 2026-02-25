@@ -1,0 +1,124 @@
+{# ═══════════════════════════════════════════════════════
+   Admin wrapper — Historial del Día (with sidebar layout)
+   ═══════════════════════════════════════════════════════ #}
+{% extends 'layouts/_layout_admin.html' %}
+{% block page_title %}Historial del Día{% endblock %}
+
+{% block admin_breadcrumb %}
+<nav aria-label="breadcrumb">
+  <ol class="cl-breadcrumb">
+    <li><a href="{{ url_for('admin.dashboard') }}">Operaciones</a></li>
+    <li class="active" aria-current="page">Historial del Día</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block admin_content %}
+<div style="margin-bottom: var(--cl-space-4);">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div>
+      <h1 style="font-size: var(--cl-text-2xl); font-weight: var(--cl-font-bold); color: var(--cl-text-primary); margin: 0;">
+        <i data-lucide="history" class="icon-md" style="vertical-align: -3px;"></i>
+        Historial del Día
+      </h1>
+      <p style="color: var(--cl-text-secondary); margin: var(--cl-space-1) 0 0; font-size: var(--cl-text-sm);">
+        Órdenes finalizadas y pagadas de hoy
+      </p>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      {% if ordenes %}
+      <span class="cl-badge cl-badge--info cl-badge--pill">
+        <i data-lucide="shopping-bag" class="icon-xs"></i>
+        {{ ordenes|length }} orden{{ 'es' if ordenes|length != 1 else '' }}
+      </span>
+      <span class="cl-badge cl-badge--success cl-badge--pill">
+        <i data-lucide="dollar-sign" class="icon-xs"></i>
+        ${{ '%.2f' | format(ordenes|sum(attribute='total')|default(0, true)|float) }}
+      </span>
+      <a href="{{ url_for('meseros.historial_csv') }}" class="cl-btn--v7-outline cl-btn--sm">
+        <i data-lucide="download" class="icon-sm"></i>
+        Exportar CSV
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if ordenes %}
+<div class="cl-v7-card" style="overflow: hidden;">
+  <div class="table-responsive">
+    <table class="cl-table" style="margin-bottom: 0;">
+      <thead>
+        <tr>
+          <th>Orden</th>
+          <th>Hora</th>
+          <th>Mesa</th>
+          <th>Estado</th>
+          <th>Productos</th>
+          <th class="text-end">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for orden in ordenes %}
+        <tr>
+          <td>
+            <span style="font-weight: var(--cl-font-semibold); color: var(--cl-text-primary);">#{{ orden.id }}</span>
+          </td>
+          <td>
+            <span style="color: var(--cl-text-secondary);">{{ orden.tiempo_registro.strftime('%H:%M') }}</span>
+          </td>
+          <td>
+            {% if orden.es_para_llevar %}
+              <span class="cl-badge cl-badge--warning cl-badge--pill" style="font-size: var(--cl-text-xs);">
+                <i data-lucide="package" class="icon-xs"></i> Para llevar
+              </span>
+            {% elif orden.mesa %}
+              <span style="font-weight: var(--cl-font-medium);">Mesa {{ orden.mesa.numero }}</span>
+            {% else %}
+              <span style="color: var(--cl-text-tertiary);">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if orden.estado == 'pagada' %}
+              <span class="cl-badge cl-badge--success">Pagada</span>
+            {% elif orden.estado == 'finalizada' %}
+              <span class="cl-badge cl-badge--info">Finalizada</span>
+            {% else %}
+              <span class="cl-badge">{{ orden.estado|capitalize }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="max-width: 320px;">
+              {% for detalle in orden.detalles[:4] %}
+              <span style="display: inline-block; font-size: var(--cl-text-sm); color: var(--cl-text-secondary); margin-right: var(--cl-space-2);">
+                {{ detalle.producto.nombre }} <span class="cl-badge cl-badge--pill" style="font-size: 10px;">x{{ detalle.cantidad }}</span>
+              </span>
+              {% endfor %}
+              {% if orden.detalles|length > 4 %}
+                <span style="font-size: var(--cl-text-xs); color: var(--cl-text-tertiary);">+{{ orden.detalles|length - 4 }} más</span>
+              {% endif %}
+            </div>
+          </td>
+          <td class="text-end">
+            <span style="font-weight: var(--cl-font-semibold); color: var(--cl-text-primary);">
+              ${{ '%.2f' | format(orden.total|default(0, true)|float) }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div style="padding: var(--cl-space-16) var(--cl-space-4); text-align: center;">
+  <div style="width: 64px; height: 64px; border-radius: var(--cl-radius-full); background: var(--cl-bg-tertiary); display: inline-flex; align-items: center; justify-content: center; margin-bottom: var(--cl-space-4);">
+    <i data-lucide="inbox" style="width: 32px; height: 32px; color: var(--cl-text-placeholder);"></i>
+  </div>
+  <h3 style="font-size: var(--cl-text-lg); font-weight: var(--cl-font-semibold); color: var(--cl-text-primary); margin-bottom: var(--cl-space-2);">Sin órdenes hoy</h3>
+  <p style="color: var(--cl-text-secondary); max-width: 360px; margin: 0 auto;">
+    No hay órdenes finalizadas o pagadas registradas hoy. Las órdenes completadas aparecerán aquí.
+  </p>
+</div>
+{% endif %}
+{% endblock %}

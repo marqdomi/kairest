@@ -1,6 +1,7 @@
 {# ═══════════════════════════════════════════════════════
-   Sprint 9 — 9.1-9.3: Detalle de Orden — Split Panel
-   60% products (left) + 40% sticky cart (right)
+   Sprint 9 — Detalle de Orden — Split Panel (v2)
+   M1-M10: Dark cart, direct add, favorites, +/-, price,
+   enriched tiles, pill counts, mobile close, popular, toast
    ═══════════════════════════════════════════════════════ #}
 {% extends 'layouts/_layout_operations.html' %}
 {% set active_op_tab = 'meseros' %}
@@ -19,28 +20,50 @@
       </div>
     </div>
 
-    {# Category pills — horizontal scrollable #}
+    {# M7: Category pills with count — M3: Favorites pill first #}
     <div class="category-pills" id="categoryPills">
-      <button class="cl-pill active" data-category="all" onclick="filterCategory('all', this)">Todos</button>
-      {% for categoria in productos_por_categoria.keys() %}
-      <button class="cl-pill" data-category="{{ categoria }}" onclick="filterCategory('{{ categoria }}', this)">
-        {{ categoria }}
+      <button class="cl-pill active" data-category="all">Todos</button>
+      <button class="cl-pill cl-pill--fav" data-category="__favoritos">
+        <i data-lucide="star" class="icon-xs"></i> Favoritos
+      </button>
+      {% if popular_product_ids %}
+      <button class="cl-pill cl-pill--popular" data-category="__populares">
+        <i data-lucide="flame" class="icon-xs"></i> Populares
+      </button>
+      {% endif %}
+      {% for categoria, productos_lista in productos_por_categoria.items() %}
+      <button class="cl-pill" data-category="{{ categoria }}">
+        {{ categoria }} <span class="cl-pill__count">{{ productos_lista|length }}</span>
       </button>
       {% endfor %}
     </div>
 
-    {# Product tiles grid #}
+    {# M6: Enriched product tiles grid — M2: click=add, long-press=notes — M3: fav star #}
     <div class="row g-2" id="productGrid">
       {% for categoria, productos_lista in productos_por_categoria.items() %}
         {% for producto in productos_lista %}
         <div class="col-6 col-sm-4 col-lg-3 product-tile-wrapper" data-category="{{ categoria }}"
-             data-name="{{ producto.nombre|lower }}">
+             data-name="{{ producto.nombre|lower }}" data-producto-id="{{ producto.id }}"
+             {% if producto.id in popular_product_ids %}data-popular="1"{% endif %}>
           <div class="cl-product-tile" data-orden-id="{{ orden.id }}" data-producto-id="{{ producto.id }}"
                data-nombre="{{ producto.nombre }}" data-precio="{{ producto.precio }}"
-               onclick="agregarProductoDirecto(this)" role="button" tabindex="0"
+               data-descripcion="{{ producto.descripcion or '' }}" data-categoria="{{ categoria }}"
+               role="button" tabindex="0"
                aria-label="Agregar {{ producto.nombre }} ${{ '%.2f'|format(producto.precio) }}">
+            <button class="tile-fav-btn" data-producto-id="{{ producto.id }}" aria-label="Favorito" type="button">
+              <i data-lucide="star" class="icon-xs"></i>
+            </button>
+            <div class="cl-product-tile__cat">{{ categoria }}</div>
             <div class="cl-product-tile__name">{{ producto.nombre }}</div>
-            <div class="cl-product-tile__price">${{ '%.2f'|format(producto.precio) }}</div>
+            {% if producto.descripcion %}
+            <div class="cl-product-tile__desc">{{ producto.descripcion|truncate(40) }}</div>
+            {% endif %}
+            <div class="cl-product-tile__footer">
+              <span class="cl-product-tile__price">${{ '%.2f'|format(producto.precio) }}</span>
+              <button class="tile-notes-btn" data-producto-id="{{ producto.id }}" aria-label="Agregar con notas" type="button">
+                <i data-lucide="message-square-plus" class="icon-xs"></i>
+              </button>
+            </div>
           </div>
         </div>
         {% endfor %}
@@ -50,32 +73,37 @@
 
   {# ═══════════════════════ RIGHT — Cart Panel (40%) ═══════════════════════ #}
   <div class="split-panel__cart" id="cartPanel" role="region" aria-label="Carrito de orden" aria-live="polite">
-    {# Cart header #}
+    {# M8: Mobile close button in cart header #}
     <div class="cart-header">
       <div>
         <h2 class="cart-header__title">Orden #{{ orden.id }}</h2>
         <div class="cart-header__meta">
           {% if orden.es_para_llevar %}
-            <span class="cl-badge cl-badge--pill" style="background: var(--cl-warning-100); color: var(--cl-warning-700);">
+            <span class="cl-badge cl-badge--pill cart-badge--warning">
               <i data-lucide="package" class="icon-xs"></i> Para llevar
             </span>
           {% else %}
-            <span class="cl-badge cl-badge--pill" style="background: var(--cl-primary-100); color: var(--cl-primary-700);">
+            <span class="cl-badge cl-badge--pill cart-badge--primary">
               <i data-lucide="map-pin" class="icon-xs"></i> Mesa {{ orden.mesa.numero }}
             </span>
           {% endif %}
-          <span class="cl-badge cl-badge--pill" style="background: var(--cl-gray-100); color: var(--cl-gray-600);">
+          <span class="cl-badge cl-badge--pill cart-badge--neutral">
             {{ orden.estado|capitalize }}
           </span>
         </div>
       </div>
-      <span class="cl-badge cl-badge--pill" style="background: var(--cl-primary-500); color: white; font-size: var(--cl-text-base); min-width: 28px; text-align: center;" id="badgeCount">0</span>
+      <div class="cart-header__right">
+        <span class="cl-badge cl-badge--pill cart-badge--count" id="badgeCount">0</span>
+        <button class="cart-close-btn d-lg-none" id="cartCloseBtn" aria-label="Cerrar carrito" type="button">
+          <i data-lucide="x" class="icon-md"></i>
+        </button>
+      </div>
     </div>
 
     {# Cart items list #}
     <div class="cart-items" id="productosList">
       <div class="cart-empty" id="cartEmpty">
-        <i data-lucide="shopping-cart" style="width: 36px; height: 36px; color: var(--cl-gray-300);"></i>
+        <i data-lucide="shopping-cart" style="width: 36px; height: 36px; color: var(--cl-text-tertiary);"></i>
         <p style="color: var(--cl-text-tertiary); margin: var(--cl-space-2) 0 0; font-size: var(--cl-text-sm);">
           Agrega productos del menú
         </p>
@@ -85,11 +113,11 @@
     {# Cart totals #}
     <div class="cart-totals" id="cartTotals" style="display: none;" role="status" aria-label="Totales del carrito">
       <div class="cart-totals__row">
-        <span>Subtotal</span>
+        <span>{% if precios_incluyen_iva %}Subtotal (sin IVA){% else %}Subtotal{% endif %}</span>
         <span id="cartSubtotal">$0.00</span>
       </div>
       <div class="cart-totals__row" style="color: var(--cl-text-tertiary); font-size: var(--cl-text-xs);">
-        <span>IVA (16%)</span>
+        <span>{% if precios_incluyen_iva %}IVA incluido (16%){% else %}IVA (16%){% endif %}</span>
         <span id="cartIVA">$0.00</span>
       </div>
       <div class="cart-totals__row cart-totals__total">
@@ -101,15 +129,29 @@
     {# Cart actions #}
     <div class="cart-actions">
       {% if orden.estado == 'pendiente' %}
+      {# Initial order — standard "Enviar a Cocina" form submit #}
       <form method="POST" action="{{ url_for('meseros.enviar_orden_a_cocina', orden_id=orden.id) }}" style="flex: 1;" id="formEnviarCocina">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="cl-btn cl-btn--success" style="width: 100%; height: 48px; font-weight: var(--cl-font-semibold);" id="btnEnviarCocina" disabled>
           <i data-lucide="send" class="icon-sm"></i> Enviar a Cocina
         </button>
       </form>
+      {% else %}
+      {# Order already in kitchen — indicator banner + manual re-notify button #}
+      <div id="newItemsBanner" style="flex: 1; display: none;">
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <div id="newItemsInfo" style="flex: 1; background: var(--cl-success-50, #ecfdf3); border: 1px solid var(--cl-success-200, #a6f4c5); border-radius: var(--cl-radius-md); padding: 8px 12px; font-size: var(--cl-text-sm); color: var(--cl-success-700, #15803d); display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="check-circle" style="width:16px;height:16px;flex-shrink:0;"></i>
+            <span id="newItemsText">Nuevos productos se envían automáticamente a cocina</span>
+          </div>
+          <button type="button" class="cl-btn cl-btn--success" id="btnReenviarCocina" style="height: 48px; white-space: nowrap; font-weight: var(--cl-font-semibold);" title="Reenviar notificación a cocina">
+            <i data-lucide="send" class="icon-sm"></i> Notificar Cocina
+          </button>
+        </div>
+      </div>
       {% endif %}
-      <button type="button" class="cl-btn" style="height: 48px; font-weight: var(--cl-font-semibold); background: var(--cl-gold-500); color: white; flex: 1;"
-              onclick="window.location.href='{{ url_for('meseros.pago_view', orden_id=orden.id) }}'">
+      <button type="button" class="cl-btn" id="btnCobrar" style="height: 48px; font-weight: var(--cl-font-semibold); background: var(--cl-gold-500); color: white; flex: 1;"
+              data-href="{{ url_for('meseros.pago_view', orden_id=orden.id) }}">
         <i data-lucide="credit-card" class="icon-sm"></i> Cobrar
       </button>
       <button type="button" class="cl-btn cl-btn--outline" style="height: 48px;" data-bs-toggle="modal" data-bs-target="#modalCancelar" aria-label="Cancelar orden">
@@ -120,10 +162,13 @@
 </div>
 
 {# ═══ Mobile cart toggle FAB ═══ #}
-<button class="cart-fab d-lg-none" id="cartFab" onclick="toggleMobileCart()" aria-label="Ver carrito">
+<button class="cart-fab d-lg-none" id="cartFab" aria-label="Ver carrito">
   <i data-lucide="shopping-cart" class="icon-md"></i>
   <span class="cart-fab__badge" id="cartFabBadge">0</span>
 </button>
+
+{# ═══ M10: Toast container ═══ #}
+<div class="add-toast-container" id="addToastContainer" aria-live="polite"></div>
 
 {# ═══════════════════════ Modal: Cancelar Orden ═══════════════════════ #}
 <div class="modal fade" id="modalCancelar" tabindex="-1" aria-labelledby="modalCancelarLabel" aria-hidden="true">
@@ -195,6 +240,9 @@
 
 {# ═══════════════════════ Styles ═══════════════════════ #}
 <style>
+/* Spin animation for loading states */
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
 /* Split panel layout */
 .split-panel {
   display: flex;
@@ -211,9 +259,9 @@
   flex: 0 0 38%;
   display: flex;
   flex-direction: column;
-  background: var(--cl-surface);
+  background: var(--cl-surface-2, #13151F);
   border-radius: var(--cl-radius-xl);
-  border: 1px solid var(--cl-border);
+  border: 1px solid var(--cl-border-color, rgba(255,255,255,0.07));
   overflow: hidden;
 }
 
@@ -232,25 +280,46 @@
   white-space: nowrap;
   padding: var(--cl-space-2) var(--cl-space-3);
   border-radius: var(--cl-radius-full);
-  border: 1px solid var(--cl-border);
-  background: var(--cl-surface);
+  border: 1px solid var(--cl-border-color, rgba(255,255,255,0.07));
+  background: var(--cl-surface-2, #13151F);
   color: var(--cl-text-secondary);
   font-size: var(--cl-text-sm);
   font-weight: var(--cl-font-medium);
   cursor: pointer;
   transition: all var(--cl-transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
-.cl-pill:hover { border-color: var(--cl-primary-500); color: var(--cl-primary-500); }
+.cl-pill:hover { border-color: var(--cl-primary-500); color: var(--cl-primary-400); }
 .cl-pill.active {
   background: var(--cl-primary-500);
   color: white;
   border-color: var(--cl-primary-500);
 }
+.cl-pill__count {
+  font-size: 10px;
+  background: rgba(255,255,255,0.12);
+  color: var(--cl-text-tertiary);
+  border-radius: var(--cl-radius-full);
+  padding: 0 6px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 18px;
+}
+.cl-pill.active .cl-pill__count {
+  background: rgba(255,255,255,0.25);
+  color: white;
+}
+.cl-pill--fav { border-color: var(--cl-gold-500, #D4A843); color: var(--cl-gold-500, #D4A843); }
+.cl-pill--fav.active { background: var(--cl-gold-500, #D4A843); color: #1a1a1a; border-color: var(--cl-gold-500); }
+.cl-pill--popular { border-color: var(--cl-error-400, #F04438); color: var(--cl-error-400, #F04438); }
+.cl-pill--popular.active { background: var(--cl-error-500); color: white; border-color: var(--cl-error-500); }
 
 /* Product tiles */
 .cl-product-tile {
-  background: var(--cl-surface);
-  border: 1px solid var(--cl-border);
+  background: var(--cl-surface-2, #13151F);
+  border: 1px solid var(--cl-border-color, rgba(255,255,255,0.07));
   border-radius: var(--cl-radius-lg);
   padding: var(--cl-space-3);
   cursor: pointer;
@@ -258,27 +327,78 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  min-height: 80px;
+  min-height: 100px;
+  position: relative;
 }
 .cl-product-tile:hover {
   transform: translateY(-2px);
   box-shadow: var(--cl-shadow-md);
-  border-color: var(--cl-primary-300);
+  border-color: var(--cl-primary-400);
 }
 .cl-product-tile:active { transform: scale(0.97); }
+.cl-product-tile__cat {
+  font-size: 10px;
+  font-weight: var(--cl-font-semibold);
+  color: var(--cl-primary-400);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
 .cl-product-tile__name {
   font-size: var(--cl-text-sm);
-  font-weight: var(--cl-font-medium);
+  font-weight: var(--cl-font-semibold);
   color: var(--cl-text-primary);
   line-height: 1.3;
   margin-bottom: var(--cl-space-1);
 }
+.cl-product-tile__desc {
+  font-size: 11px;
+  color: var(--cl-text-tertiary);
+  line-height: 1.3;
+  margin-bottom: auto;
+}
+.cl-product-tile__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--cl-space-2);
+}
 .cl-product-tile__price {
   font-size: var(--cl-text-sm);
   font-weight: var(--cl-font-bold);
-  color: var(--cl-primary-600);
+  color: var(--cl-success-400, #32D583);
 }
+
+/* Tile favorite star */
+.tile-fav-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: none;
+  border: none;
+  color: var(--cl-text-tertiary);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--cl-radius-sm);
+  opacity: 0.4;
+  transition: opacity var(--cl-transition-fast), color var(--cl-transition-fast);
+  z-index: 2;
+}
+.tile-fav-btn:hover, .tile-fav-btn.is-fav { opacity: 1; color: var(--cl-gold-500, #D4A843); }
+.tile-fav-btn.is-fav i { fill: var(--cl-gold-500, #D4A843); }
+
+/* Tile notes button */
+.tile-notes-btn {
+  background: rgba(255,255,255,0.07);
+  border: none;
+  color: var(--cl-text-tertiary);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--cl-radius-sm);
+  transition: background var(--cl-transition-fast), color var(--cl-transition-fast);
+  z-index: 2;
+}
+.tile-notes-btn:hover { background: var(--cl-primary-500); color: white; }
 
 /* Bounce animation on add */
 @keyframes tileAdded {
@@ -287,13 +407,13 @@
 }
 .tile-added { animation: tileAdded 0.3s ease; }
 
-/* Cart panel sections */
+/* M1: Dark-mode cart panel */
 .cart-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   padding: var(--cl-space-4);
-  border-bottom: 1px solid var(--cl-border);
+  border-bottom: 1px solid var(--cl-border-color, rgba(255,255,255,0.07));
 }
 .cart-header__title {
   font-size: var(--cl-text-lg);
@@ -307,6 +427,40 @@
   margin-top: var(--cl-space-1);
   flex-wrap: wrap;
 }
+.cart-header__right {
+  display: flex;
+  align-items: center;
+  gap: var(--cl-space-2);
+}
+.cart-badge--primary {
+  background: rgba(59,130,246,0.15);
+  color: var(--cl-primary-400);
+}
+.cart-badge--warning {
+  background: rgba(234,179,8,0.15);
+  color: var(--cl-gold-500, #D4A843);
+}
+.cart-badge--neutral {
+  background: rgba(255,255,255,0.07);
+  color: var(--cl-text-secondary);
+}
+.cart-badge--count {
+  background: var(--cl-primary-500);
+  color: white;
+  font-size: var(--cl-text-base);
+  min-width: 28px;
+  text-align: center;
+}
+.cart-close-btn {
+  background: none;
+  border: none;
+  color: var(--cl-text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--cl-radius-sm);
+}
+.cart-close-btn:hover { color: var(--cl-text-primary); }
+
 .cart-items {
   flex: 1;
   overflow-y: auto;
@@ -324,33 +478,66 @@
   align-items: center;
   gap: var(--cl-space-2);
   padding: var(--cl-space-2) 0;
-  border-bottom: 1px solid var(--cl-border-light, var(--cl-gray-100));
+  border-bottom: 1px solid var(--cl-border-color, rgba(255,255,255,0.07));
   animation: slideIn 0.2s ease;
 }
 @keyframes slideIn {
   from { opacity: 0; transform: translateX(20px); }
   to { opacity: 1; transform: translateX(0); }
 }
-.cart-item__name {
+.cart-item__info {
   flex: 1;
+  min-width: 0;
+}
+.cart-item__name {
   font-size: var(--cl-text-sm);
   font-weight: var(--cl-font-medium);
   color: var(--cl-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .cart-item__notes {
   font-size: var(--cl-text-xs);
   color: var(--cl-text-tertiary);
   font-style: italic;
 }
-.cart-item__qty {
+.cart-item__line-price {
+  font-size: 11px;
+  color: var(--cl-text-tertiary);
+}
+
+/* M4: +/- quantity controls */
+.cart-item__qty-controls {
   display: inline-flex;
   align-items: center;
+  gap: 0;
+  border-radius: var(--cl-radius-md);
+  overflow: hidden;
+  border: 1px solid var(--cl-border-color, rgba(255,255,255,0.07));
+  flex-shrink: 0;
+}
+.cart-item__qty-btn {
+  display: flex;
+  align-items: center;
   justify-content: center;
-  min-width: 24px;
-  height: 24px;
-  border-radius: var(--cl-radius-full);
-  background: var(--cl-primary-100);
-  color: var(--cl-primary-700);
+  width: 28px;
+  height: 28px;
+  background: rgba(255,255,255,0.05);
+  border: none;
+  color: var(--cl-text-secondary);
+  cursor: pointer;
+  transition: background var(--cl-transition-fast), color var(--cl-transition-fast);
+}
+.cart-item__qty-btn:hover { background: var(--cl-primary-500); color: white; }
+.cart-item__qty-val {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  background: rgba(59,130,246,0.12);
+  color: var(--cl-primary-400);
   font-size: var(--cl-text-xs);
   font-weight: var(--cl-font-bold);
 }
@@ -364,17 +551,18 @@
   transition: color var(--cl-transition-fast), background var(--cl-transition-fast);
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 .cart-item__remove:hover {
-  color: var(--cl-error-600);
-  background: var(--cl-error-50);
+  color: var(--cl-error-300);
+  background: rgba(240,68,56,0.15);
 }
 
-/* Cart totals */
+/* Cart totals — M1 dark */
 .cart-totals {
   padding: var(--cl-space-3) var(--cl-space-4);
-  border-top: 1px solid var(--cl-border);
-  background: var(--cl-gray-50);
+  border-top: 1px solid var(--cl-border-color, rgba(255,255,255,0.07));
+  background: var(--cl-surface-3, #181A26);
 }
 .cart-totals__row {
   display: flex;
@@ -389,7 +577,7 @@
   color: var(--cl-text-primary);
   margin-top: var(--cl-space-1);
   padding-top: var(--cl-space-2);
-  border-top: 2px solid var(--cl-border);
+  border-top: 2px solid var(--cl-border-color, rgba(255,255,255,0.07));
 }
 
 /* Cart actions */
@@ -397,7 +585,7 @@
   display: flex;
   gap: var(--cl-space-2);
   padding: var(--cl-space-3);
-  border-top: 1px solid var(--cl-border);
+  border-top: 1px solid var(--cl-border-color, rgba(255,255,255,0.07));
 }
 
 /* Mobile cart FAB */
@@ -434,6 +622,39 @@
   justify-content: center;
 }
 
+/* M10: Toast animation */
+.add-toast-container {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+  pointer-events: none;
+}
+.add-toast {
+  background: var(--cl-surface-3, #181A26);
+  color: var(--cl-success-400, #32D583);
+  padding: 8px 16px;
+  border-radius: var(--cl-radius-full);
+  font-size: var(--cl-text-sm);
+  font-weight: var(--cl-font-medium);
+  border: 1px solid rgba(50,213,131,0.2);
+  box-shadow: var(--cl-shadow-lg);
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 1.7s forwards;
+  white-space: nowrap;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toastOut {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-8px) scale(0.95); }
+}
+
 /* Responsive: mobile stacks vertically, cart hides behind FAB */
 @media (max-width: 991.98px) {
   .split-panel {
@@ -456,13 +677,43 @@
     border: none;
   }
   .split-panel__cart.mobile-open { display: flex; }
+  .add-toast-container { bottom: 20px; }
 }
 </style>
 
 {# ═══════════════════════ Scripts ═══════════════════════ #}
-<script>
+<script nonce="{{ csp_nonce }}">
 const ORDEN_ID = {{ orden.id }};
+const ORDEN_ESTADO = '{{ orden.estado }}';
 const IVA_RATE = 0.16;
+const PRECIOS_INCLUYEN_IVA = {{ 'true' if precios_incluyen_iva else 'false' }};
+const USER_ID = {{ user_id|default(0) }};
+const FAV_KEY = 'cl_favorites_' + USER_ID;
+
+// =============================================
+// M3: Favorites system (localStorage)
+// =============================================
+function getFavorites() {
+  try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; }
+  catch { return []; }
+}
+function saveFavorites(ids) {
+  localStorage.setItem(FAV_KEY, JSON.stringify(ids));
+}
+function toggleFavorite(productoId) {
+  const favs = getFavorites();
+  const idx = favs.indexOf(productoId);
+  if (idx > -1) favs.splice(idx, 1); else favs.push(productoId);
+  saveFavorites(favs);
+  renderFavStars();
+}
+function renderFavStars() {
+  const favs = getFavorites();
+  document.querySelectorAll('.tile-fav-btn').forEach(btn => {
+    const pid = Number(btn.dataset.productoId);
+    btn.classList.toggle('is-fav', favs.includes(pid));
+  });
+}
 
 // =============================================
 // Category filter
@@ -470,10 +721,85 @@ const IVA_RATE = 0.16;
 function filterCategory(cat, btn) {
   document.querySelectorAll('.cl-pill').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
+  const favs = getFavorites();
   document.querySelectorAll('.product-tile-wrapper').forEach(tile => {
-    tile.style.display = (cat === 'all' || tile.dataset.category === cat) ? '' : 'none';
+    if (cat === 'all') {
+      tile.style.display = '';
+    } else if (cat === '__favoritos') {
+      tile.style.display = favs.includes(Number(tile.dataset.productoId)) ? '' : 'none';
+    } else if (cat === '__populares') {
+      tile.style.display = tile.dataset.popular === '1' ? '' : 'none';
+    } else {
+      tile.style.display = tile.dataset.category === cat ? '' : 'none';
+    }
   });
 }
+
+// Event delegation for category pills
+document.getElementById('categoryPills').addEventListener('click', function(e) {
+  const pill = e.target.closest('.cl-pill');
+  if (!pill) return;
+  filterCategory(pill.dataset.category, pill);
+});
+
+// Event delegation for product tiles — M2: click tile body = add ×1 directly
+document.getElementById('productGrid').addEventListener('click', function(e) {
+  // M3: Favorite star toggle
+  const favBtn = e.target.closest('.tile-fav-btn');
+  if (favBtn) {
+    e.stopPropagation();
+    toggleFavorite(Number(favBtn.dataset.productoId));
+    return;
+  }
+  // M2: Notes button opens modal
+  const notesBtn = e.target.closest('.tile-notes-btn');
+  if (notesBtn) {
+    e.stopPropagation();
+    const tile = notesBtn.closest('.cl-product-tile');
+    if (tile) abrirModalNotas(tile);
+    return;
+  }
+  // M2: Click tile body = add ×1 immediately (no modal)
+  const tile = e.target.closest('.cl-product-tile');
+  if (!tile) return;
+  agregarDirecto(tile, 1, '');
+});
+
+// Cobrar button
+const btnCobrar = document.getElementById('btnCobrar');
+if (btnCobrar) {
+  btnCobrar.addEventListener('click', function() {
+    window.location.href = this.dataset.href;
+  });
+}
+
+// Mobile cart FAB
+document.getElementById('cartFab').addEventListener('click', toggleMobileCart);
+
+// M8: Mobile cart close button
+document.getElementById('cartCloseBtn').addEventListener('click', toggleMobileCart);
+
+// Event delegation for cart item buttons (+, -, remove, notes)
+document.getElementById('productosList').addEventListener('click', function(e) {
+  const removeBtn = e.target.closest('.cart-item__remove');
+  if (removeBtn) {
+    quitarItem(Number(removeBtn.dataset.ordenId), Number(removeBtn.dataset.detalleId));
+    return;
+  }
+  const qtyBtn = e.target.closest('.cart-item__qty-btn');
+  if (qtyBtn) {
+    const detalleId = Number(qtyBtn.dataset.detalleId);
+    const action = qtyBtn.dataset.action;
+    const currentQty = Number(qtyBtn.dataset.qty);
+    if (action === 'minus' && currentQty <= 1) {
+      quitarItem(ORDEN_ID, detalleId);
+    } else {
+      const newQty = action === 'plus' ? currentQty + 1 : currentQty - 1;
+      actualizarCantidad(detalleId, newQty);
+    }
+    return;
+  }
+});
 
 // =============================================
 // Product search
@@ -523,7 +849,8 @@ fetch('/static/js/notas_rapidas.json')
   .then(data => { _notasRapidas = data.notas || []; })
   .catch(() => { _notasRapidas = []; });
 
-function agregarProductoDirecto(el) {
+// M2: Open notes modal (called from notes button on tile)
+function abrirModalNotas(el) {
   _pendingOrdenId = el.dataset.ordenId;
   _pendingProductoId = el.dataset.productoId;
   _pendingEl = el;
@@ -546,33 +873,48 @@ function agregarProductoDirecto(el) {
   new bootstrap.Modal(document.getElementById('modalNotas')).show();
 }
 
-function _enviarProducto(notas, cantidad) {
-  fetch(`/api/ordenes/${_pendingOrdenId}/detalle`, {
+// M2: Direct add — no modal, instant
+function agregarDirecto(el, cantidad, notas) {
+  const ordenId = el.dataset.ordenId;
+  const productoId = el.dataset.productoId;
+  const nombre = el.dataset.nombre || 'Producto';
+
+  fetch(`/api/ordenes/${ordenId}/detalle`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ producto_id: Number(_pendingProductoId), cantidad, notas })
+    body: JSON.stringify({ producto_id: Number(productoId), cantidad, notas })
   })
   .then(res => res.json())
   .then(data => {
     if (data.error) {
-      alert('Error: ' + data.error);
+      showAddToast('❌ ' + data.error, true);
     } else {
-      if (_pendingEl) {
-        _pendingEl.classList.remove('tile-added');
-        void _pendingEl.offsetWidth;
-        _pendingEl.classList.add('tile-added');
+      // Tile bounce
+      el.classList.remove('tile-added');
+      void el.offsetWidth;
+      el.classList.add('tile-added');
+      // M10: Toast — show kitchen notification for non-pendiente orders
+      if (ORDEN_ESTADO !== 'pendiente') {
+        showAddToast(`✓ ${nombre} ×${cantidad} — enviado a cocina 🔔`);
+      } else {
+        showAddToast(`✓ ${nombre} ×${cantidad}`);
       }
-      cargarDetalleProductos(_pendingOrdenId);
+      cargarDetalleProductos(ordenId);
     }
   })
-  .catch(console.error);
+  .catch(err => { console.error(err); showAddToast('❌ Error de red', true); });
+}
 
+function _enviarProductoDesdeModal(notas, cantidad) {
+  if (_pendingEl) {
+    agregarDirecto(_pendingEl, cantidad, notas);
+  }
   const m = bootstrap.Modal.getInstance(document.getElementById('modalNotas'));
   if (m) m.hide();
 }
 
 document.getElementById('btnAgregarSinNotas').addEventListener('click', function() {
-  _enviarProducto('', parseInt(document.getElementById('notasCantidad').value) || 1);
+  _enviarProductoDesdeModal('', parseInt(document.getElementById('notasCantidad').value) || 1);
 });
 
 document.getElementById('btnAgregarConNotas').addEventListener('click', function() {
@@ -580,11 +922,44 @@ document.getElementById('btnAgregarConNotas').addEventListener('click', function
   document.querySelectorAll('#notasRapidasBtns .nota-rapida-btn:not(.cl-btn--outline)').forEach(b => selected.push(b.textContent));
   const libre = document.getElementById('notasLibre').value.trim();
   if (libre) selected.push(libre);
-  _enviarProducto(selected.join(', '), parseInt(document.getElementById('notasCantidad').value) || 1);
+  _enviarProductoDesdeModal(selected.join(', '), parseInt(document.getElementById('notasCantidad').value) || 1);
 });
 
 // =============================================
-// Cart — load, render, remove
+// M10: Toast on add
+// =============================================
+function showAddToast(text, isError) {
+  const container = document.getElementById('addToastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'add-toast';
+  if (isError) {
+    toast.style.color = 'var(--cl-error-400)';
+    toast.style.borderColor = 'rgba(240,68,56,0.2)';
+  }
+  toast.textContent = text;
+  container.appendChild(toast);
+  setTimeout(() => { if (toast.parentNode) toast.remove(); }, 2200);
+}
+
+// =============================================
+// M4: Update quantity via PATCH
+// =============================================
+function actualizarCantidad(detalleId, nuevaCantidad) {
+  fetch(`/api/ordenes/${ORDEN_ID}/detalle/${detalleId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ cantidad: nuevaCantidad })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) showAddToast('❌ ' + data.error, true);
+    else cargarDetalleProductos(ORDEN_ID);
+  })
+  .catch(err => console.error('Error al actualizar cantidad:', err));
+}
+
+// =============================================
+// Cart — load, render, remove (M5: prices from API)
 // =============================================
 function cargarDetalleProductos(ordenId) {
   fetch(`/api/ordenes/${ordenId}/detalle`)
@@ -616,37 +991,98 @@ function cargarDetalleProductos(ordenId) {
       if (emptyEl) emptyEl.style.display = 'none';
       if (totalsEl) totalsEl.style.display = 'block';
 
-      // Calculate totals (price_unitario * cantidad)
-      // API doesn't return precio, let's compute from product data
+      // M5: Use precio_unitario from API instead of DOM lookup
       let subtotal = 0;
+      let pendienteCount = 0;
 
       let html = '';
       detalles.forEach(item => {
         const nombre = item.nombre || item.producto_nombre;
-        const notasHtml = item.notas ? `<div class="cart-item__notes">📝 ${item.notas}</div>` : '';
-        // Try to get precio from the product tile data
-        const tileEl = document.querySelector(`.cl-product-tile[data-producto-id="${item.producto_id}"]`);
-        const precio = tileEl ? parseFloat(tileEl.dataset.precio) : 0;
-        subtotal += precio * item.cantidad;
+        const precio = item.precio_unitario || 0;
+        const lineTotal = precio * item.cantidad;
+        subtotal += lineTotal;
+        const estado = item.estado || 'pendiente';
+        const isEditable = estado === 'pendiente';
+        if (isEditable) pendienteCount += item.cantidad;
+
+        // Status badge
+        let badgeHtml = '';
+        if (estado === 'listo') {
+          badgeHtml = '<span style="font-size:11px;font-weight:600;color:var(--cl-success-600,#16a34a);background:var(--cl-success-50,#ecfdf3);padding:2px 8px;border-radius:9999px;white-space:nowrap;">✓ Listo</span>';
+        } else if (estado === 'entregado') {
+          badgeHtml = '<span style="font-size:11px;font-weight:600;color:var(--cl-neutral-500,#737373);background:var(--cl-neutral-100,#f5f5f5);padding:2px 8px;border-radius:9999px;white-space:nowrap;">Entregado</span>';
+        } else if (ORDEN_ESTADO !== 'pendiente') {
+          // Item is pendiente but order already sent — mark as "new"
+          badgeHtml = '<span style="font-size:11px;font-weight:600;color:var(--cl-warning-700,#a16207);background:var(--cl-warning-50,#fefce8);padding:2px 8px;border-radius:9999px;white-space:nowrap;">🆕 Nuevo</span>';
+        }
+
+        const notasHtml = item.notas
+          ? `<div class="cart-item__notes"><i data-lucide="file-text" style="width:12px;height:12px;"></i> ${item.notas}</div>`
+          : '';
+        const priceHtml = precio > 0
+          ? `<div class="cart-item__line-price">$${precio.toFixed(2)} × ${item.cantidad} = $${lineTotal.toFixed(2)}</div>`
+          : '';
+
+        // Controls: editable only for pendiente items
+        const qtyControlsHtml = isEditable
+          ? `<div class="cart-item__qty-controls">
+              <button class="cart-item__qty-btn" data-detalle-id="${item.id}" data-action="minus" data-qty="${item.cantidad}" aria-label="Reducir cantidad">
+                <i data-lucide="minus" style="width:14px;height:14px;"></i>
+              </button>
+              <span class="cart-item__qty-val">${item.cantidad}</span>
+              <button class="cart-item__qty-btn" data-detalle-id="${item.id}" data-action="plus" data-qty="${item.cantidad}" aria-label="Aumentar cantidad">
+                <i data-lucide="plus" style="width:14px;height:14px;"></i>
+              </button>
+            </div>
+            <button class="cart-item__remove" data-orden-id="${ordenId}" data-detalle-id="${item.id}" aria-label="Eliminar ${nombre}">
+              <i data-lucide="trash-2" class="icon-xs"></i>
+            </button>`
+          : `<div class="cart-item__qty-controls">
+              <span class="cart-item__qty-val" style="opacity:0.7;">${item.cantidad}</span>
+            </div>`;
+
+        const itemOpacity = estado === 'entregado' ? 'opacity:0.6;' : '';
 
         html += `
-          <div class="cart-item">
-            <div class="cart-item__name">
-              ${nombre}
+          <div class="cart-item" style="${itemOpacity}" data-estado="${estado}">
+            <div class="cart-item__info">
+              <div class="cart-item__name" style="display:flex;align-items:center;gap:6px;">
+                ${nombre} ${badgeHtml}
+              </div>
               ${notasHtml}
+              ${priceHtml}
             </div>
-            <span class="cart-item__qty">${item.cantidad}</span>
-            <button class="cart-item__remove" onclick="quitarItem(${ordenId}, ${item.id})" aria-label="Eliminar ${nombre}">
-              <i data-lucide="trash-2" class="icon-xs"></i>
-            </button>
+            ${qtyControlsHtml}
           </div>`;
       });
       listEl.innerHTML = html;
 
-      // Update totals
-      const iva = subtotal * IVA_RATE;
-      const total = subtotal + iva;
-      document.getElementById('cartSubtotal').textContent = '$' + subtotal.toFixed(2);
+      // Show/hide new items banner for non-pendiente orders
+      const newItemsBanner = document.getElementById('newItemsBanner');
+      if (newItemsBanner) {
+        if (pendienteCount > 0) {
+          newItemsBanner.style.display = 'block';
+          document.getElementById('newItemsText').textContent =
+            `${pendienteCount} producto(s) nuevo(s) — enviados automáticamente a cocina`;
+        } else {
+          newItemsBanner.style.display = 'none';
+        }
+      }
+
+      // Update totals — respect precios_incluyen_iva config
+      let iva, total, subtotalDisplay;
+      if (PRECIOS_INCLUYEN_IVA) {
+        // Prices already include IVA: extract it
+        total = subtotal;
+        iva = total - (total / (1 + IVA_RATE));
+        subtotalDisplay = total - iva;
+      } else {
+        // Prices do NOT include IVA: add it on top
+        subtotalDisplay = subtotal;
+        iva = subtotal * IVA_RATE;
+        total = subtotal + iva;
+      }
+      document.getElementById('cartSubtotal').textContent = '$' + subtotalDisplay.toFixed(2);
       document.getElementById('cartIVA').textContent = '$' + iva.toFixed(2);
       document.getElementById('cartTotal').textContent = '$' + total.toFixed(2);
 
@@ -663,7 +1099,7 @@ function quitarItem(ordenId, detalleId) {
   })
   .then(r => r.json())
   .then(result => {
-    if (result.error) alert('Error: ' + result.error);
+    if (result.error) showAddToast('❌ ' + result.error, true);
     else cargarDetalleProductos(ordenId);
   })
   .catch(err => console.error('Error al quitar item:', err));
@@ -689,9 +1125,43 @@ if (motivoSelect) {
 }
 
 // =============================================
+// Re-notify kitchen (for non-pendiente orders)
+// =============================================
+const btnReenviar = document.getElementById('btnReenviarCocina');
+if (btnReenviar) {
+  btnReenviar.addEventListener('click', function() {
+    this.disabled = true;
+    this.innerHTML = '<i data-lucide="loader" class="icon-sm" style="animation:spin 1s linear infinite;"></i> Enviando...';
+    fetch(`/api/ordenes/${ORDEN_ID}/notificar-cocina`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        showAddToast('❌ ' + data.error, true);
+      } else {
+        showAddToast('🔔 Cocina notificada');
+      }
+      btnReenviar.disabled = false;
+      btnReenviar.innerHTML = '<i data-lucide="send" class="icon-sm"></i> Notificar Cocina';
+      if (window.lucide) lucide.createIcons();
+    })
+    .catch(err => {
+      console.error(err);
+      showAddToast('❌ Error de red', true);
+      btnReenviar.disabled = false;
+      btnReenviar.innerHTML = '<i data-lucide="send" class="icon-sm"></i> Notificar Cocina';
+      if (window.lucide) lucide.createIcons();
+    });
+  });
+}
+
+// =============================================
 // Init
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
+  renderFavStars();
   cargarDetalleProductos(ORDEN_ID);
 });
 </script>

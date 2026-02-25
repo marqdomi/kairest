@@ -73,7 +73,7 @@
 <h5 class="mt-4 mb-3"><i data-lucide="map" class="icon-sm"></i> Estado de Mesas</h5>
 <div id="mapa-mesas" class="row g-2"></div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 document.addEventListener('DOMContentLoaded', async function() {
   const res = await fetch('{{ url_for("reservaciones.api_mesas_estado") }}');
   const mesas = await res.json();

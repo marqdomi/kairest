@@ -8,7 +8,7 @@ class ProductoForm(FlaskForm):
     categoria = StringField('Categoría', validators=[DataRequired(), Length(max=50)])
     estacion = SelectField(
         'Estación',
-        choices=[('taqueros','Taqueros'), ('comal','Comal'), ('bebidas','Bebidas')],
+        choices=[],  # Populated dynamically in the view from Estacion model
         validators=[DataRequired()]
     )
     submit = SubmitField('Guardar')

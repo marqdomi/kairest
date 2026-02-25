@@ -20,7 +20,7 @@ class TestOrderCreation:
         assert resp.status_code in (200, 201, 302, 401, 403)
 
     def test_order_total_calculates_iva(self, db, sample_producto):
-        """Test that order totals include IVA calculation."""
+        """Test that order totals include IVA calculation (precios_incluyen_iva=True default)."""
         from backend.models.models import Orden, OrdenDetalle, IVA_RATE
         from decimal import Decimal
 
@@ -38,10 +38,14 @@ class TestOrderCreation:
         db.session.flush()
 
         orden.calcular_totales()
-        assert float(orden.subtotal) == 90.0
-        expected_iva = 90.0 * float(IVA_RATE)
-        assert abs(float(orden.iva) - expected_iva) < 0.01
-        assert abs(float(orden.total) - (90.0 + expected_iva)) < 0.01
+        # Default: precios_incluyen_iva=True — prices already include IVA
+        bruto = Decimal('90.00')
+        expected_total = bruto
+        expected_iva = (bruto - bruto / (1 + IVA_RATE)).quantize(Decimal('0.01'))
+        expected_subtotal = (bruto - expected_iva).quantize(Decimal('0.01'))
+        assert float(orden.total) == pytest.approx(float(expected_total), abs=0.01)
+        assert float(orden.iva) == pytest.approx(float(expected_iva), abs=0.01)
+        assert float(orden.subtotal) == pytest.approx(float(expected_subtotal), abs=0.01)
 
 
 class TestPayment:

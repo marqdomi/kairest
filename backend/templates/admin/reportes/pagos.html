@@ -2,7 +2,7 @@
 {% block page_title %}Métodos de Pago{% endblock %}
 {% block head %}
 {{ super() }}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script nonce="{{ csp_nonce }}" src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 {% endblock %}
 
 {% block admin_content %}
@@ -62,6 +62,6 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/reportes-charts.js') }}?v={{ config.VERSION }}"></script>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/reportes-charts.js') }}?v={{ config.VERSION }}"></script>
 <script nonce="{{ csp_nonce }}">document.addEventListener('DOMContentLoaded', initPagosCharts);</script>
 {% endblock %}

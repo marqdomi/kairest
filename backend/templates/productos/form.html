@@ -1,18 +1,43 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="card">
-  <div class="card-header bg-primary text-white">
-    {{ titulo }}
+{% extends 'layouts/_layout_admin.html' %}
+{% set active_sidebar = 'productos' %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block admin_content %}
+<div class="cl-page-hdr" style="margin-bottom:24px;">
+  <div>
+    <h1>{{ titulo }}</h1>
   </div>
-  <div class="card-body">
-<form method="post">
-  {{ form.hidden_tag() }}
-  <div class="mb-3">{{ form.nombre.label }} {{ form.nombre(class="form-control") }}</div>
-  <div class="mb-3">{{ form.precio_unitario.label }} {{ form.precio_unitario(class="form-control") }}</div>
-  <div class="mb-3">{{ form.categoria.label }} {{ form.categoria(class="form-control") }}</div>
-  <div class="mb-3">{{ form.estacion.label }} {{ form.estacion(class="form-select") }}</div>
-  {{ form.submit(class="btn btn-success") }}
-</form>
+</div>
+
+<div class="cl-card">
+  <div class="cl-card__body">
+    <form method="post">
+      {{ form.hidden_tag() }}
+      <div class="mb-3">
+        <label class="cl-form-label">{{ form.nombre.label.text }}</label>
+        {{ form.nombre(class="cl-form-input") }}
+      </div>
+      <div class="mb-3">
+        <label class="cl-form-label">{{ form.precio_unitario.label.text }}</label>
+        {{ form.precio_unitario(class="cl-form-input") }}
+      </div>
+      <div class="mb-3">
+        <label class="cl-form-label">{{ form.categoria.label.text }}</label>
+        {{ form.categoria(class="cl-form-input") }}
+      </div>
+      <div class="mb-3">
+        <label class="cl-form-label">{{ form.estacion.label.text }}</label>
+        {{ form.estacion(class="cl-form-select") }}
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button type="submit" class="cl-btn--v7-success">
+          <i data-lucide="check" class="icon-sm"></i> Guardar
+        </button>
+        <a href="{{ url_for('productos.listar_productos') }}" class="cl-btn--v7-outline">
+          <i data-lucide="arrow-left" class="icon-sm"></i> Cancelar
+        </a>
+      </div>
+    </form>
   </div>
 </div>
 {% endblock %}

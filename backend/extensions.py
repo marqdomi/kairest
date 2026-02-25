@@ -18,8 +18,22 @@ cors = CORS()
 db = SQLAlchemy()
 
 # Socket.IO — orígenes restringidos desde config (fallback dev)
+# Use eventlet in production (gunicorn --worker-class eventlet), threading in dev/tests
 _cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:5005').split(',')
-socketio = SocketIO(cors_allowed_origins=_cors_origins)
+
+
+def _detect_async_mode():
+    """Auto-detect best async mode: eventlet if monkey-patched, else threading."""
+    try:
+        import eventlet.patcher
+        if eventlet.patcher.is_monkey_patched('socket'):
+            return 'eventlet'
+    except (ImportError, AttributeError):
+        pass
+    return 'threading'
+
+
+socketio = SocketIO(cors_allowed_origins=_cors_origins, async_mode=_detect_async_mode())
 
 csrf = CSRFProtect()
 

@@ -4,13 +4,14 @@ from decimal import Decimal
 from flask import Blueprint, render_template, session, redirect, url_for, flash, request, jsonify, g, current_app
 from backend.models.models import (
     Mesa, Orden, Producto, OrdenDetalle, Sale, SaleItem, Usuario, Pago, IVA_RATE,
-    descontar_inventario_por_orden, Cliente,
+    descontar_inventario_por_orden, Cliente, MovimientoInventario,
 )
 from backend.extensions import db, socketio
 from backend.utils import login_required, verificar_propiedad_orden, filtrar_por_sucursal, verificar_stock_disponible, actualizar_estado_mesa
 from backend.services.sanitizer import sanitizar_texto
 from collections import defaultdict
 from sqlalchemy.orm import joinedload
+from sqlalchemy import func
 from datetime import datetime, date
 
 logger = logging.getLogger(__name__)
@@ -20,37 +21,88 @@ meseros_bp = Blueprint('meseros', __name__, url_prefix='/meseros')
 ESTADOS_MODIFICABLES = ['pendiente', 'enviado', 'en_preparacion', 'lista_para_entregar']
 
 
+def _revertir_inventario_orden(orden, usuario_id):
+    """Reverse inventory deductions for a cancelled order that already had inventory deducted."""
+    for detalle in orden.detalles:
+        if not detalle.producto or not detalle.producto.receta_items:
+            continue
+        for receta in detalle.producto.receta_items:
+            cantidad_total = receta.cantidad_por_unidad * detalle.cantidad
+            receta.ingrediente.stock_actual += cantidad_total
+            mov = MovimientoInventario(
+                ingrediente_id=receta.ingrediente_id,
+                tipo='ajuste',
+                cantidad=cantidad_total,
+                orden_id=orden.id,
+                usuario_id=usuario_id,
+                motivo=f'Reversión cancelación orden #{orden.id}',
+            )
+            db.session.add(mov)
+
+
 # =====================================================================
 # Dashboard
 # =====================================================================
 @meseros_bp.route('/')
-@login_required(roles='mesero')
+@login_required(roles=['mesero', 'admin', 'superadmin'])
 def view_meseros():
+    is_admin = session.get('rol') in ('admin', 'superadmin')
     user_id = session.get('user_id')
     query = Orden.query.options(
         joinedload(Orden.mesa),
         joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
+        joinedload(Orden.mesero),
     ).filter(
-        Orden.mesero_id == user_id,
         Orden.estado.notin_(['pagada', 'finalizada', 'cancelada']),
     )
+    if not is_admin:
+        query = query.filter(Orden.mesero_id == user_id)
     query = filtrar_por_sucursal(query, Orden)
     ordenes_mesero = query.order_by(Orden.tiempo_registro.desc()).all()
 
-    return render_template('meseros.html', ordenes_mesero=ordenes_mesero, now_utc=datetime.utcnow())
+    # Ensure totals are calculated for all orders (fixes $0.00 display)
+    dirty = False
+    for o in ordenes_mesero:
+        if o.total is None and o.detalles:
+            o.calcular_totales()
+            dirty = True
+    if dirty:
+        db.session.commit()
+
+    # Load paid orders from today for the "Pagadas" pill
+    hoy = date.today()
+    q_pagadas = Orden.query.options(
+        joinedload(Orden.mesa),
+        joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
+        joinedload(Orden.mesero),
+    ).filter(
+        Orden.estado.in_(['pagada', 'finalizada']),
+        db.or_(
+            db.func.date(Orden.fecha_pago) == hoy,
+            db.func.date(Orden.tiempo_registro) == hoy,
+        ),
+    )
+    if not is_admin:
+        q_pagadas = q_pagadas.filter(Orden.mesero_id == user_id)
+    q_pagadas = filtrar_por_sucursal(q_pagadas, Orden)
+    ordenes_pagadas = q_pagadas.order_by(Orden.fecha_pago.desc()).all()
+
+    template = 'admin/ordenes_activas.html' if is_admin else 'meseros.html'
+    return render_template(template, ordenes_mesero=ordenes_mesero,
+                           ordenes_pagadas=ordenes_pagadas, now_utc=datetime.utcnow())
 
 
 # =====================================================================
 # Mapa visual de mesas (Sprint 4 — 5.1)
 # =====================================================================
 @meseros_bp.route('/mapa')
-@login_required(roles='mesero')
+@login_required(roles=['mesero', 'admin', 'superadmin'])
 def mapa_mesas():
-    from flask_login import current_user
     mesas = filtrar_por_sucursal(Mesa.query, Mesa).all()
     zonas = sorted(set(m.zona for m in mesas if m.zona))
-    is_admin = current_user.rol in ('admin', 'superadmin')
-    return render_template('meseros/mapa_mesas.html', zonas=zonas, is_admin=is_admin)
+    is_admin = session.get('rol') in ('admin', 'superadmin')
+    template = 'admin/mapa_mesas.html' if is_admin else 'meseros/mapa_mesas.html'
+    return render_template(template, zonas=zonas, is_admin=is_admin)
 
 
 # =====================================================================
@@ -64,12 +116,17 @@ def historial_dia():
         joinedload(Orden.mesa),
         joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
     ).filter(
-        db.func.date(Orden.tiempo_registro) == hoy,
         Orden.estado.in_(['finalizada', 'pagada']),
+        db.or_(
+            db.func.date(Orden.fecha_pago) == hoy,
+            db.func.date(Orden.tiempo_registro) == hoy,
+        ),
     )
     query = filtrar_por_sucursal(query, Orden)
-    ordenes = query.order_by(Orden.tiempo_registro.desc()).all()
-    return render_template('historial_dia.html', ordenes=ordenes)
+    ordenes = query.order_by(Orden.fecha_pago.desc().nullslast()).all()
+    is_admin = session.get('rol') in ('admin', 'superadmin')
+    template = 'admin/historial_dia.html' if is_admin else 'historial_dia.html'
+    return render_template(template, ordenes=ordenes)
 
 
 # =====================================================================
@@ -87,11 +144,14 @@ def historial_csv():
         joinedload(Orden.mesa),
         joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
     ).filter(
-        db.func.date(Orden.tiempo_registro) == hoy,
         Orden.estado.in_(['finalizada', 'pagada']),
+        db.or_(
+            db.func.date(Orden.fecha_pago) == hoy,
+            db.func.date(Orden.tiempo_registro) == hoy,
+        ),
     )
     query = filtrar_por_sucursal(query, Orden)
-    ordenes = query.order_by(Orden.tiempo_registro.desc()).all()
+    ordenes = query.order_by(Orden.fecha_pago.desc().nullslast()).all()
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -196,8 +256,20 @@ def detalle_orden(orden_id):
     for p in productos:
         productos_por_categoria[p.categoria.nombre].append(p.to_dict())
 
+    # M9 — Popular products: top 8 most ordered products overall
+    popular_ids = (
+        db.session.query(OrdenDetalle.producto_id, func.sum(OrdenDetalle.cantidad).label('total'))
+        .group_by(OrdenDetalle.producto_id)
+        .order_by(func.sum(OrdenDetalle.cantidad).desc())
+        .limit(8)
+        .all()
+    )
+    popular_product_ids = [pid for pid, _ in popular_ids]
+
     return render_template('detalle_orden.html', orden=orden,
-                           productos_por_categoria=productos_por_categoria)
+                           productos_por_categoria=productos_por_categoria,
+                           popular_product_ids=popular_product_ids,
+                           user_id=session.get('user_id', 0))
 
 
 @meseros_bp.route('/ordenes/<int:orden_id>/agregar_productos', methods=['POST'])
@@ -334,10 +406,21 @@ def entregar_item(orden_id, detalle_id):
 @meseros_bp.route('/ordenes/<int:orden_id>/cancelar', methods=['POST'])
 @login_required(roles=['mesero', 'admin', 'superadmin'])
 def cancelar_orden(orden_id):
-    orden = Orden.query.get_or_404(orden_id)
+    orden = Orden.query.options(
+        joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
+        joinedload(Orden.pagos),
+    ).get_or_404(orden_id)
     if orden.estado in ['pagada', 'finalizada', 'cancelada']:
         flash('No se puede cancelar.', 'warning')
         return redirect(url_for('meseros.view_meseros'))
+
+    # Reverse inventory if it was already deducted (order went through payment flow)
+    if orden.estado == 'pagada' or orden.pagos:
+        try:
+            _revertir_inventario_orden(orden, session.get('user_id'))
+        except Exception:
+            logger.exception('Error revirtiendo inventario orden %s', orden_id)
+
     orden.estado = 'cancelada'
     db.session.commit()
     # Liberar mesa si no quedan órdenes activas (Sprint 2 — 3.3)
@@ -440,7 +523,8 @@ def get_cobrar_orden_info(orden_id):
         "total": float(orden.total or 0),
         "pagos": pagos_data,
         "total_pagado": float(orden.total_pagado()),
-        "saldo_pendiente": float(orden.saldo_pendiente()),
+        "saldo_pendiente": float(max(orden.saldo_pendiente(), Decimal('0'))),
+        "cambio": float(orden.cambio or 0),
     })
 
 
@@ -452,10 +536,14 @@ def get_cobrar_orden_info(orden_id):
 @verificar_propiedad_orden
 def registrar_pago(orden_id):
     """Registra un pago parcial o total. Se pueden hacer múltiples."""
-    orden = Orden.query.options(
-        joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
-        joinedload(Orden.pagos),
-    ).get_or_404(orden_id)
+    # Lock the order row to prevent concurrent double-payment race condition
+    orden = db.session.query(Orden).with_for_update().get(orden_id)
+    if not orden:
+        return jsonify(success=False, message="Orden no encontrada."), 404
+    # Eager-load relationships after locking
+    db.session.refresh(orden)
+    orden.detalles  # trigger lazy load
+    orden.pagos     # trigger lazy load
 
     if orden.estado not in ('completada', 'lista_para_entregar'):
         return jsonify(success=False, message=f"Orden no lista para cobro ({orden.estado})."), 400
@@ -488,10 +576,10 @@ def registrar_pago(orden_id):
     orden.calcular_totales()
 
     pago = Pago(
-        orden_id=orden.id, metodo=metodo, monto=monto,
+        metodo=metodo, monto=monto,
         referencia=referencia, registrado_por=session.get('user_id'),
     )
-    db.session.add(pago)
+    orden.pagos.append(pago)  # Use relationship so in-memory collection stays in sync
     db.session.flush()
 
     total_pagado = orden.total_pagado()
@@ -523,10 +611,20 @@ def registrar_pago(orden_id):
             'orden_id': orden.id, 'mensaje': f'Orden #{orden.id} pagada.',
         })
         # Descontar inventario según receta estándar
+        inventario_ok = True
         try:
             descontar_inventario_por_orden(orden, session.get('user_id'))
         except Exception:
-            logger.exception('Error descontando inventario orden %s', orden_id)
+            inventario_ok = False
+            logger.exception('Error descontando inventario orden %s — requiere reconciliación', orden_id)
+            # Flag for reconciliation via ConfiguracionSistema
+            try:
+                from backend.models.models import ConfiguracionSistema
+                pending = ConfiguracionSistema.get('inventario_pendiente', '')
+                ids = f"{pending},{orden_id}" if pending else str(orden_id)
+                ConfiguracionSistema.set('inventario_pendiente', ids)
+            except Exception:
+                pass  # Don't block payment over flagging
 
         # Actualizar visitas/gasto del cliente
         if orden.cliente_id:
@@ -575,12 +673,8 @@ def cobrar_orden_post(orden_id):
         joinedload(Orden.pagos),
     ).get_or_404(orden_id)
 
-    if orden.estado != 'completada':
+    if orden.estado not in ('completada', 'lista_para_entregar'):
         return jsonify(success=False, message=f"No lista para cobro ({orden.estado})."), 400
-
-    no_entregados = [d for d in orden.detalles if d.estado != 'entregado']
-    if no_entregados:
-        return jsonify(success=False, message="Ítems pendientes de entrega."), 400
 
     data = request.get_json()
     if not data or 'monto_recibido' not in data:
@@ -624,6 +718,11 @@ def cobrar_orden_post(orden_id):
         ))
 
     db.session.commit()
+    # Descontar inventario (Sprint 6)
+    try:
+        descontar_inventario_por_orden(orden, session.get('user_id'))
+    except Exception:
+        logger.exception('Error descontando inventario en cobrar_orden_post orden %s', orden_id)
     # Liberar mesa si no quedan órdenes activas (Sprint 2 — 3.3)
     actualizar_estado_mesa(orden.mesa_id)
     db.session.commit()

@@ -2,7 +2,7 @@
 
 {% block page_title %}Personalización{% endblock %}
 
-{% block content %}
+{% block admin_content %}
 <div class="cl-content-header" style="margin-bottom:24px;">
     <div>
         <h1 class="cl-page-title">Personalización</h1>
@@ -113,7 +113,7 @@
     </div>
 </form>
 
-<script>
+<script nonce="{{ csp_nonce }}">
     function previewLogo(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
@@ -128,4 +128,4 @@
         document.getElementById('colorHex').textContent = this.value;
     });
 </script>
-{% endblock %}
+{% endblock admin_content %}

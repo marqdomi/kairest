@@ -145,9 +145,9 @@
     </div>
     <div class="cl-card__body" id="stockAlertsList">
       <div class="cl-alert-list" aria-live="polite">
-        <div class="cl-skeleton" style="height:38px;border-radius:8px;margin-bottom:8px;"></div>
-        <div class="cl-skeleton" style="height:38px;border-radius:8px;margin-bottom:8px;"></div>
-        <div class="cl-skeleton" style="height:38px;border-radius:8px;"></div>
+        <div class="cl-skeleton" style="height:38px;margin-bottom:8px;"></div>
+        <div class="cl-skeleton" style="height:38px;margin-bottom:8px;"></div>
+        <div class="cl-skeleton" style="height:38px;"></div>
       </div>
     </div>
   </div>
@@ -164,9 +164,9 @@
       </a>
     </div>
     <div class="cl-card__body cl-feed" id="activityFeed" style="max-height:340px;overflow-y:auto;" aria-live="polite">
-      <div class="cl-skeleton" style="height:54px;border-radius:8px;margin-bottom:6px;"></div>
-      <div class="cl-skeleton" style="height:54px;border-radius:8px;margin-bottom:6px;"></div>
-      <div class="cl-skeleton" style="height:54px;border-radius:8px;"></div>
+      <div class="cl-skeleton" style="height:54px;margin-bottom:6px;"></div>
+      <div class="cl-skeleton" style="height:54px;margin-bottom:6px;"></div>
+      <div class="cl-skeleton" style="height:54px;"></div>
     </div>
   </div>
 
@@ -175,6 +175,6 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{{ url_for('static', filename='js/admin-dashboard.js') }}?v={{ config.VERSION }}"></script>
+<script nonce="{{ csp_nonce }}" src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/admin-dashboard.js') }}?v={{ config.VERSION }}"></script>
 {% endblock %}

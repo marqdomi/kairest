@@ -73,12 +73,36 @@ class Sucursal(db.Model):
 # -------------------- MODELOS --------------------
 
 class Usuario(UserMixin, db.Model):
+    # Roles estáticos: superadmin, admin, mesero, cocina
+    # Los usuarios con rol='cocina' se asocian a una estación vía estacion_id
+    ROLES_ESTATICOS = ['superadmin', 'admin', 'mesero', 'cocina']
+
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     rol = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256))
     sucursal_id = db.Column(db.Integer, db.ForeignKey('sucursales.id'), nullable=True)
+    estacion_id = db.Column(db.Integer, db.ForeignKey('estacion.id'), nullable=True)
+    estacion = db.relationship('Estacion', backref='usuarios', lazy=True)
+
+    @property
+    def es_cocina(self):
+        """True si el usuario es un trabajador de cocina (rol='cocina' o rol legacy de estación)."""
+        if self.rol == 'cocina':
+            return True
+        # Backward compatibility: roles legacy (taquero, comal, bebidas, etc.)
+        return self.rol not in self.ROLES_ESTATICOS and self.rol != ''
+
+    @property
+    def estacion_nombre(self):
+        """Nombre de la estación asignada (vía FK o rol legacy)."""
+        if self.estacion_id and self.estacion:
+            return self.estacion.nombre
+        # Backward compatibility: el rol es el nombre de la estación
+        if self.es_cocina and self.rol != 'cocina':
+            return self.rol
+        return None
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -129,8 +153,11 @@ class Producto(db.Model):
 
 
 class Mesa(db.Model):
+    __table_args__ = (
+        db.UniqueConstraint('numero', 'sucursal_id', name='uq_mesa_numero_sucursal'),
+    )
     id = db.Column(db.Integer, primary_key=True)
-    numero = db.Column(db.String(10), nullable=False, unique=True)
+    numero = db.Column(db.String(10), nullable=False)
     capacidad = db.Column(db.Integer, default=4)
     estado = db.Column(db.String(20), default='disponible')
     zona = db.Column(db.String(50), nullable=True)
@@ -217,23 +244,37 @@ class Orden(db.Model):
     productos = db.relationship('Producto', secondary='orden_detalle', viewonly=True, backref='ordenes')
 
     def calcular_totales(self):
-        """Calcula subtotal, descuento, IVA y total."""
-        sub = sum(
-            d.cantidad * float(d.precio_unitario or d.producto.precio)
+        """Calcula subtotal, descuento, IVA y total.
+        Respects precios_incluyen_iva config from ConfiguracionSistema.
+        If True (default): menu prices already include IVA, so we extract IVA from the total.
+        If False: IVA is added on top of the menu prices."""
+        precios_con_iva = ConfiguracionSistema.get_bool('precios_incluyen_iva', default=True)
+
+        bruto = sum(
+            d.cantidad * Decimal(str(d.precio_unitario if d.precio_unitario is not None else d.producto.precio))
             for d in self.detalles
         )
-        self.subtotal = Decimal(str(round(sub, 2)))
 
         desc = Decimal('0')
         if self.descuento_pct and self.descuento_pct > 0:
-            desc = self.subtotal * (self.descuento_pct / Decimal('100'))
+            desc = bruto * (self.descuento_pct / Decimal('100'))
         if self.descuento_monto and self.descuento_monto > 0:
             desc += self.descuento_monto
-        desc = min(desc, self.subtotal)
+        desc = min(desc, bruto)
 
-        base_gravable = self.subtotal - desc
-        self.iva = (base_gravable * IVA_RATE).quantize(Decimal('0.01'))
-        self.total = (base_gravable + self.iva).quantize(Decimal('0.01'))
+        base_con_descuento = bruto - desc
+
+        if precios_con_iva:
+            # Prices already include IVA — extract IVA from total
+            self.total = base_con_descuento.quantize(Decimal('0.01'))
+            self.iva = (self.total - self.total / (1 + IVA_RATE)).quantize(Decimal('0.01'))
+            self.subtotal = (self.total - self.iva).quantize(Decimal('0.01'))
+        else:
+            # Prices do NOT include IVA — add IVA on top
+            self.subtotal = base_con_descuento.quantize(Decimal('0.01'))
+            self.iva = (self.subtotal * IVA_RATE).quantize(Decimal('0.01'))
+            self.total = (self.subtotal + self.iva).quantize(Decimal('0.01'))
+
         return self.total
 
     def total_pagado(self):
@@ -250,11 +291,19 @@ class Orden(db.Model):
             'mesero_id': self.mesero_id,
             'estado': self.estado,
             'es_para_llevar': self.es_para_llevar,
+            'canal': self.canal,
             'tiempo_registro': self.tiempo_registro.isoformat(),
+            'fecha_pago': self.fecha_pago.isoformat() if self.fecha_pago else None,
             'subtotal': float(self.subtotal or 0),
+            'descuento_pct': float(self.descuento_pct or 0),
+            'descuento_monto': float(self.descuento_monto or 0),
             'iva': float(self.iva or 0),
             'total': float(self.total or 0),
+            'propina': float(self.propina or 0),
+            'cambio': float(self.cambio or 0),
             'detalles': [detalle.to_dict() for detalle in self.detalles],
+            'pagos': [{'id': p.id, 'metodo': p.metodo, 'monto': float(p.monto),
+                       'fecha': p.fecha.isoformat() if p.fecha else None} for p in self.pagos],
         }
 
 
@@ -267,6 +316,7 @@ class OrdenDetalle(db.Model):
     estado = db.Column(db.String(20), nullable=False, default='pendiente')
     entregado = db.Column(db.Boolean, default=False)
     precio_unitario = db.Column(db.Numeric(10, 2), nullable=True)
+    fecha_listo = db.Column(db.DateTime, nullable=True)
 
     producto = db.relationship('Producto', backref='orden_detalles')
 

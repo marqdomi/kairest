@@ -79,7 +79,13 @@
           </td>
           <td style="color:var(--cl-text-tertiary);">{{ u.email }}</td>
           <td>
-            <span class="cl-badge cl-badge--{{ rol_color }}">{{ u.rol|capitalize }}</span>
+            <span class="cl-badge cl-badge--{{ rol_color }}">
+              {%- if u.rol == 'cocina' and u.estacion -%}
+                Cocina — {{ u.estacion.nombre }}
+              {%- else -%}
+                {{ u.rol|capitalize }}
+              {%- endif -%}
+            </span>
           </td>
           <td style="text-align:right;">
             <div style="display:flex;justify-content:flex-end;gap:6px;">
@@ -118,7 +124,7 @@
 {{ confirm_modal(id='deleteModal', title='¿Eliminar usuario?', body='Esta acción no se puede deshacer.',
 confirm_text='Eliminar', form_action='#') }}
 
-<script>
+<script nonce="{{ csp_nonce }}">
   document.getElementById('deleteModal').addEventListener('show.bs.modal', function (e) {
     this.querySelector('form').setAttribute('action', e.relatedTarget.getAttribute('data-action'));
     const name = e.relatedTarget.getAttribute('data-name');

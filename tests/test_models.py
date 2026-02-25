@@ -62,7 +62,36 @@ class TestMesaModel:
 
 class TestOrdenModel:
     def test_orden_calcular_totales(self, db, sample_producto):
+        """Default: precios_incluyen_iva=True — IVA extracted from prices."""
         from backend.models.models import Orden, OrdenDetalle, IVA_RATE
+
+        orden = Orden(estado='pendiente')
+        db.session.add(orden)
+        db.session.flush()
+
+        d = OrdenDetalle(
+            orden_id=orden.id,
+            producto_id=sample_producto.id,
+            cantidad=3,
+            precio_unitario=Decimal('45.00'),
+        )
+        db.session.add(d)
+        db.session.flush()
+
+        orden.calcular_totales()
+        # precios_incluyen_iva=True (default): total=135, iva extracted
+        expected_total = Decimal('135.00')
+        expected_iva = (expected_total - expected_total / (1 + IVA_RATE)).quantize(Decimal('0.01'))
+        expected_subtotal = (expected_total - expected_iva).quantize(Decimal('0.01'))
+        assert float(orden.total) == pytest.approx(float(expected_total), abs=0.01)
+        assert float(orden.iva) == pytest.approx(float(expected_iva), abs=0.01)
+        assert float(orden.subtotal) == pytest.approx(float(expected_subtotal), abs=0.01)
+
+    def test_orden_calcular_totales_iva_no_incluido(self, db, sample_producto):
+        """precios_incluyen_iva=False — IVA added on top of prices."""
+        from backend.models.models import Orden, OrdenDetalle, ConfiguracionSistema, IVA_RATE
+
+        ConfiguracionSistema.set('precios_incluyen_iva', 'false')
 
         orden = Orden(estado='pendiente')
         db.session.add(orden)
@@ -80,6 +109,10 @@ class TestOrdenModel:
         orden.calcular_totales()
         assert float(orden.subtotal) == 135.0
         assert float(orden.iva) == pytest.approx(135.0 * float(IVA_RATE), abs=0.01)
+        assert float(orden.total) == pytest.approx(135.0 + 135.0 * float(IVA_RATE), abs=0.01)
+
+        # Cleanup config
+        ConfiguracionSistema.set('precios_incluyen_iva', 'true')
 
     def test_orden_propina(self, db):
         from backend.models.models import Orden

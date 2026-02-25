@@ -167,8 +167,10 @@ def login_required(roles=None):
                     flash('No tienes permiso para acceder a esta página', 'danger')
                     if user_role == 'mesero':
                         return redirect(url_for('meseros.view_meseros'))
-                    elif user_role in ('cocinero', 'comal', 'taquero', 'bebidas'):
-                        return redirect(url_for('cocina.view_cocina'))
+                    elif user_role == 'cocina' or session.get('estacion_id'):
+                        return redirect(url_for('cocina.index'))
+                    elif user_role in ('admin', 'superadmin'):
+                        return redirect(url_for('admin.dashboard'))
                     return redirect(url_for('auth.login'))
 
             return func(*args, **kwargs)
@@ -215,11 +217,12 @@ def obtener_ordenes_por_estacion(estacion):
     Devuelve un diccionario que mapea cada orden_id a la lista de
     OrdenDetalle pendientes para la estación indicada.
     """
+    from backend.models.models import Producto
     detalles = (
         OrdenDetalle.query
         .filter(
             OrdenDetalle.estado != 'listo',
-            OrdenDetalle.producto.has(estacion=estacion)
+            OrdenDetalle.producto.has(Producto.estacion_id == estacion.id)
         )
         .all()
     )

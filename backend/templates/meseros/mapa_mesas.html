@@ -1,15 +1,25 @@
-{% extends 'base.html' %}
-{% block title %}Mapa de Mesas{% endblock %}
+{% extends 'layouts/_layout_operations.html' %}
+{% block page_title %}Mapa de Mesas{% endblock %}
+{% set active_op_tab = 'mapa' %}
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/mapa_mesas.css') }}?v={{ config.VERSION }}">
 {% endblock %}
-{% block content %}
-<div class="container-fluid mt-3">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Mapa de Mesas</h2>
-    <div>
-      <a href="{{ url_for('meseros.crear_orden_para_llevar') }}" class="btn btn-danger btn-sm me-2">Orden Para Llevar</a>
-      <a href="{{ url_for('meseros.view_meseros') }}" class="btn btn-outline-secondary btn-sm">Ver Lista</a>
+{% block ops_content %}
+<div class="container-fluid" style="padding:var(--cl-space-4);">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0 d-flex align-items-center gap-2" style="font-size:1.3rem;font-weight:700;">
+      <i data-lucide="layout-grid" style="width:22px;height:22px;"></i>
+      Mapa de Mesas
+    </h2>
+    <div class="d-flex gap-2 flex-wrap">
+      {% if is_admin %}
+      <button id="btnAutoArrange" class="cl-btn cl-btn--sm cl-btn--outline btn-auto-arrange" title="Reorganizar mesas automáticamente">
+        <i data-lucide="grid-3x3" style="width:14px;height:14px;"></i> Auto-organizar
+      </button>
+      {% endif %}
+      <a href="{{ url_for('meseros.crear_orden_para_llevar') }}" class="cl-btn cl-btn--sm cl-btn--danger d-flex align-items-center gap-1">
+        <i data-lucide="package" style="width:14px;height:14px;"></i> Para Llevar
+      </a>
     </div>
   </div>
 
@@ -24,9 +34,9 @@
   <!-- Zone filters -->
   {% if zonas %}
   <div class="zone-filters mb-2">
-    <button class="btn btn-outline-secondary btn-sm active" data-zone-filter="todas">Todas</button>
+    <button class="cl-btn--v7-outline cl-btn--sm active" data-zone-filter="todas">Todas</button>
     {% for zona in zonas %}
-    <button class="btn btn-outline-secondary btn-sm" data-zone-filter="{{ zona }}">{{ zona }}</button>
+    <button class="cl-btn--v7-outline cl-btn--sm" data-zone-filter="{{ zona }}">{{ zona }}</button>
     {% endfor %}
   </div>
   {% endif %}
@@ -34,10 +44,13 @@
   <!-- Desktop/tablet: interactive map -->
   <div id="mapa-mesas" class="mapa-container {% if is_admin %}admin-mode{% endif %}"
        data-admin="{{ 'true' if is_admin else 'false' }}">
-    <!-- Mesas are rendered dynamically by JS -->
+    <!-- Mesas rendered dynamically by JS -->
   </div>
   {% if is_admin %}
-  <small class="text-muted mt-1 d-block">Modo admin: arrastra las mesas para reposicionarlas. Los cambios se guardan automáticamente.</small>
+  <small class="text-muted mt-1 d-block">
+    <i data-lucide="info" style="width:12px;height:12px;display:inline;"></i>
+    Modo admin: arrastra las mesas para reposicionarlas. Usa "Auto-organizar" para alinearlas en cuadrícula.
+  </small>
   {% endif %}
 
   <!-- Mobile: list view -->
@@ -45,9 +58,9 @@
     <!-- Rendered by JS -->
   </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
-{{ super() }}
-<script src="{{ url_for('static', filename='js/mapa_mesas.js') }}?v={{ config.VERSION }}"></script>
+<!-- Inject CSRF token for JS -->
+<script nonce="{{ csp_nonce }}">window.__csrfToken = "{{ csrf_token() }}";</script>
+<script nonce="{{ csp_nonce }}" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/mapa_mesas.js') }}?v={{ config.VERSION }}"></script>
 {% endblock %}

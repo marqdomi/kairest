@@ -121,7 +121,12 @@ def create_app():
                 from flask import redirect, url_for
                 return redirect(url_for('setup.index'))
         except Exception:
-            pass  # Table may not exist yet during migrations
+            # Table may not exist yet (fresh install) — redirect to setup
+            from flask import redirect, url_for
+            try:
+                return redirect(url_for('setup.index'))
+            except Exception:
+                pass
 
     # ---- Multi-sucursal: inyectar sucursal activa (Sprint 2 — 2.2) ----
     @app.before_request
@@ -163,6 +168,32 @@ def create_app():
             product_name='KaiRest',
         )
 
+    # Inject IVA config for templates
+    @app.context_processor
+    def _inject_iva_config():
+        try:
+            from backend.models.models import ConfiguracionSistema
+            incluye = ConfiguracionSistema.get_bool('precios_incluyen_iva', default=True)
+        except Exception:
+            incluye = True
+        return dict(precios_incluyen_iva=incluye)
+
+    # Inject nav_estaciones for dynamic kitchen station links in navbar
+    @app.context_processor
+    def _inject_nav_estaciones():
+        try:
+            from backend.models.models import Estacion
+            from text_unidecode import unidecode
+            import re as _re
+            estaciones = Estacion.query.order_by(Estacion.nombre).all()
+            nav = []
+            for e in estaciones:
+                slug = _re.sub(r'[^a-z0-9]+', '-', unidecode(e.nombre).lower()).strip('-')
+                nav.append({'nombre': e.nombre, 'slug': slug, 'id': e.id})
+            return dict(nav_estaciones=nav)
+        except Exception:
+            return dict(nav_estaciones=[])
+
     # Custom Jinja filter for Next-Gen money formatting
     @app.template_filter('money')
     def format_money(amount):
@@ -186,11 +217,12 @@ def create_app():
         # Content Security Policy
         csp = (
             f"default-src 'self'; "
-            f"script-src 'self' 'nonce-{nonce}' cdn.jsdelivr.net cdnjs.cloudflare.com; "
-            f"style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
+            f"script-src 'self' 'nonce-{nonce}' cdn.jsdelivr.net cdnjs.cloudflare.com unpkg.com; "
+            f"style-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com unpkg.com fonts.googleapis.com; "
             f"img-src 'self' data:; "
-            f"connect-src 'self' ws: wss:; "
-            f"font-src 'self' cdn.jsdelivr.net; "
+            f"media-src 'self' data:; "
+            f"connect-src 'self' ws: wss: cdn.jsdelivr.net cdnjs.cloudflare.com unpkg.com; "
+            f"font-src 'self' cdn.jsdelivr.net fonts.gstatic.com; "
             f"frame-ancestors 'none'; "
             f"base-uri 'self'; "
             f"form-action 'self';"
@@ -235,10 +267,10 @@ def create_app():
     # Onboarding
     app.register_blueprint(setup_bp)
 
-    # Exempt API routes from CSRF
-    csrf.exempt(inventario_bp)
-    csrf.exempt(clientes_bp)
+    # Exempt ONLY the delivery webhook blueprint (JSON-only, no forms, HMAC-verified)
     csrf.exempt(delivery_bp)
+    # NOTE: inventario_bp and clientes_bp no longer exempt — they use Jinja2 forms
+    # Their AJAX calls should include X-CSRFToken header
 
     # Rate limiting — rutas sensibles (Fase 4 - Item 24)
     limiter.limit("10 per minute")(auth_bp)

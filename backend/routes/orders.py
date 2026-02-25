@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session, g, current_app
-from backend.utils import login_required, verificar_orden_completa, verificar_stock_disponible
+from backend.utils import login_required, verificar_orden_completa, verificar_stock_disponible, verificar_propiedad_orden
 from backend.models.models import Orden, OrdenDetalle, Producto
 from backend.extensions import db, socketio
 
@@ -27,11 +27,13 @@ def create_order():
 
 @orders_bp.route('/ordenes/<int:orden_id>/estado', methods=['PUT'])
 @login_required()
+@verificar_propiedad_orden
 def update_order_status(orden_id):
     data = request.get_json()
     nuevo_estado = data.get('estado')
-    if nuevo_estado not in ['lista', 'pagado']:
-        return jsonify({'error': 'Estado no válido. Debe ser "lista" o "pagado".'}), 400
+    ESTADOS_VALIDOS = ['pendiente', 'enviado', 'en_preparacion', 'lista_para_entregar', 'completada', 'pagada', 'cancelada']
+    if nuevo_estado not in ESTADOS_VALIDOS:
+        return jsonify({'error': f'Estado no válido. Debe ser uno de: {", ".join(ESTADOS_VALIDOS)}.'}), 400
     orden = Orden.query.get_or_404(orden_id)
     orden.estado = nuevo_estado
     db.session.commit()
@@ -43,10 +45,12 @@ def update_order_status(orden_id):
 
 @orders_bp.route('/ordenes/<int:orden_id>/detalle', methods=['POST'])
 @login_required()
+@verificar_propiedad_orden
 def add_product_to_order(orden_id):
     data = request.get_json()
     producto_id = data.get('producto_id')
     cantidad = data.get('cantidad', 1)
+    notas = data.get('notas', '').strip()
     producto = Producto.query.get_or_404(producto_id)
     orden = Orden.query.get_or_404(orden_id)
 
@@ -59,26 +63,51 @@ def add_product_to_order(orden_id):
                 'faltantes': faltantes,
             }), 409
 
-    detalle = OrdenDetalle(
-        orden_id=orden.id,
-        producto_id=producto.id,
-        cantidad=cantidad,
-        notas=data.get('notas', ''),
-        precio_unitario=producto.precio,
-    )
-    db.session.add(detalle)
+    # Merge: only merge with items that are still 'pendiente' (not listo/entregado)
+    existing = OrdenDetalle.query.filter_by(
+        orden_id=orden.id, producto_id=producto.id, estado='pendiente'
+    ).all()
+    merged = False
+    for d in existing:
+        existing_notas = (d.notas or '').strip()
+        if existing_notas == notas:
+            d.cantidad += cantidad
+            detalle = d
+            merged = True
+            break
+
+    if not merged:
+        detalle = OrdenDetalle(
+            orden_id=orden.id,
+            producto_id=producto.id,
+            cantidad=cantidad,
+            notas=notas,
+            precio_unitario=producto.precio,
+            estado='pendiente',
+        )
+        db.session.add(detalle)
+
     db.session.commit()
-    # Emit real-time update and check if order is now complete
+
+    # Emit real-time update
     socketio.emit('order_detail_added', {
         'orden_id': orden.id,
         'detalle': {
             'id': detalle.id,
             'producto_id': producto.id,
             'producto_nombre': producto.nombre,
-            'cantidad': cantidad,
-            'notas': detalle.notas
+            'cantidad': detalle.cantidad,
+            'notas': detalle.notas or ''
         }
     })
+
+    # If the order is already sent to kitchen, notify KDS about new items
+    if orden.estado not in ('pendiente',):
+        socketio.emit('nueva_orden_cocina', {
+            'orden_id': orden.id,
+            'mensaje': f'Nuevos productos en orden #{orden.id}.',
+        })
+
     verificar_orden_completa(orden.id)
     return jsonify({
         'message': 'Producto agregado a la orden.',
@@ -87,15 +116,83 @@ def add_product_to_order(orden_id):
 
 @orders_bp.route('/ordenes/<int:orden_id>/detalle', methods=['GET'])
 @login_required()
+@verificar_propiedad_orden
 def get_order_details(orden_id):
     detalles = OrdenDetalle.query.filter_by(orden_id=orden_id).all()
     detalles_data = []
     for d in detalles:
+        # Fallback: if precio_unitario is null (old data), use current product price
+        precio = d.precio_unitario if d.precio_unitario is not None else d.producto.precio
         detalles_data.append({
             'id': d.id,
             'producto_id': d.producto_id,
             'producto_nombre': d.producto.nombre,
             'cantidad': d.cantidad,
-            'notas': d.notas
+            'notas': d.notas or '',
+            'precio_unitario': float(precio),
+            'estado': d.estado,
         })
     return jsonify(detalles_data), 200
+
+
+@orders_bp.route('/ordenes/<int:orden_id>/detalle/<int:detalle_id>', methods=['PATCH'])
+@login_required()
+@verificar_propiedad_orden
+def update_order_detail(orden_id, detalle_id):
+    """Update quantity or notes of an order detail item."""
+    detalle = OrdenDetalle.query.filter_by(id=detalle_id, orden_id=orden_id).first_or_404()
+    data = request.get_json()
+    if 'cantidad' in data:
+        nueva_cantidad = int(data['cantidad'])
+        if nueva_cantidad < 1:
+            return jsonify({'error': 'Cantidad mínima es 1.'}), 400
+        if current_app.config.get('INVENTARIO_VALIDAR_STOCK'):
+            diff = nueva_cantidad - detalle.cantidad
+            if diff > 0:
+                disponible, faltantes, _ = verificar_stock_disponible(detalle.producto_id, diff)
+                if not disponible:
+                    return jsonify({'error': 'Stock insuficiente', 'faltantes': faltantes}), 409
+        detalle.cantidad = nueva_cantidad
+    if 'notas' in data:
+        detalle.notas = data['notas']
+    db.session.commit()
+    socketio.emit('order_detail_updated', {
+        'orden_id': orden_id,
+        'detalle_id': detalle_id,
+        'cantidad': detalle.cantidad,
+    })
+    return jsonify({'message': 'Detalle actualizado.', 'cantidad': detalle.cantidad}), 200
+
+
+@orders_bp.route('/ordenes/<int:orden_id>/detalle/<int:detalle_id>', methods=['DELETE'])
+@login_required()
+@verificar_propiedad_orden
+def delete_order_detail(orden_id, detalle_id):
+    """Remove a product from the order."""
+    detalle = OrdenDetalle.query.filter_by(id=detalle_id, orden_id=orden_id).first_or_404()
+    db.session.delete(detalle)
+    db.session.commit()
+    socketio.emit('order_detail_removed', {
+        'orden_id': orden_id,
+        'detalle_id': detalle_id,
+    })
+    verificar_orden_completa(orden_id)
+    return jsonify({'message': 'Producto eliminado de la orden.'}), 200
+
+
+@orders_bp.route('/ordenes/<int:orden_id>/notificar-cocina', methods=['POST'])
+@login_required()
+@verificar_propiedad_orden
+def notificar_cocina(orden_id):
+    """Manually re-notify kitchen about pending items in an already-sent order."""
+    orden = Orden.query.get_or_404(orden_id)
+    if orden.estado == 'pendiente':
+        return jsonify({'error': 'Usa "Enviar a Cocina" para órdenes pendientes.'}), 400
+    pendientes = OrdenDetalle.query.filter_by(orden_id=orden_id, estado='pendiente').count()
+    if pendientes == 0:
+        return jsonify({'error': 'No hay productos nuevos pendientes.'}), 400
+    socketio.emit('nueva_orden_cocina', {
+        'orden_id': orden.id,
+        'mensaje': f'Nuevos productos ({pendientes}) en orden #{orden.id}.',
+    })
+    return jsonify({'message': f'Cocina notificada — {pendientes} producto(s) nuevo(s).'}), 200

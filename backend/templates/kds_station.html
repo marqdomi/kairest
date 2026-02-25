@@ -10,299 +10,401 @@
 
 {% block head %}
 {{ super() }}
-<style>
-  /* ── KDS Order Card ── */
-  .kds-card {
-    background: var(--cl-gray-800, #1f2937);
-    border-radius: var(--cl-radius-lg, 12px);
-    border: 2px solid transparent;
-    overflow: hidden;
-    transition: border-color .3s, box-shadow .3s;
-    display: flex; flex-direction: column;
-  }
-  .kds-card--green  { border-color: #12B76A; }
-  .kds-card--yellow { border-color: #F79009; }
-  .kds-card--red    { border-color: #F04438; }
-  .kds-card--urgent { border-color: #B42318; animation: kds-border-pulse 1s ease-in-out infinite; }
-  @keyframes kds-border-pulse {
-    0%,100% { box-shadow: 0 0 0 0 rgba(180,35,24,.5); }
-    50%     { box-shadow: 0 0 20px 4px rgba(180,35,24,.4); }
-  }
-
-  .kds-card__header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: var(--cl-space-3, 12px) var(--cl-space-4, 16px);
-    background: rgba(255,255,255,.05);
-  }
-  .kds-card__order-num {
-    font-size: clamp(28px, 4vw, 56px);
-    font-weight: var(--cl-font-bold, 700);
-    color: #fff;
-    line-height: 1;
-  }
-  .kds-card__meta {
-    display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
-  }
-  .kds-card__mesa {
-    font-size: clamp(14px, 2vw, 20px);
-    color: rgba(255,255,255,.7);
-    font-weight: 500;
-  }
-  .kds-card__timer {
-    font-family: 'JetBrains Mono', 'SF Mono', monospace;
-    font-size: clamp(18px, 2.5vw, 28px);
-    font-weight: 700;
-    padding: 4px 12px;
-    border-radius: var(--cl-radius-sm, 6px);
-    min-width: 80px;
-    text-align: center;
-    transition: background .5s, color .5s;
-  }
-  .kds-card__timer--green  { background: #12B76A; color: #fff; }
-  .kds-card__timer--yellow { background: #F79009; color: #000; }
-  .kds-card__timer--red    { background: #F04438; color: #fff; }
-  .kds-card__timer--urgent { background: #B42318; color: #fff; }
-
-  .kds-card__para-llevar {
-    display: inline-flex; align-items: center; gap: 4px;
-    background: var(--cl-amber-500, #f59e0b); color: #000;
-    padding: 2px 10px; border-radius: 20px;
-    font-size: 13px; font-weight: 600;
-  }
-
-  .kds-card__body {
-    flex: 1; padding: var(--cl-space-3, 12px) var(--cl-space-4, 16px);
-  }
-  .kds-item {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: var(--cl-space-2, 8px) 0;
-    border-bottom: 1px solid rgba(255,255,255,.08);
-  }
-  .kds-item:last-child { border-bottom: none; }
-  .kds-item__name {
-    font-size: clamp(18px, 2.5vw, 28px);
-    font-weight: 600; color: #fff;
-  }
-  .kds-item__qty {
-    font-size: clamp(16px, 2vw, 24px);
-    font-weight: 700; color: rgba(255,255,255,.6);
-    min-width: 40px; text-align: right;
-  }
-  .kds-item__notes {
-    display: block; margin-top: 4px;
-    background: rgba(247,144,9,.15); border: 1px solid rgba(247,144,9,.3);
-    border-radius: var(--cl-radius-sm, 6px);
-    padding: 4px 10px;
-    font-size: clamp(14px, 1.5vw, 20px);
-    color: #F79009; font-weight: 500;
-  }
-  .kds-item__notes::before { content: '⚠ '; }
-
-  .kds-card__footer {
-    padding: var(--cl-space-2, 8px) var(--cl-space-4, 16px) var(--cl-space-3, 12px);
-  }
-  .kds-btn-listo {
-    width: 100%; height: 72px;
-    background: #12B76A; border: none; border-radius: var(--cl-radius-md, 8px);
-    color: #fff; font-size: clamp(18px, 2vw, 24px); font-weight: 700;
-    cursor: pointer; transition: background .2s, transform .1s;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-  }
-  .kds-btn-listo:hover { background: #0e9a57; }
-  .kds-btn-listo:active { transform: scale(.97); }
-  .kds-btn-listo--done {
-    background: var(--cl-gray-600, #4b5563); pointer-events: none;
-  }
-
-  /* Slide-in animation for new orders */
-  @keyframes kdsSlideIn {
-    from { opacity: 0; transform: translateX(60px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-  .kds-card--new { animation: kdsSlideIn .4s ease-out; }
-
-  /* Override grid for KDS: larger cards */
-  .cl-kds__grid {
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  }
-  @media (max-width: 640px) {
-    .cl-kds__grid { grid-template-columns: 1fr; }
-  }
-
-  /* Sound toggle */
-  .kds-sound-btn { position: relative; }
-  .kds-sound-btn.muted::after {
-    content: ''; position: absolute; top: 50%; left: 50%;
-    width: 24px; height: 2px; background: #f04438;
-    transform: translate(-50%, -50%) rotate(-45deg);
-  }
-</style>
 {% endblock %}
 
-{% block kds_stats %}
-<div class="cl-kds__stat">
-  <span class="cl-kds__stat-value" id="kdsPendingCount">{{ ordenes_data | length }}</span>
-  <span class="cl-kds__stat-label">Pendientes</span>
-</div>
-<div class="cl-kds__stat">
-  <span class="cl-kds__stat-value" id="kdsItemCount">{{ ordenes_data.values() | map('length') | sum }}</span>
-  <span class="cl-kds__stat-label">Items</span>
-</div>
-<div style="display:flex;gap:8px;">
-  <button class="cl-topbar__icon-btn kds-sound-btn" id="soundToggle"
-          style="color:#fff" title="Sonido de notificación" aria-label="Toggle sonido">
-    <i data-lucide="volume-2" class="icon-sm" id="soundIcon"></i>
-  </button>
+{% block kds_stats_extra %}
+<div class="cl-kds-stat">
+  <i data-lucide="utensils" style="width:14px;height:14px;color:var(--cl-warning-500);"></i>
+  Items: <strong id="kdsItemCount">{{ ordenes_data.values() | map('length') | sum }}</strong>
 </div>
 {% endblock %}
 
 {% block kds_content %}
-{% if ordenes_data %}
-  {% for orden, detalles in ordenes_data.items() %}
-  <div class="kds-card orden-timer-card" id="kds-orden-{{ orden.id }}"
-       data-tiempo-registro="{{ orden.tiempo_registro.isoformat() }}"
-       data-orden-id="{{ orden.id }}">
-    <div class="kds-card__header">
-      <span class="kds-card__order-num">#{{ orden.id }}</span>
-      <div class="kds-card__meta">
-        <span class="kds-card__mesa">
-          {% if orden.es_para_llevar %}
-            <span class="kds-card__para-llevar">🛍 Para Llevar</span>
-          {% else %}
-            Mesa {{ orden.mesa.numero if orden.mesa else '—' }}
-          {% endif %}
-        </span>
-        <span class="kds-card__timer timer-badge" data-timer-orden="{{ orden.id }}">00:00</span>
-      </div>
-    </div>
-    <div class="kds-card__body">
-      {% for item in detalles %}
-      <div class="kds-item" id="kds-item-{{ item.id }}">
-        <div>
-          <span class="kds-item__name">{{ item.producto.nombre }}</span>
-          {% if item.notas %}
-          <span class="kds-item__notes">{{ item.notas }}</span>
-          {% endif %}
-        </div>
-        <span class="kds-item__qty">×{{ item.cantidad }}</span>
-      </div>
-      {% endfor %}
-    </div>
-    <div class="kds-card__footer">
-      <button class="kds-btn-listo" data-orden-id="{{ orden.id }}"
-              onclick="marcarTodosListos(this, {{ orden.id }}, [{% for item in detalles %}{{ item.id }}{% if not loop.last %},{% endif %}{% endfor %}])">
-        <i data-lucide="check-circle" style="width:28px;height:28px;"></i>
-        LISTO
-      </button>
-    </div>
-  </div>
-  {% endfor %}
-{% else %}
-<div class="cl-kds__empty">
-  <i data-lucide="chef-hat"></i>
-  <p style="font-size:clamp(18px,2vw,28px);margin-top:16px;">No hay órdenes pendientes</p>
-  <p style="font-size:14px;opacity:.5;">Las nuevas órdenes aparecerán automáticamente</p>
-</div>
-{% endif %}
+{% include 'cocina/_kds_cards_fragment.html' %}
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"
+<script nonce="{{ csp_nonce }}" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"
         integrity="sha512-11t8Q+vY9JlCrr+PveZKTYJq8n7O09Y5X/pk/aMd3vJugSvu4xOunGEUzaADqL3I8cZKE/pBwwCfXzDkRJh2sQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="{{ url_for('static', filename='js/cocina_timers.js') }}?v={{ config.VERSION }}"></script>
-<script>
+<script nonce="{{ csp_nonce }}">
 (function() {
   'use strict';
   const STATION = '{{ station }}';
-  const FRAG_URL = {
-    taqueros: '/cocina/taquero/fragmento_ordenes',
-    comal:    '/cocina/comal/fragmento_ordenes',
-    bebidas:  '/cocina/bebidas/fragmento_ordenes'
-  }[STATION];
-  const MARK_BASE = '/cocina/' + STATION + '/marcar/';
+  const STATION_SLUG = '{{ station_slug }}';
+  const FRAG_URL = '/cocina/' + STATION_SLUG + '/fragmento_ordenes';
+  const MARK_BASE = '/cocina/' + STATION_SLUG + '/marcar/';
+  const STATS_URL = '/cocina/' + STATION_SLUG + '/stats';
 
-  // ── Sound ──
-  let soundEnabled = localStorage.getItem('kds_sound') !== 'off';
-  const notifSound = new Audio('data:audio/wav;base64,UklGRl9vT19teleXRlZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU' +
-    Array(300).fill('gP8A/w').join('') + '==');
-  notifSound.volume = 0.5;
-
-  const soundToggle = document.getElementById('soundToggle');
-  function updateSoundUI() {
-    soundToggle.classList.toggle('muted', !soundEnabled);
-    soundToggle.title = soundEnabled ? 'Sonido activado' : 'Sonido silenciado';
-  }
-  updateSoundUI();
-  soundToggle.addEventListener('click', () => {
-    soundEnabled = !soundEnabled;
-    localStorage.setItem('kds_sound', soundEnabled ? 'on' : 'off');
-    updateSoundUI();
-    if (soundEnabled) notifSound.play().catch(() => {});
-  });
+  // ── Sound (uses layout toggle via window.__kdsSound) ──
+  var notifAudio = null;
+  try { notifAudio = new Audio('{{ url_for("static", filename="audio/notif.wav") }}'); notifAudio.volume = 0.5; } catch(e) {}
 
   function playNotif() {
-    if (soundEnabled) notifSound.play().catch(() => {});
+    if (window.__kdsSound && notifAudio) notifAudio.play().catch(function(){});
   }
 
-  // ── Socket.IO ──
+  // ── Timer system (6-level urgency) ──
+  var URGENCY_LEVELS = [
+    { max: 300, name: 'fresh' },
+    { max: 600, name: 'normal' },
+    { max: 900, name: 'warming' },
+    { max: 1200, name: 'hot' },
+    { max: 1500, name: 'urgent' },
+    { max: Infinity, name: 'critical' }
+  ];
+
+  function getUrgency(sec) {
+    for (var i = 0; i < URGENCY_LEVELS.length; i++) {
+      if (sec < URGENCY_LEVELS[i].max) return URGENCY_LEVELS[i].name;
+    }
+    return 'critical';
+  }
+
+  function updateTimers() {
+    document.querySelectorAll('.cl-kds-card').forEach(function(card) {
+      var iso = card.getAttribute('data-tiempo-registro');
+      if (!iso) return;
+      var diffSec = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+      var mins = Math.floor(diffSec / 60);
+      var secs = diffSec % 60;
+      var urgency = getUrgency(diffSec);
+      var timer = card.querySelector('[data-timer-orden]');
+      if (timer) {
+        timer.textContent = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+        timer.className = 'cl-kds-timer cl-kds-timer--' + urgency;
+      }
+      card.className = card.className
+        .replace(/cl-kds-card--(fresh|normal|warming|hot|urgent|critical)/g, '').replace(/\s+/g, ' ').trim();
+      card.classList.add('cl-kds-card--' + urgency);
+    });
+  }
+
+  window.initKdsTimers = updateTimers;
+  updateTimers();
+  setInterval(updateTimers, 1000);
+
+  // ── Event delegation for KDS actions (CSP-safe, no inline handlers) ──
+  document.getElementById('main-content').addEventListener('click', function(e) {
+    // Check circle — mark individual item
+    var checkEl = e.target.closest('[data-action="marcar-item"]');
+    if (checkEl) {
+      var oId = parseInt(checkEl.getAttribute('data-orden-id'), 10);
+      var dId = parseInt(checkEl.getAttribute('data-detalle-id'), 10);
+      if (oId && dId) marcarItemListo(checkEl, oId, dId);
+      return;
+    }
+    // LISTO button — mark all items
+    var doneBtn = e.target.closest('[data-action="marcar-todos"]');
+    if (doneBtn) {
+      var ordenId = parseInt(doneBtn.getAttribute('data-orden-id'), 10);
+      var ids = JSON.parse(doneBtn.getAttribute('data-pending-ids') || '[]');
+      if (ordenId) marcarTodosListos(doneBtn, ordenId, ids);
+      return;
+    }
+    // Posponer button
+    var skipBtn = e.target.closest('[data-action="posponer"]');
+    if (skipBtn) {
+      posponerOrden(skipBtn);
+      return;
+    }
+  });
+
+  // Also handle Enter/Space on check circles (a11y)
+  document.getElementById('main-content').addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var checkEl = e.target.closest('[data-action="marcar-item"]');
+    if (checkEl) {
+      e.preventDefault();
+      var oId = parseInt(checkEl.getAttribute('data-orden-id'), 10);
+      var dId = parseInt(checkEl.getAttribute('data-detalle-id'), 10);
+      if (oId && dId) marcarItemListo(checkEl, oId, dId);
+    }
+  });
+
+  // ── Socket.IO with connection indicator ──
   const socket = io();
-  socket.on('connect', () => console.log(`KDS ${STATION} conectado`));
+  var liveDot = document.querySelector('.cl-live-dot');
+  var liveLabel = liveDot ? liveDot.nextElementSibling : null;
+
+  socket.on('connect', () => {
+    console.log('KDS ' + STATION + ' conectado');
+    if (liveDot) { liveDot.classList.remove('cl-live-dot--off'); }
+    if (liveLabel) { liveLabel.textContent = 'Socket.IO conectado'; }
+  });
+
+  socket.on('disconnect', () => {
+    console.warn('KDS ' + STATION + ' desconectado');
+    if (liveDot) { liveDot.classList.add('cl-live-dot--off'); }
+    if (liveLabel) { liveLabel.textContent = 'Desconectado'; }
+  });
+
+  // ── Track existing card IDs (for detecting new arrivals) ──
+  var knownCardIds = new Set();
+  document.querySelectorAll('.cl-kds-card').forEach(function(c) {
+    var oid = c.getAttribute('data-orden-id');
+    if (oid) knownCardIds.add(oid);
+  });
 
   socket.on('nueva_orden_cocina', () => {
     playNotif();
-    refreshOrders();
+    refreshOrders(true); // true = new order, trigger flash + scroll
   });
 
+  socket.on('order_detail_added', () => refreshOrders());
+  socket.on('order_detail_updated', () => refreshOrders());
+  socket.on('order_detail_removed', () => refreshOrders());
+
   socket.on('item_listo_notificacion', (data) => {
-    // Remove the item visually if it belongs to this station's view
-    const itemEl = document.getElementById('kds-item-' + data.item_id);
+    var itemEl = document.getElementById('kds-item-' + data.item_id);
     if (itemEl) {
-      itemEl.style.transition = 'opacity .3s, height .3s';
-      itemEl.style.opacity = '0';
-      itemEl.style.height = '0';
-      itemEl.style.padding = '0';
-      setTimeout(() => refreshOrders(), 400);
+      itemEl.classList.add('cl-kds-item--done');
+      var check = itemEl.querySelector('.cl-kds-check');
+      if (check) {
+        check.classList.add('cl-kds-check--done');
+        check.innerHTML = '<i data-lucide="check" style="width:12px;height:12px;color:#fff;"></i>';
+        check.removeAttribute('data-action');
+        if (window.lucide) lucide.createIcons();
+      }
+      updateCardProgress(data.orden_id);
     } else {
       refreshOrders();
     }
   });
 
-  // ── Fetch refresh (no jQuery) ──
-  function refreshOrders() {
+  socket.on('item_progreso', (data) => {
+    updateCardProgress(data.orden_id, data.items_listos, data.items_total);
+  });
+
+  // ── Refresh orders via AJAX ──
+  function refreshOrders(isNewOrder) {
     fetch(FRAG_URL)
       .then(r => r.json())
       .then(data => {
-        const grid = document.getElementById('main-content');
+        var grid = document.getElementById('main-content');
         grid.innerHTML = data.html;
-        document.getElementById('kdsPendingCount').textContent =
-          (grid.querySelectorAll('.kds-card').length) || '0';
+        var cards = grid.querySelectorAll('.cl-kds-card');
+        var cardCount = cards.length;
+        document.getElementById('kdsPendingCount').textContent = cardCount || '0';
         document.getElementById('kdsItemCount').textContent = data.conteo_productos;
-        // Re-init Lucide icons on new DOM
         if (window.lucide) lucide.createIcons();
-        // Re-init timers
-        if (window.initKdsTimers) window.initKdsTimers();
+        updateTimers();
+        focusedCardIdx = -1; // reset keyboard focus
+
+        // Detect new cards and apply flash + auto-scroll
+        var newKnown = new Set();
+        cards.forEach(function(c) {
+          var oid = c.getAttribute('data-orden-id');
+          if (oid) {
+            newKnown.add(oid);
+            if (!knownCardIds.has(oid) || isNewOrder) {
+              c.classList.add('cl-kds-card--flash');
+              c.addEventListener('animationend', function() {
+                c.classList.remove('cl-kds-card--flash');
+              }, { once: true });
+            }
+          }
+        });
+        knownCardIds = newKnown;
+
+        // Auto-scroll to show newest card (rightmost)
+        if (isNewOrder && cards.length > 0) {
+          var last = cards[cards.length - 1];
+          last.scrollIntoView({ behavior: 'smooth', inline: 'end', block: 'nearest' });
+        }
       })
       .catch(err => console.error('KDS refresh error:', err));
   }
 
-  // ── Mark all items in an order as done ──
-  window.marcarTodosListos = async function(btn, ordenId, detalleIds) {
-    btn.disabled = true;
-    btn.innerHTML = '<span style="animation:spin 1s linear infinite;display:inline-block;">⏳</span> Procesando…';
-    try {
-      for (const did of detalleIds) {
-        await fetch(MARK_BASE + ordenId + '/' + did, { method: 'POST' });
+  // ── Card exit animation helper ──
+  function animateCardExit(card, callback) {
+    card.classList.add('cl-kds-card--exiting');
+    setTimeout(function() {
+      if (callback) callback();
+      else refreshOrders();
+    }, 400);
+  }
+
+  // ── Update card progress bar ──
+  function updateCardProgress(ordenId, listos, total) {
+    var card = document.getElementById('kds-orden-' + ordenId);
+    if (!card) return;
+    if (typeof listos === 'undefined') {
+      total = card.querySelectorAll('.cl-kds-item').length;
+      listos = card.querySelectorAll('.cl-kds-item--done').length;
+    }
+    card.setAttribute('data-items-listos', listos);
+    card.setAttribute('data-items-total', total);
+    var progressEl = card.querySelector('.cl-kds-progress');
+    if (listos > 0 && listos < total) {
+      if (!progressEl) {
+        progressEl = document.createElement('div');
+        progressEl.className = 'cl-kds-progress';
+        progressEl.innerHTML = '<div class="cl-kds-progress__bar"></div><span class="cl-kds-progress__text"></span>';
+        var hdr = card.querySelector('.cl-kds-card__hdr');
+        if (hdr) hdr.insertAdjacentElement('afterend', progressEl);
       }
-      btn.classList.add('kds-btn-listo--done');
-      btn.innerHTML = '✓ Completado';
+      progressEl.querySelector('.cl-kds-progress__bar').style.width = Math.round(listos / total * 100) + '%';
+      progressEl.querySelector('.cl-kds-progress__text').textContent = listos + '/' + total;
+    } else if (progressEl) {
+      progressEl.remove();
+    }
+    if (listos >= total) {
+      animateCardExit(card);
+    }
+  }
+
+  // ── Mark individual item as done ──
+  window.marcarItemListo = async function(checkEl, ordenId, detalleId) {
+    if (checkEl.classList.contains('cl-kds-check--done')) return;
+    checkEl.classList.add('cl-kds-check--done');
+    checkEl.innerHTML = '<i data-lucide="loader" style="width:12px;height:12px;color:#fff;animation:spin 1s linear infinite;"></i>';
+    if (window.lucide) lucide.createIcons();
+    try {
+      await fetch(MARK_BASE + ordenId + '/' + detalleId, { method: 'POST' });
+      checkEl.innerHTML = '<i data-lucide="check" style="width:12px;height:12px;color:#fff;"></i>';
+      checkEl.removeAttribute('data-action');
+      var itemRow = checkEl.closest('.cl-kds-item');
+      if (itemRow) itemRow.classList.add('cl-kds-item--done');
+      if (window.lucide) lucide.createIcons();
+      updateCardProgress(ordenId);
+      refreshStats(); // update footer after marking
     } catch (err) {
-      console.error('Error marking items:', err);
-      btn.disabled = false;
-      btn.innerHTML = '<i data-lucide="check-circle" style="width:28px;height:28px;"></i> LISTO';
+      console.error('Error marking item:', err);
+      checkEl.classList.remove('cl-kds-check--done');
+      checkEl.innerHTML = '';
     }
   };
+
+  // ── Mark all items in an order as done (batch) ──
+  window.marcarTodosListos = async function(btn, ordenId, detalleIds) {
+    if (!detalleIds.length) { refreshOrders(); return; }
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader" style="width:18px;height:18px;animation:spin 1s linear infinite;"></i> Procesando…';
+    if (window.lucide) lucide.createIcons();
+    try {
+      var resp = await fetch('/cocina/' + STATION_SLUG + '/batch-listo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orden_id: ordenId, detalle_ids: detalleIds })
+      });
+      if (!resp.ok) throw new Error('Batch failed: ' + resp.status);
+      var card = document.getElementById('kds-orden-' + ordenId);
+      if (card) {
+        card.querySelectorAll('.cl-kds-item').forEach(function(item) {
+          item.classList.add('cl-kds-item--done');
+          var check = item.querySelector('.cl-kds-check');
+          if (check) {
+            check.classList.add('cl-kds-check--done');
+            check.innerHTML = '<i data-lucide="check" style="width:12px;height:12px;color:#fff;"></i>';
+            check.removeAttribute('data-action');
+          }
+        });
+        if (window.lucide) lucide.createIcons();
+        btn.classList.add('cl-kds-btn--disabled');
+        btn.innerHTML = '<i data-lucide="check" style="width:18px;height:18px;"></i> Completado';
+        if (window.lucide) lucide.createIcons();
+        animateCardExit(card);
+        refreshStats();
+      }
+    } catch (err) {
+      console.error('Error batch marking:', err);
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="check-circle" style="width:18px;height:18px;"></i> LISTO';
+      if (window.lucide) lucide.createIcons();
+    }
+  };
+
+  // ── Posponer: move card to end of strip ──
+  window.posponerOrden = function(btn) {
+    var card = btn.closest('.cl-kds-card');
+    if (!card || card.classList.contains('cl-kds-card--postponed')) return;
+    var strip = document.getElementById('main-content');
+    if (!strip) return;
+
+    // Animate out briefly
+    card.style.transition = 'opacity .3s, transform .3s';
+    card.style.opacity = '0';
+    card.style.transform = 'scale(0.92)';
+
+    setTimeout(function() {
+      // Reappend to end of strip
+      strip.appendChild(card);
+      card.classList.add('cl-kds-card--postponed');
+      card.style.opacity = '';
+      card.style.transform = '';
+      card.style.transition = '';
+
+      // Scroll to show it at the end
+      card.scrollIntoView({ behavior: 'smooth', inline: 'end', block: 'nearest' });
+
+      // Remove postponed state after 60s so it becomes normal priority again
+      setTimeout(function() {
+        card.classList.remove('cl-kds-card--postponed');
+      }, 60000);
+    }, 320);
+  };
+
+  // ── Footer stats refresh ──
+  function refreshStats() {
+    fetch(STATS_URL)
+      .then(r => r.json())
+      .then(data => {
+        var compEl = document.getElementById('kdsCompletadas');
+        var avgEl = document.getElementById('kdsAvgTime');
+        var ayerEl = document.getElementById('kdsAvgAyer');
+        if (compEl) compEl.textContent = data.completadas || '0';
+        if (avgEl) avgEl.textContent = data.avg_minutos ? data.avg_minutos + ' min' : '—';
+        if (ayerEl) ayerEl.textContent = data.avg_turno_anterior ? data.avg_turno_anterior + ' min' : '—';
+      })
+      .catch(function() {});
+  }
+  refreshStats();
+  setInterval(refreshStats, 30000);
+
+  // ── Keyboard navigation ──
+  var focusedCardIdx = -1;
+
+  function getCards() {
+    return Array.from(document.querySelectorAll('.cl-kds-card:not(.cl-kds-card--exiting)'));
+  }
+
+  function focusCard(idx) {
+    var cards = getCards();
+    // Remove old focus
+    cards.forEach(function(c) { c.classList.remove('cl-kds-card--focused'); });
+    if (idx < 0 || idx >= cards.length) { focusedCardIdx = -1; return; }
+    focusedCardIdx = idx;
+    cards[idx].classList.add('cl-kds-card--focused');
+    cards[idx].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }
+
+  document.addEventListener('keydown', function(e) {
+    var cards = getCards();
+    if (!cards.length) return;
+
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      focusCard(Math.min(focusedCardIdx + 1, cards.length - 1));
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      focusCard(Math.max(focusedCardIdx - 1, 0));
+    } else if ((e.key === 'Enter' || e.key === ' ') && focusedCardIdx >= 0) {
+      e.preventDefault();
+      var card = cards[focusedCardIdx];
+      if (card) {
+        var btn = card.querySelector('.cl-kds-btn--done');
+        if (btn && !btn.disabled) btn.click();
+      }
+    } else if (e.key === 'Escape') {
+      focusCard(-1);
+    }
+  });
+
+  // Set initial pending count from DOM
+  var initCount = document.querySelectorAll('.cl-kds-card').length;
+  document.getElementById('kdsPendingCount').textContent = initCount || '0';
 
   // Auto-refresh every 30s as fallback
   setInterval(refreshOrders, 30000);

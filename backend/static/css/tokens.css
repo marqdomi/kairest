@@ -120,12 +120,12 @@
   --cl-shadow-xl: 0 20px 24px -4px rgba(16, 24, 40, 0.08), 0 8px 8px -4px rgba(16, 24, 40, 0.03);
   --cl-shadow-2xl: 0 24px 48px -12px rgba(16, 24, 40, 0.18);
 
-  /* ─── Radii ─── */
-  --cl-radius-sm: 0.375rem;
-  --cl-radius-md: 0.5rem;
-  --cl-radius-lg: 0.75rem;
-  --cl-radius-xl: 1rem;
-  --cl-radius-2xl: 1.5rem;
+  /* ─── Radii (aligned with v7 mockups) ─── */
+  --cl-radius-sm: 8px;
+  --cl-radius-md: 12px;
+  --cl-radius-lg: 16px;
+  --cl-radius-xl: 20px;
+  --cl-radius-2xl: 24px;
   --cl-radius-full: 9999px;
 
   /* ─── Transitions ─── */
@@ -189,12 +189,8 @@
   /* ─── v7 KPI sparkline height ─── */
   --cl-sparkline-h: 32px;
 
-  /* ─── v7 Z-Index scale ─── */
-  --cl-z-topbar: 400;
-  --cl-z-sidebar: 500;
-  --cl-z-modal: 600;
-  --cl-z-toast: 700;
-  --cl-z-fixed: 300;
+  /* ─── v7 Z-Index (uses unified Bootstrap-compatible scale above) ─── */
+  /* --cl-z-topbar, --cl-z-sidebar: use --cl-z-sticky / --cl-z-fixed from above */
 
   /* ─── v7 Shadows (dark-native) ─── */
   --cl-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -1092,65 +1088,10 @@ small,
 
 
 /* ═══════════════════════════════════════════════════
-   CL Topbar (for admin with sidebar)
+   CL Topbar & Main — CANONICAL defs in v7-sidebar.css
+   (Legacy v6 rules removed — position:fixed/left:260px
+    and margin-top:64px were leaking into v7 layouts)
    ═══════════════════════════════════════════════════ */
-.cl-topbar {
-  position: fixed;
-  top: 0;
-  left: var(--cl-sidebar-width);
-  right: 0;
-  height: var(--cl-topbar-height);
-  background: var(--cl-bg-primary);
-  border-bottom: 1px solid var(--cl-border-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--cl-space-6);
-  z-index: var(--cl-z-sticky);
-  transition: left var(--cl-transition-slow);
-}
-
-.cl-sidebar--collapsed~.cl-topbar {
-  left: var(--cl-sidebar-collapsed);
-}
-
-.cl-topbar__left {
-  display: flex;
-  align-items: center;
-  gap: var(--cl-space-4);
-}
-
-.cl-topbar__right {
-  display: flex;
-  align-items: center;
-  gap: var(--cl-space-3);
-}
-
-.cl-topbar__user {
-  display: flex;
-  align-items: center;
-  gap: var(--cl-space-2);
-  font-size: var(--cl-text-sm);
-  color: var(--cl-text-secondary);
-}
-
-
-/* ═══════════════════════════════════════════════════
-   CL Main Content (with sidebar)
-   ═══════════════════════════════════════════════════ */
-.cl-main {
-  margin-left: var(--cl-sidebar-width);
-  margin-top: var(--cl-topbar-height);
-  padding: var(--cl-space-6) var(--cl-space-8);
-  min-height: calc(100vh - var(--cl-topbar-height));
-  transition: margin-left var(--cl-transition-slow);
-  background: var(--cl-bg-secondary);
-}
-
-.cl-sidebar--collapsed~.cl-topbar~.cl-main,
-.cl-sidebar--collapsed~.cl-main {
-  margin-left: var(--cl-sidebar-collapsed);
-}
 
 
 /* ═══════════════════════════════════════════════════
@@ -1189,14 +1130,6 @@ small,
   .cl-sidebar--open {
     transform: translateX(0);
     box-shadow: var(--cl-shadow-2xl);
-  }
-
-  .cl-topbar {
-    left: 0;
-  }
-
-  .cl-main {
-    margin-left: 0;
   }
 
   .cl-sidebar-overlay {
@@ -1313,7 +1246,7 @@ small,
   font-size: var(--cl-text-sm);
   font-weight: var(--cl-font-medium);
   padding: var(--cl-space-1) var(--cl-space-2);
-  border-radius: var(--cl-radius-md);
+  border-radius: 100px;
   cursor: pointer;
   transition: background var(--cl-transition-fast);
 }

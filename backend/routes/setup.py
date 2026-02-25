@@ -8,7 +8,7 @@ import logging
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from backend.extensions import db
 from backend.models.models import ConfiguracionSistema, Sucursal, Usuario, Mesa, Categoria, Estacion, Producto
-from backend.services.seeder import seed_menu_default, seed_mesas, seed_estaciones
+from backend.services.seeder import seed_from_template, get_template_list, seed_mesas
 from backend.services.password_policy import validar_password
 from backend.services.sanitizer import sanitizar_texto, sanitizar_email
 
@@ -19,7 +19,31 @@ setup_bp = Blueprint('setup', __name__, url_prefix='/setup')
 
 def _onboarding_done():
     """Check if onboarding has been completed."""
-    return ConfiguracionSistema.get_bool('onboarding_completado', False)
+    try:
+        return ConfiguracionSistema.get_bool('onboarding_completado', False)
+    except Exception:
+        return False  # Table may not exist yet (fresh install)
+
+
+def _ensure_tables():
+    """Create tables if they don't exist (safety net for fresh installs)."""
+    try:
+        # Quick check: try to count configuracion_sistema
+        ConfiguracionSistema.query.limit(1).all()
+    except Exception:
+        db.session.rollback()
+        try:
+            from backend.models.database import init_db
+            init_db()
+            logger.info('Tablas creadas desde setup blueprint (fresh install).')
+        except Exception:
+            logger.exception('Error creando tablas desde setup.')
+
+
+@setup_bp.before_request
+def _setup_ensure_db():
+    """Ensure DB tables exist before any setup route runs."""
+    _ensure_tables()
 
 
 @setup_bp.route('/')
@@ -68,6 +92,10 @@ def paso1():
 def paso2():
     if _onboarding_done():
         return redirect(url_for('auth.login'))
+    # Guard: must complete step 1 first
+    if not ConfiguracionSistema.get('nombre_negocio'):
+        flash('Primero completa el paso 1.', 'warning')
+        return redirect(url_for('setup.paso1'))
 
     if request.method == 'POST':
         nombre = sanitizar_texto(request.form.get('nombre', ''), 100)
@@ -122,24 +150,31 @@ def paso2():
 def paso3():
     if _onboarding_done():
         return redirect(url_for('auth.login'))
+    # Guard: must have admin user from step 2
+    if not Usuario.query.filter_by(rol='superadmin').first():
+        flash('Primero crea tu cuenta de administrador.', 'warning')
+        return redirect(url_for('setup.paso2'))
 
     if request.method == 'POST':
-        opcion = request.form.get('opcion_menu', 'default')
+        opcion = request.form.get('opcion_menu', 'taqueria')
 
-        if opcion == 'default':
-            # Seed the default barbacoa/carnitas menu
-            created = seed_menu_default()
-            flash(f'Menú cargado: {created} productos agregados.', 'success')
-        elif opcion == 'manual':
+        if opcion == 'manual':
             # Process manually-added products
             nombres = request.form.getlist('prod_nombre[]')
             precios = request.form.getlist('prod_precio[]')
             categorias_form = request.form.getlist('prod_categoria[]')
+            # Ensure stations exist
             estaciones_form = request.form.getlist('prod_estacion[]')
 
-            # Ensure stations exist
-            seed_estaciones()
-            estaciones_map = {e.nombre: e for e in Estacion.query.all()}
+            # Build station map — create new stations on-the-fly
+            estaciones_map = {e.nombre.lower(): e for e in Estacion.query.all()}
+            for est_raw in estaciones_form:
+                est_name = sanitizar_texto(est_raw, 50)
+                if est_name and est_name.lower() not in estaciones_map:
+                    new_est = Estacion(nombre=est_name)
+                    db.session.add(new_est)
+                    db.session.flush()
+                    estaciones_map[est_name.lower()] = new_est
 
             created = 0
             for i, nombre in enumerate(nombres):
@@ -161,7 +196,7 @@ def paso3():
                     db.session.add(cat)
                     db.session.flush()
 
-                estacion = estaciones_map.get(est_nombre)
+                estacion = estaciones_map.get(est_nombre.lower().strip()) if est_nombre else None
 
                 if not Producto.query.filter_by(nombre=nombre).first():
                     prod = Producto(
@@ -177,12 +212,18 @@ def paso3():
 
             db.session.commit()
             flash(f'{created} productos agregados.', 'success')
+        else:
+            # Template-based seeding (taqueria, restaurante, cafeteria)
+            created = seed_from_template(opcion)
+            flash(f'Menu cargado: {created} productos agregados.', 'success')
 
         return redirect(url_for('setup.paso4'))
 
-    # Get existing categories for the manual form
+    # Get existing categories, stations, and available templates
     categorias = [c.nombre for c in Categoria.query.order_by(Categoria.nombre).all()]
-    return render_template('setup/paso3.html', paso=3, categorias=categorias)
+    estaciones = [e.nombre for e in Estacion.query.order_by(Estacion.nombre).all()]
+    templates = get_template_list()
+    return render_template('setup/paso3.html', paso=3, categorias=categorias, estaciones=estaciones, templates=templates)
 
 
 # ── Paso 4: Mesas ──
@@ -191,6 +232,13 @@ def paso3():
 def paso4():
     if _onboarding_done():
         return redirect(url_for('auth.login'))
+    # Guard: must have completed previous steps (superadmin + products)
+    if not Usuario.query.filter_by(rol='superadmin').first():
+        flash('Primero completa los pasos anteriores.', 'warning')
+        return redirect(url_for('setup.paso2'))
+    if Producto.query.count() == 0:
+        flash('Primero agrega productos en el paso 3.', 'warning')
+        return redirect(url_for('setup.paso3'))
 
     if request.method == 'POST':
         try:
@@ -213,6 +261,10 @@ def paso4():
 def paso5():
     if _onboarding_done():
         return redirect(url_for('auth.login'))
+    # Guard: must have completed step 4 (mesas)
+    if Mesa.query.count() == 0 and not Usuario.query.filter_by(rol='superadmin').first():
+        flash('Primero completa los pasos anteriores.', 'warning')
+        return redirect(url_for('setup.paso1'))
 
     if request.method == 'POST':
         nombres = request.form.getlist('user_nombre[]')
@@ -222,6 +274,9 @@ def paso5():
 
         created = 0
         sucursal_id = session.get('setup_sucursal_id')
+
+        # Build station lookup for cocina roles
+        estaciones_map = {e.nombre.lower(): e for e in Estacion.query.all()}
 
         for i, nombre in enumerate(nombres):
             nombre = sanitizar_texto(nombre, 100)
@@ -233,13 +288,31 @@ def paso5():
             password = passwords[i] if i < len(passwords) else ''
             if not password:
                 continue
-            rol = roles[i] if i < len(roles) else 'mesero'
+
+            # Validate password strength (same policy as superadmin)
+            pw_valida, pw_errores = validar_password(password, nombre=nombre, email=email)
+            if not pw_valida:
+                flash(f'Contraseña de {nombre} no cumple política: {"; ".join(pw_errores)}', 'danger')
+                continue
+
+            rol_raw = roles[i] if i < len(roles) else 'mesero'
+
+            # Parse "cocina:station_name" format → rol='cocina' + estacion_id FK
+            estacion_id = None
+            if rol_raw.startswith('cocina:'):
+                station_name = rol_raw.split(':', 1)[1].strip()
+                estacion = estaciones_map.get(station_name.lower())
+                if estacion:
+                    estacion_id = estacion.id
+                rol = 'cocina'
+            else:
+                rol = rol_raw
 
             if Usuario.query.filter_by(email=email).first():
                 flash(f'El email {email} ya existe, se omitió.', 'warning')
                 continue
 
-            user = Usuario(nombre=nombre, email=email, rol=rol)
+            user = Usuario(nombre=nombre, email=email, rol=rol, estacion_id=estacion_id)
             user.set_password(password)
             if sucursal_id:
                 user.sucursal_id = sucursal_id
@@ -250,22 +323,32 @@ def paso5():
         if created:
             flash(f'{created} usuarios creados.', 'success')
 
-        return redirect(url_for('setup.completar'))
+        # Complete onboarding
+        ConfiguracionSistema.set('onboarding_completado', 'true')
+        ConfiguracionSistema.set('modo_sistema', 'basico')
+        db.session.commit()
+        logger.info('Onboarding completado desde paso 5.')
+        flash('¡Configuración completada! Inicia sesión para comenzar.', 'success')
+        return redirect(url_for('auth.login'))
 
-    return render_template('setup/paso5.html', paso=5)
+    estaciones = Estacion.query.order_by(Estacion.nombre).all()
+    return render_template('setup/paso5.html', paso=5, estaciones=estaciones)
 
 
 # ── Completar ──
 
-@setup_bp.route('/completar', methods=['GET', 'POST'])
+@setup_bp.route('/completar', methods=['POST'])
 def completar():
     if _onboarding_done():
         return redirect(url_for('auth.login'))
+    # Guard: must have a superadmin to complete
+    if not Usuario.query.filter_by(rol='superadmin').first():
+        flash('Primero completa el setup.', 'warning')
+        return redirect(url_for('setup.paso1'))
 
-    if request.method == 'POST' or request.method == 'GET':
-        ConfiguracionSistema.set('onboarding_completado', 'true')
-        ConfiguracionSistema.set('modo_sistema', 'basico')
-        db.session.commit()
-        logger.info('Onboarding completado.')
-        flash('¡Configuración completada! Inicia sesión para comenzar.', 'success')
-        return redirect(url_for('auth.login'))
+    ConfiguracionSistema.set('onboarding_completado', 'true')
+    ConfiguracionSistema.set('modo_sistema', 'basico')
+    db.session.commit()
+    logger.info('Onboarding completado.')
+    flash('¡Configuración completada! Inicia sesión para comenzar.', 'success')
+    return redirect(url_for('auth.login'))

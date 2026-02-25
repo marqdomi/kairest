@@ -33,7 +33,8 @@ Children: list of (label, endpoint) for sub-nav #}
 'items': [
 {'icon': 'clipboard-list', 'label': 'Órdenes Activas', 'endpoint': 'meseros.view_meseros'},
 {'icon': 'map', 'label': 'Mapa de Mesas', 'endpoint': 'meseros.mapa_mesas'},
-{'icon': 'history', 'label': 'Historial del Día','endpoint': 'meseros.historial_dia'}
+{'icon': 'history', 'label': 'Historial del Día','endpoint': 'meseros.historial_dia'},
+{'icon': 'chef-hat', 'label': 'Cocina (KDS)', 'endpoint': 'cocina.index'}
 ]
 },
 {
@@ -114,7 +115,7 @@ Children: list of (label, endpoint) for sub-nav #}
   </a>
 
   {# Navigation #}
-  <nav class="cl-sidebar__nav">
+  <nav class="cl-sidebar__nav" id="sidebarNav">
     {% for group in sidebar_nav %}
     {# ── Modo básico: ocultar módulos avanzados ── #}
     {% if modo_sistema == 'avanzado' or group.key in modulos_basicos %}
@@ -165,28 +166,26 @@ Children: list of (label, endpoint) for sub-nav #}
     {% endfor %}
     {% endif %}{# modo_sistema filter #}
     {% endfor %}
-  </nav>
 
-  {# ── Modo sistema toggle (superadmin only) ── #}
-  {# ── Modo sistema toggle (superadmin only) ── #}
-  {% if current_user.is_authenticated and current_user.rol == 'superadmin' %}
-  <div style="padding:var(--cl-space-3) var(--cl-space-4);border-top:1px solid var(--cl-border-color);">
-    <form method="POST" action="{{ url_for('admin.toggle_modo') }}" style="margin:0">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button type="submit" class="cl-btn cl-btn--ghost"
-        style="width:100%;font-size:11px;padding:6px 8px;color:var(--cl-text-tertiary);background:rgba(255,255,255,0.04);border:1px solid var(--cl-border-color);border-radius:8px;"
-        title="Cambiar entre modo básico y avanzado">
-        {% if modo_sistema == 'avanzado' %}
-        <i data-lucide="toggle-right" class="icon-xs"></i>
-        <span class="cl-sidebar__label">Modo Avanzado</span>
-        {% else %}
-        <i data-lucide="toggle-left" class="icon-xs"></i>
-        <span class="cl-sidebar__label">Modo Básico</span>
-        {% endif %}
-      </button>
-    </form>
-  </div>
-  {% endif %}
+    {# ── Modo sistema toggle (inside nav to scroll with content) ── #}
+    {% if current_user.is_authenticated and current_user.rol == 'superadmin' %}
+    <div class="cl-sidebar__modo-toggle">
+      <form method="POST" action="{{ url_for('admin.toggle_modo') }}" style="margin:0">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="cl-sidebar__modo-btn"
+          title="Cambiar entre modo básico y avanzado">
+          {% if modo_sistema == 'avanzado' %}
+          <i data-lucide="toggle-right" class="icon-xs"></i>
+          <span class="cl-sidebar__label">Modo Avanzado</span>
+          {% else %}
+          <i data-lucide="toggle-left" class="icon-xs"></i>
+          <span class="cl-sidebar__label">Modo Básico</span>
+          {% endif %}
+        </button>
+      </form>
+    </div>
+    {% endif %}
+  </nav>
 
   {# ── User pill footer ── #}
   {% if current_user.is_authenticated %}
@@ -200,7 +199,8 @@ Children: list of (label, endpoint) for sub-nav #}
         <div class="cl-user-name">{{ current_user.nombre }}</div>
         <div class="cl-user-role">{{ current_user.rol|capitalize }}</div>
       </div>
-      <a href="{{ url_for('auth.logout') }}" class="cl-sidebar__label" title="Cerrar sesión" aria-label="Cerrar sesión">
+      <a href="{{ url_for('auth.logout') }}" class="cl-user-pill__logout" title="Cerrar sesión" aria-label="Cerrar sesión"
+        style="margin-left:auto;display:flex;align-items:center;text-decoration:none;">
         <i data-lucide="log-out" style="width:14px;height:14px;color:var(--cl-text-tertiary);"></i>
       </a>
     </div>
@@ -235,28 +235,11 @@ Children: list of (label, endpoint) for sub-nav #}
       </span>
       {% endif %}
       <div class="cl-icon-btn" id="darkModeToggle" role="button" aria-label="Alternar modo oscuro" title="Modo oscuro">
-        <span id="darkModeIcon">🌙</span>
+        <span id="darkModeIcon"><i data-lucide="moon" style="width:16px;height:16px"></i></span>
       </div>
-      {% if current_user.is_authenticated %}
-      <div class="dropdown">
-        <button class="cl-topbar__user-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"
-          id="userMenuBtn">
-          <span class="cl-topbar__avatar">{{ current_user.nombre[0]|upper }}</span>
-          <span class="cl-topbar__user-name d-none d-md-inline">{{ current_user.nombre }}</span>
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuBtn">
-          <li><span class="dropdown-item-text text-muted small">{{ current_user.rol|capitalize }}</span></li>
-          <li>
-            <hr class="dropdown-divider">
-          </li>
-          <li>
-            <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
-              <i data-lucide="log-out" class="icon-sm me-2"></i>Cerrar sesión
-            </a>
-          </li>
-        </ul>
+      <div class="cl-icon-btn" role="button" aria-label="Notificaciones" title="Notificaciones">
+        <i data-lucide="bell" style="width:16px;height:16px"></i>
       </div>
-      {% endif %}
     </div>
   </header>
 
@@ -286,7 +269,7 @@ Children: list of (label, endpoint) for sub-nav #}
 </div>
 
 {# ── Sidebar JS ── #}
-<script>
+<script nonce="{{ csp_nonce }}">
   (function () {
     var sidebar = document.getElementById('adminSidebar');
     var main = document.getElementById('adminMain');

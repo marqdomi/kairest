@@ -2,7 +2,7 @@
 {% block page_title %}Inventario / Mermas{% endblock %}
 {% block head %}
 {{ super() }}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script nonce="{{ csp_nonce }}" src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 {% endblock %}
 
 {% block admin_content %}
@@ -62,14 +62,14 @@
 </div>
 {% else %}
 {% from 'components/_empty_state.html' import empty_state %}
-{{ empty_state('package', 'No hay mermas registradas en este periodo.') }}
+{{ empty_state('No hay mermas registradas en este periodo.', icon='package') }}
 {% endif %}
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 {% if mermas %}
-<script src="{{ url_for('static', filename='js/reportes-charts.js') }}?v={{ config.VERSION }}"></script>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/reportes-charts.js') }}?v={{ config.VERSION }}"></script>
 <script nonce="{{ csp_nonce }}">document.addEventListener('DOMContentLoaded', initInventarioCharts);</script>
 {% endif %}
 {% endblock %}

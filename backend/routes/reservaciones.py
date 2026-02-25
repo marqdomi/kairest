@@ -1,12 +1,14 @@
 """Fase 3 — Item 19: Reservaciones y estados de mesa avanzados."""
 import logging
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from backend.utils import login_required, filtrar_por_sucursal
 from backend.extensions import db
 from backend.services.sanitizer import sanitizar_texto, sanitizar_telefono
 from backend.models.models import Reservacion, Mesa, Cliente
 from sqlalchemy.orm import joinedload
+
+RESERVACION_DURACION_HORAS = 2  # assumed duration window for overlap detection
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +46,19 @@ def nueva_reservacion():
         mesa_id = request.form.get('mesa_id') or None
         cliente_id = request.form.get('cliente_id') or None
 
+        # Overlap detection: check for existing non-cancelled reservations on same mesa
+        if mesa_id:
+            ventana = timedelta(hours=RESERVACION_DURACION_HORAS)
+            conflicto = Reservacion.query.filter(
+                Reservacion.mesa_id == int(mesa_id),
+                Reservacion.estado.in_(['confirmada']),
+                Reservacion.fecha_hora.between(fecha_hora - ventana, fecha_hora + ventana),
+            ).first()
+            if conflicto:
+                flash(f'La mesa ya tiene reservación a las {conflicto.fecha_hora.strftime("%H:%M")} '
+                      f'({conflicto.nombre_contacto}). Elige otra mesa u horario.', 'danger')
+                return redirect(url_for('reservaciones.nueva_reservacion'))
+
         r = Reservacion(
             mesa_id=int(mesa_id) if mesa_id else None,
             cliente_id=int(cliente_id) if cliente_id else None,
@@ -57,11 +72,13 @@ def nueva_reservacion():
         )
         db.session.add(r)
 
-        # Si se asignó mesa, marcarla como reservada
+        # Only mark mesa as 'reservada' if the reservation is within the next 2 hours (same-day)
         if mesa_id:
             mesa = Mesa.query.get(int(mesa_id))
             if mesa and mesa.estado == 'disponible':
-                mesa.estado = 'reservada'
+                now = datetime.utcnow()
+                if fecha_hora <= now + timedelta(hours=RESERVACION_DURACION_HORAS):
+                    mesa.estado = 'reservada'
 
         db.session.commit()
         flash('Reservación creada.', 'success')

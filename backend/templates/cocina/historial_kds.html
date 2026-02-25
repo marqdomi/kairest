@@ -1,0 +1,215 @@
+{# ═══════════════════════════════════════════════════════
+   KDS Historial + Analytics — Phase 4
+   Admin view: station-level prep time metrics, per-order breakdown
+   ═══════════════════════════════════════════════════════ #}
+{% extends 'layouts/_layout_admin.html' %}
+{% block page_title %}KDS Analytics{% endblock %}
+
+{% block admin_content %}
+{% from 'components/_page_header.html' import page_header %}
+{% call page_header('KDS Analytics', breadcrumb=[{'label':'Admin','url':'#'}, {'label':'Cocina','url':url_for('cocina.index')}], subtitle='Métricas de preparación por estación') %}
+{% endcall %}
+
+{# ── Filters ── #}
+<form method="get" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:var(--cl-space-6);">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <label for="fecha" style="font-size:var(--cl-text-sm);font-weight:var(--cl-font-semibold);color:var(--cl-text-secondary);">
+      <i data-lucide="calendar" class="icon-sm" style="vertical-align:-2px;"></i> Fecha
+    </label>
+    <input type="date" id="fecha" name="fecha" value="{{ fecha.isoformat() }}"
+      class="cl-input" style="width:170px;font-size:var(--cl-text-sm);padding:6px 10px;">
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <label for="estacion" style="font-size:var(--cl-text-sm);font-weight:var(--cl-font-semibold);color:var(--cl-text-secondary);">
+      <i data-lucide="chef-hat" class="icon-sm" style="vertical-align:-2px;"></i> Estación
+    </label>
+    <select id="estacion" name="estacion" class="cl-input" style="width:170px;font-size:var(--cl-text-sm);padding:6px 10px;">
+      <option value="">Todas</option>
+      {% for est in estaciones %}
+      <option value="{{ est.slug }}" {% if estacion_slug == est.slug %}selected{% endif %}>{{ est.nombre|title }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button type="submit" class="cl-btn cl-btn--primary cl-btn--sm">
+    <i data-lucide="filter" class="icon-sm"></i> Filtrar
+  </button>
+</form>
+
+{# ── KPI Cards ── #}
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:var(--cl-space-6);">
+  <div class="cl-card" style="padding:20px;text-align:center;">
+    <div style="font-size:var(--cl-text-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--cl-text-tertiary);font-weight:var(--cl-font-semibold);margin-bottom:6px;">
+      <i data-lucide="clipboard-check" class="icon-xs" style="vertical-align:-1px;"></i> Órdenes
+    </div>
+    <div style="font-size:var(--cl-text-3xl);font-weight:900;color:var(--cl-text-primary);font-family:var(--cl-font-mono);">
+      {{ kpi.ordenes }}
+    </div>
+    <div style="font-size:var(--cl-text-xs);color:var(--cl-text-tertiary);margin-top:4px;">completadas</div>
+  </div>
+
+  <div class="cl-card" style="padding:20px;text-align:center;">
+    <div style="font-size:var(--cl-text-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--cl-text-tertiary);font-weight:var(--cl-font-semibold);margin-bottom:6px;">
+      <i data-lucide="utensils" class="icon-xs" style="vertical-align:-1px;"></i> Ítems
+    </div>
+    <div style="font-size:var(--cl-text-3xl);font-weight:900;color:var(--cl-text-primary);font-family:var(--cl-font-mono);">
+      {{ kpi.total_items }}
+    </div>
+    <div style="font-size:var(--cl-text-xs);color:var(--cl-text-tertiary);margin-top:4px;">preparados</div>
+  </div>
+
+  <div class="cl-card" style="padding:20px;text-align:center;">
+    <div style="font-size:var(--cl-text-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--cl-text-tertiary);font-weight:var(--cl-font-semibold);margin-bottom:6px;">
+      <i data-lucide="clock" class="icon-xs" style="vertical-align:-1px;"></i> Promedio
+    </div>
+    <div style="font-size:var(--cl-text-3xl);font-weight:900;font-family:var(--cl-font-mono);{% if kpi.avg_min > 15 %}color:var(--cl-danger-500);{% elif kpi.avg_min > 10 %}color:var(--cl-warning-500);{% else %}color:var(--cl-success-500);{% endif %}">
+      {{ kpi.avg_min }}<span style="font-size:var(--cl-text-sm);font-weight:600;">min</span>
+    </div>
+    <div style="font-size:var(--cl-text-xs);color:var(--cl-text-tertiary);margin-top:4px;">tiempo de preparación</div>
+  </div>
+
+  <div class="cl-card" style="padding:20px;text-align:center;">
+    <div style="font-size:var(--cl-text-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--cl-text-tertiary);font-weight:var(--cl-font-semibold);margin-bottom:6px;">
+      <i data-lucide="zap" class="icon-xs" style="vertical-align:-1px;"></i> Más rápido
+    </div>
+    <div style="font-size:var(--cl-text-3xl);font-weight:900;color:var(--cl-success-500);font-family:var(--cl-font-mono);">
+      {{ kpi.fastest }}<span style="font-size:var(--cl-text-sm);font-weight:600;">min</span>
+    </div>
+    <div style="font-size:var(--cl-text-xs);color:var(--cl-text-tertiary);margin-top:4px;">orden más rápida</div>
+  </div>
+
+  <div class="cl-card" style="padding:20px;text-align:center;">
+    <div style="font-size:var(--cl-text-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--cl-text-tertiary);font-weight:var(--cl-font-semibold);margin-bottom:6px;">
+      <i data-lucide="alert-triangle" class="icon-xs" style="vertical-align:-1px;"></i> Más lento
+    </div>
+    <div style="font-size:var(--cl-text-3xl);font-weight:900;font-family:var(--cl-font-mono);{% if kpi.slowest > 20 %}color:var(--cl-danger-500);{% elif kpi.slowest > 12 %}color:var(--cl-warning-500);{% else %}color:var(--cl-text-primary);{% endif %}">
+      {{ kpi.slowest }}<span style="font-size:var(--cl-text-sm);font-weight:600;">min</span>
+    </div>
+    <div style="font-size:var(--cl-text-xs);color:var(--cl-text-tertiary);margin-top:4px;">orden más lenta</div>
+  </div>
+</div>
+
+{# ── Per-Station Breakdown ── #}
+{% if station_stats %}
+<div class="cl-card" style="padding:20px;margin-bottom:var(--cl-space-6);">
+  <h3 style="font-size:var(--cl-text-base);font-weight:var(--cl-font-bold);color:var(--cl-text-primary);margin:0 0 16px;">
+    <i data-lucide="bar-chart-3" class="icon-sm" style="vertical-align:-2px;"></i>
+    Rendimiento por Estación
+  </h3>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+    {% for name, stats in station_stats.items() %}
+    <div style="padding:16px;background:var(--cl-bg-secondary);border-radius:var(--cl-radius-md);border:1px solid var(--cl-border-primary);">
+      <div style="font-size:var(--cl-text-sm);font-weight:var(--cl-font-bold);color:var(--cl-text-primary);margin-bottom:8px;">
+        <i data-lucide="chef-hat" class="icon-xs" style="vertical-align:-1px;"></i>
+        {{ name|title }}
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;">
+        <div>
+          <span style="font-size:var(--cl-text-2xl);font-weight:900;font-family:var(--cl-font-mono);color:var(--cl-text-primary);">{{ stats.items }}</span>
+          <span style="font-size:var(--cl-text-xs);color:var(--cl-text-tertiary);"> ítems</span>
+        </div>
+        <div style="text-align:right;">
+          <span style="font-size:var(--cl-text-lg);font-weight:800;font-family:var(--cl-font-mono);{% if stats.avg > 15 %}color:var(--cl-danger-500);{% elif stats.avg > 10 %}color:var(--cl-warning-500);{% else %}color:var(--cl-success-500);{% endif %}">
+            {{ stats.avg }} min
+          </span>
+          <div style="font-size:var(--cl-text-xs);color:var(--cl-text-tertiary);">promedio</div>
+        </div>
+      </div>
+      {# Mini progress bar: avg time visual (max 20 min scale) #}
+      <div style="margin-top:10px;height:4px;background:var(--cl-bg-tertiary);border-radius:2px;overflow:hidden;">
+        <div style="height:100%;border-radius:2px;width:{{ [stats.avg / 20 * 100, 100]|min }}%;{% if stats.avg > 15 %}background:var(--cl-danger-500);{% elif stats.avg > 10 %}background:var(--cl-warning-500);{% else %}background:var(--cl-success-500);{% endif %}"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# ── Orders Table ── #}
+{% if ordenes_list %}
+<div class="cl-card" style="border-radius:var(--cl-radius-lg);overflow:hidden;">
+  <div style="padding:16px 20px;border-bottom:1px solid var(--cl-border-primary);display:flex;justify-content:space-between;align-items:center;">
+    <h3 style="font-size:var(--cl-text-base);font-weight:var(--cl-font-bold);color:var(--cl-text-primary);margin:0;">
+      <i data-lucide="list" class="icon-sm" style="vertical-align:-2px;"></i>
+      Detalle de Órdenes
+    </h3>
+    <span class="cl-badge cl-badge--pill cl-badge--info">{{ ordenes_list|length }} orden{{ 'es' if ordenes_list|length != 1 }}</span>
+  </div>
+  <div class="table-responsive">
+    <table class="cl-table" style="margin-bottom:0;">
+      <thead>
+        <tr>
+          <th>Orden</th>
+          <th>Hora</th>
+          <th>Mesa</th>
+          <th>Ítems</th>
+          <th>Productos</th>
+          <th style="text-align:right;">
+            <i data-lucide="clock" class="icon-xs" style="vertical-align:-1px;"></i> Prep Time
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in ordenes_list %}
+        {% set orden = entry.orden %}
+        {% set prep = entry.prep_min %}
+        <tr>
+          <td>
+            <span style="font-weight:var(--cl-font-bold);color:var(--cl-text-primary);font-family:var(--cl-font-mono);">#{{ orden.id }}</span>
+          </td>
+          <td>
+            <span style="color:var(--cl-text-secondary);font-family:var(--cl-font-mono);">{{ orden.tiempo_registro.strftime('%H:%M') }}</span>
+          </td>
+          <td>
+            {% if orden.es_para_llevar %}
+              <span class="cl-badge cl-badge--warning cl-badge--pill" style="font-size:var(--cl-text-xs);">
+                <i data-lucide="package" class="icon-xs"></i> Para llevar
+              </span>
+            {% elif orden.mesa %}
+              Mesa {{ orden.mesa.numero }}
+            {% else %}
+              <span style="color:var(--cl-text-tertiary);">—</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="cl-badge cl-badge--pill" style="font-size:11px;">{{ entry.detalles|length }}</span>
+          </td>
+          <td>
+            <div style="max-width:300px;">
+              {% for d in entry.detalles[:5] %}
+              <span style="display:inline-block;font-size:var(--cl-text-sm);color:var(--cl-text-secondary);margin-right:var(--cl-space-1);">
+                {{ d.producto.nombre }}
+                <span class="cl-badge cl-badge--pill" style="font-size:10px;">×{{ d.cantidad }}</span>
+              </span>
+              {% endfor %}
+              {% if entry.detalles|length > 5 %}
+                <span style="font-size:var(--cl-text-xs);color:var(--cl-text-tertiary);">+{{ entry.detalles|length - 5 }} más</span>
+              {% endif %}
+            </div>
+          </td>
+          <td style="text-align:right;">
+            {% if prep is not none %}
+            <span style="font-weight:var(--cl-font-bold);font-family:var(--cl-font-mono);{% if prep > 15 %}color:var(--cl-danger-500);{% elif prep > 10 %}color:var(--cl-warning-500);{% else %}color:var(--cl-success-500);{% endif %}">
+              {{ prep }} min
+            </span>
+            {% else %}
+            <span style="color:var(--cl-text-tertiary);">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div style="padding:var(--cl-space-16) var(--cl-space-4);text-align:center;">
+  <div style="width:64px;height:64px;border-radius:var(--cl-radius-full);background:var(--cl-bg-tertiary);display:inline-flex;align-items:center;justify-content:center;margin-bottom:var(--cl-space-4);">
+    <i data-lucide="chef-hat" style="width:32px;height:32px;color:var(--cl-text-placeholder);"></i>
+  </div>
+  <h3 style="font-size:var(--cl-text-lg);font-weight:var(--cl-font-semibold);color:var(--cl-text-primary);margin-bottom:var(--cl-space-2);">Sin datos de preparación</h3>
+  <p style="color:var(--cl-text-secondary);max-width:360px;margin:0 auto;">
+    No hay ítems completados con tiempos registrados para esta fecha{% if estacion_slug %} y estación{% endif %}.
+  </p>
+</div>
+{% endif %}
+{% endblock %}

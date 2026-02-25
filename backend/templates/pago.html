@@ -142,7 +142,7 @@
 {# ═══ Success overlay ═══ #}
 <div class="pago-success-overlay" id="successOverlay" style="display: none;">
   <div class="pago-success-content">
-    <div class="pago-success-check">✓</div>
+    <div class="pago-success-check"><i data-lucide="check" style="width:48px;height:48px;"></i></div>
     <h2 style="color: var(--cl-success-700); margin: var(--cl-space-3) 0 var(--cl-space-1);">¡Pago exitoso!</h2>
     <p style="color: var(--cl-text-secondary);" id="successMsg">Orden completada</p>
   </div>
@@ -342,7 +342,7 @@
 }
 </style>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 const ORDEN_ID = {{ orden.id }};
 let _orderData = {};
 let _selectedMethod = 'efectivo';

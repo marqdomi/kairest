@@ -24,8 +24,8 @@ reportes_bp = Blueprint('reportes', __name__, url_prefix='/admin/reportes')
 
 def _parse_rango(args):
     """Extrae fecha_inicio y fecha_fin de los query params."""
-    fi = args.get('fecha_inicio', date.today().replace(day=1).isoformat())
-    ff = args.get('fecha_fin', date.today().isoformat())
+    fi = args.get('fecha_inicio', '') or date.today().replace(day=1).isoformat()
+    ff = args.get('fecha_fin', '') or date.today().isoformat()
     return date.fromisoformat(fi), date.fromisoformat(ff)
 
 

@@ -17,15 +17,25 @@
     {{ form_group('nombre', 'Nombre', value=usuario.nombre if usuario else '', required=true, icon='user') }}
     {{ form_group('email', 'Email', type='email', value=usuario.email if usuario else '', required=true, icon='mail') }}
 
+    {# Dynamic roles: static roles + one cocina entry per station #}
     {% set roles = [
-      {'id': 'mesero', 'nombre': 'Mesero'},
-      {'id': 'taquero', 'nombre': 'Taquero'},
-      {'id': 'comal', 'nombre': 'Comal'},
-      {'id': 'bebidas', 'nombre': 'Bebidas'},
-      {'id': 'admin', 'nombre': 'Admin'},
-      {'id': 'superadmin', 'nombre': 'Superadmin'}
+      {'id': 'mesero', 'nombre': 'Mesero'}
     ] %}
-    {{ form_select('rol', 'Rol', options=roles, value=usuario.rol if usuario else '', required=true) }}
+    {% for est in estaciones %}
+      {% set _ = roles.append({'id': 'cocina:' ~ est.nombre, 'nombre': 'Cocina — ' ~ est.nombre}) %}
+    {% endfor %}
+    {% set _ = roles.append({'id': 'admin', 'nombre': 'Admin'}) %}
+    {% set _ = roles.append({'id': 'superadmin', 'nombre': 'Superadmin'}) %}
+
+    {# Compute the current role value for select #}
+    {% if usuario and usuario.rol == 'cocina' and usuario.estacion %}
+      {% set rol_value = 'cocina:' ~ usuario.estacion.nombre %}
+    {% elif usuario %}
+      {% set rol_value = usuario.rol %}
+    {% else %}
+      {% set rol_value = '' %}
+    {% endif %}
+    {{ form_select('rol', 'Rol', options=roles, value=rol_value, required=true) }}
 
     {{ form_group('password', 'Contraseña' ~ (' (dejar vacío para no cambiar)' if usuario else ''),
                   type='password', required=not usuario, icon='lock',

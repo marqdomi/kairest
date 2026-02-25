@@ -26,6 +26,7 @@
 
 .cl-sidebar--collapsed .cl-sidebar__label,
 .cl-sidebar--collapsed .cl-sidebar__brand-text,
+.cl-sidebar--collapsed .cl-sidebar__brand-ver,
 .cl-sidebar--collapsed .cl-sidebar__group-label,
 .cl-sidebar--collapsed .cl-sidebar__chevron,
 .cl-sidebar--collapsed .cl-sidebar__sublink {
@@ -35,6 +36,37 @@
 .cl-sidebar--collapsed .cl-sidebar__link {
     justify-content: center;
     padding: 10px;
+}
+
+.cl-sidebar--collapsed .cl-sidebar__brand {
+    justify-content: center;
+    padding: 0;
+}
+
+.cl-sidebar--collapsed .cl-user-pill {
+    justify-content: center;
+    padding: 7px;
+}
+
+.cl-sidebar--collapsed .cl-user-pill > div:not(.cl-user-avatar),
+.cl-sidebar--collapsed .cl-user-pill .cl-user-name,
+.cl-sidebar--collapsed .cl-user-pill .cl-user-role,
+.cl-sidebar--collapsed .cl-user-pill__logout {
+    display: none;
+}
+
+.cl-sidebar--collapsed .cl-sidebar__footer {
+    padding: 12px 8px;
+}
+
+.cl-sidebar--collapsed .cl-sidebar__toggle {
+    position: static;
+    width: 100%;
+    border-radius: 0;
+    border: none;
+    border-top: 1px solid var(--cl-border-color);
+    background: transparent;
+    height: 40px;
 }
 
 /* ─── BRAND ─── */
@@ -84,19 +116,78 @@
 /* ─── NAV ─── */
 .cl-sidebar__nav {
     flex: 1;
-    padding: 10px 8px;
+    padding: 6px 8px;
     overflow-y: auto;
     overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.12) transparent;
+}
+
+.cl-sidebar__nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+.cl-sidebar__nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.cl-sidebar__nav::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.12);
+    border-radius: 4px;
+}
+
+.cl-sidebar__nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.2);
 }
 
 .cl-sidebar__group-label {
     font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     color: var(--cl-text-tertiary);
     text-transform: uppercase;
-    padding: 8px 10px 4px;
+    padding: 4px 10px 3px;
+    margin-top: 10px;
+    margin-bottom: 1px;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-top: 1px solid var(--cl-border-color);
+    padding-top: 10px;
+}
+
+.cl-sidebar__group-label:first-child {
+    margin-top: 0;
+    border-top: none;
+    padding-top: 4px;
+}
+
+/* Modo toggle inside nav (scrolls with content) */
+.cl-sidebar__modo-toggle {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--cl-border-color);
+}
+
+.cl-sidebar__modo-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    font-size: 11px;
+    padding: 6px 10px;
+    color: var(--cl-text-tertiary);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--cl-border-color);
+    border-radius: var(--cl-radius-sm, 8px);
+    cursor: pointer;
+    transition: all var(--cl-transition-fast);
+    white-space: nowrap;
+}
+
+.cl-sidebar__modo-btn:hover {
+    color: var(--cl-text-primary);
+    background: rgba(255,255,255,0.07);
 }
 
 /* Regular nav link */
@@ -104,17 +195,17 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 10px;
+    padding: 7px 10px;
     border-radius: var(--cl-radius-sm, 8px);
     color: var(--cl-text-secondary);
     cursor: pointer;
     transition: all var(--cl-transition-fast);
     font-weight: var(--cl-font-medium);
-    font-size: 13.5px;
+    font-size: 13px;
     text-decoration: none;
     border: 1px solid transparent;
     white-space: nowrap;
-    margin-bottom: 2px;
+    margin-bottom: 1px;
 }
 
 .cl-sidebar__link:hover {
@@ -136,14 +227,14 @@
 /* Sub-links (dropdown children) */
 .cl-sidebar__sublink {
     display: block;
-    padding: 6px 10px 6px 36px;
+    padding: 5px 10px 5px 36px;
     border-radius: var(--cl-radius-sm);
     color: var(--cl-text-tertiary);
     font-size: 12.5px;
     font-weight: var(--cl-font-medium);
     text-decoration: none;
     transition: all var(--cl-transition-fast);
-    margin-bottom: 1px;
+    margin-bottom: 0;
 }
 
 .cl-sidebar__sublink:hover {
@@ -167,31 +258,28 @@
 
 /* Sidebar toggle button */
 .cl-sidebar__toggle {
-    position: absolute;
-    bottom: 70px;
-    right: -14px;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 1px solid var(--cl-border-color);
-    background: var(--cl-surface-2);
-    color: var(--cl-text-tertiary);
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    height: 36px;
+    border: none;
+    border-top: 1px solid var(--cl-border-color);
+    background: transparent;
+    color: var(--cl-text-tertiary);
     cursor: pointer;
     transition: all var(--cl-transition-fast);
-    z-index: 1;
+    flex-shrink: 0;
 }
 
 .cl-sidebar__toggle:hover {
     color: var(--cl-text-primary);
-    border-color: var(--cl-border-color-md);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 /* ─── SIDEBAR FOOTER ─── */
 .cl-sidebar__footer {
-    padding: 12px 14px;
+    padding: 8px 10px;
     border-top: 1px solid var(--cl-border-color);
     flex-shrink: 0;
 }
@@ -213,15 +301,15 @@
 }
 
 .cl-user-avatar {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     border-radius: var(--cl-radius-sm);
     background: linear-gradient(135deg, var(--cl-red-500), var(--cl-gold));
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 800;
     color: #fff;
     flex-shrink: 0;
 }
@@ -267,6 +355,39 @@
     font-weight: var(--cl-font-semibold);
 }
 
+/* Topbar left group */
+.cl-topbar__left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Tab navigation (operations topbar) */
+.cl-topbar-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border-radius: var(--cl-radius-sm);
+    font-size: 13px;
+    font-weight: var(--cl-font-medium);
+    color: var(--cl-text-tertiary);
+    text-decoration: none;
+    transition: all var(--cl-transition-fast);
+    white-space: nowrap;
+}
+
+.cl-topbar-tab:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--cl-text-secondary);
+}
+
+.cl-topbar-tab.active {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--cl-text-primary);
+    font-weight: var(--cl-font-semibold);
+}
+
 .cl-topbar__right {
     display: flex;
     align-items: center;
@@ -295,7 +416,7 @@
 
 /* Sucursal badge in topbar */
 .cl-sucursal-badge {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 6px;
     background: rgba(46, 144, 250, 0.1);

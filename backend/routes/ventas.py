@@ -1,16 +1,16 @@
-from flask import Blueprint, request, jsonify, g
-from flask_login import login_required, current_user
+from flask import Blueprint, request, jsonify, g, session
+from backend.utils import login_required
 from backend.extensions import db
 from backend.models.models import Sale, SaleItem, Producto, Mesa
 
 ventas_bp = Blueprint('ventas', __name__, url_prefix='/ventas')
 
 @ventas_bp.route('/abrir', methods=['POST'])
-@login_required
+@login_required(roles=['admin', 'superadmin', 'mesero'])
 def abrir_venta():
     mesa_id = request.json.get('mesa_id')
     sale = Sale(
-        usuario_id=current_user.id,
+        usuario_id=session.get('user_id'),
         mesa_id=mesa_id,
         sucursal_id=getattr(g, 'sucursal_id', None),
     )
@@ -19,7 +19,7 @@ def abrir_venta():
     return jsonify({'sale_id': sale.id}), 201
 
 @ventas_bp.route('/<int:sale_id>/items', methods=['POST'])
-@login_required
+@login_required(roles=['admin', 'superadmin', 'mesero'])
 def agregar_item(sale_id):
     data = request.json
     producto = Producto.query.get_or_404(data['producto_id'])
@@ -39,7 +39,7 @@ def agregar_item(sale_id):
     return jsonify({'item_id': item.id, 'nuevo_total': float(sale.total)}), 201
 
 @ventas_bp.route('/<int:sale_id>/cerrar', methods=['POST'])
-@login_required
+@login_required(roles=['admin', 'superadmin', 'mesero'])
 def cerrar_venta(sale_id):
     sale = Sale.query.get_or_404(sale_id)
     sale.estado = 'cerrada'

@@ -24,7 +24,7 @@
   </div>
   {% endfor %}
 </div>
-<script>
+<script nonce="{{ csp_nonce }}">
 (function(){
   document.querySelectorAll('.cl-toast').forEach(function(t){
     var timer;

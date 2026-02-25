@@ -50,86 +50,56 @@ def listar_ordenes():
 @api_bp.route('/ordenes/<int:orden_id>/detalle/<int:detalle_id>/listo', methods=['POST'])
 @login_required()
 def marcar_detalle_listo(orden_id, detalle_id):
+    from datetime import datetime as dt
     detalle = OrdenDetalle.query.get_or_404(detalle_id)
+    if detalle.estado == 'listo':
+        return jsonify({'message': 'Ya estaba marcado como listo'}), 200
     detalle.estado = 'listo'
+    detalle.fecha_listo = dt.utcnow()
+    orden = Orden.query.get(orden_id)
+    # Transition to en_preparacion on first item marked listo
+    if orden and orden.estado == 'enviado':
+        orden.estado = 'en_preparacion'
+        socketio.emit('orden_en_preparacion', {
+            'orden_id': orden.id,
+            'mesa_nombre': orden.mesa.numero if orden.mesa else 'Para Llevar',
+        })
     db.session.commit()
     verificar_orden_completa(orden_id)
+    socketio.emit('item_listo_notificacion', {
+        'item_id': detalle.id,
+        'orden_id': orden_id,
+        'producto_id': detalle.producto_id,
+        'producto_nombre': detalle.producto.nombre,
+        'mesa_nombre': orden.mesa.numero if orden and orden.mesa else 'Para Llevar',
+        'mensaje': f'¡{detalle.producto.nombre} de la orden {orden_id} está listo!'
+    })
+    # Emit progress
+    all_detalles = OrdenDetalle.query.filter_by(orden_id=orden_id).all()
+    items_listos = sum(1 for d in all_detalles if d.estado == 'listo')
+    socketio.emit('item_progreso', {
+        'orden_id': orden_id,
+        'items_listos': items_listos,
+        'items_total': len(all_detalles),
+        'mesa_nombre': orden.mesa.numero if orden and orden.mesa else 'Para Llevar',
+    })
     return jsonify({'message': 'Item marcado como listo.'}), 200
 
 @api_bp.route('/ordenes/<int:orden_id>/pagar', methods=['POST'])
 @login_required()
 def pagar_orden(orden_id):
-    orden = Orden.query.get_or_404(orden_id)
-    orden.estado = 'pagado'
-    db.session.commit()
-    return jsonify({'message': 'Orden pagada.'}), 200
+    """DEPRECATED — Use /meseros/ordenes/<id>/pago (registrar_pago) instead.
+    This endpoint was broken (wrong state, no Sale, no inventory, no audit).
+    Kept for backwards compatibility but returns error directing to proper flow."""
+    return jsonify({
+        'error': 'Endpoint deprecado. Usa el flujo de pagos en /meseros/ordenes/<id>/pago.',
+        'message': 'Use the proper payment flow via registrar_pago.',
+    }), 410
 
-@api_bp.route('/ordenes/<int:orden_id>/detalle', methods=['GET', 'POST'])
-@login_required()
-def order_details(orden_id):
-    if request.method == 'POST':
-        data = request.get_json() or {}
-        producto_id = data.get('producto_id')
-        cantidad = data.get('cantidad', 1)
-        notas = data.get('notas', '')
 
-        producto = Producto.query.get_or_404(producto_id)
-        orden = Orden.query.get_or_404(orden_id)
-
-        detalle = OrdenDetalle(
-            orden_id=orden.id,
-            producto_id=producto.id,
-            cantidad=cantidad,
-            notas=notas,
-            estado='pendiente',
-            precio_unitario=producto.precio,
-        )
-        db.session.add(detalle)
-        db.session.commit()
-
-        socketio.emit('order_detail_added', {
-            'orden_id': orden.id,
-            'detalle': {
-                'id': detalle.id,
-                'producto_id': producto.id,
-                'producto_nombre': producto.nombre,
-                'cantidad': cantidad,
-                'notas': notas,
-                'estado': detalle.estado
-            }
-        })
-
-        verificar_orden_completa(orden.id)
-
-        # Return updated list of detalles
-        detalles = OrdenDetalle.query.filter_by(orden_id=orden_id).all()
-        out = [
-            {
-                'id': d.id,
-                'producto_id': d.producto_id,
-                'producto_nombre': d.producto.nombre,
-                'cantidad': d.cantidad,
-                'notas': d.notas,
-                'estado': d.estado
-            }
-            for d in detalles
-        ]
-        return jsonify(out), 201
-
-    # GET request
-    detalles = OrdenDetalle.query.filter_by(orden_id=orden_id).all()
-    out = [
-        {
-            'id': d.id,
-            'producto_id': d.producto_id,
-            'producto_nombre': d.producto.nombre,
-            'cantidad': d.cantidad,
-            'notas': d.notas,
-            'estado': d.estado
-        }
-        for d in detalles
-    ]
-    return jsonify(out), 200
+# NOTE: GET/POST for /ordenes/<id>/detalle is now handled by orders_bp
+# (add_product_to_order, get_order_details) with IDOR protection.
+# PATCH/DELETE also in orders_bp.
 
 
 @api_bp.route('/ordenes/mesa/<int:mesa_id>')

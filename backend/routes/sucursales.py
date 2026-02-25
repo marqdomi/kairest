@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from backend.utils import login_required
 from backend.extensions import db
 from backend.models.models import Sucursal, Usuario
-from flask_login import current_user
+from backend.services.sanitizer import sanitizar_texto, sanitizar_telefono
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +23,9 @@ def lista_sucursales():
 def nueva_sucursal():
     if request.method == 'POST':
         s = Sucursal(
-            nombre=request.form['nombre'],
-            direccion=request.form.get('direccion', ''),
-            telefono=request.form.get('telefono', ''),
+            nombre=sanitizar_texto(request.form['nombre'], 100),
+            direccion=sanitizar_texto(request.form.get('direccion', ''), 200),
+            telefono=sanitizar_telefono(request.form.get('telefono', '')),
         )
         db.session.add(s)
         db.session.commit()
@@ -39,9 +39,9 @@ def nueva_sucursal():
 def editar_sucursal(id):
     s = Sucursal.query.get_or_404(id)
     if request.method == 'POST':
-        s.nombre = request.form['nombre']
-        s.direccion = request.form.get('direccion', '')
-        s.telefono = request.form.get('telefono', '')
+        s.nombre = sanitizar_texto(request.form['nombre'], 100)
+        s.direccion = sanitizar_texto(request.form.get('direccion', ''), 200)
+        s.telefono = sanitizar_telefono(request.form.get('telefono', ''))
         s.activa = 'activa' in request.form
         db.session.commit()
         flash('Sucursal actualizada.', 'success')

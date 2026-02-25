@@ -138,7 +138,7 @@
 {{ confirm_modal(id='deleteModal', title='¿Eliminar mesa?', body='Esta acción no se puede deshacer.',
 confirm_text='Eliminar', form_action='#') }}
 
-<script>
+<script nonce="{{ csp_nonce }}">
   document.getElementById('deleteModal').addEventListener('show.bs.modal', function (e) {
     this.querySelector('form').setAttribute('action', e.relatedTarget.getAttribute('data-action'));
     const name = e.relatedTarget.getAttribute('data-name');

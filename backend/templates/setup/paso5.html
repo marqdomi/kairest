@@ -19,15 +19,15 @@
         </div>
         <div class="cl-form-group" style="flex:1;min-width:120px">
           <label class="cl-form-label">Contraseña</label>
-          <input type="text" class="cl-form-input" name="user_password[]" placeholder="••••••">
+          <input type="password" class="cl-form-input" name="user_password[]" placeholder="Min. 8 caracteres">
         </div>
         <div class="cl-form-group" style="flex:1;min-width:100px">
           <label class="cl-form-label">Rol</label>
           <select class="cl-form-input" name="user_rol[]">
             <option value="mesero">Mesero</option>
-            <option value="taquero">Taquero</option>
-            <option value="comal">Comal</option>
-            <option value="bebidas">Bebidas</option>
+            {% for est in estaciones %}
+            <option value="cocina:{{ est.nombre }}">Cocina — {{ est.nombre }}</option>
+            {% endfor %}
             <option value="admin">Admin</option>
           </select>
         </div>
@@ -40,37 +40,51 @@
     </button>
 
     <div class="cl-setup__actions" style="margin-top:var(--cl-space-5)">
-      <a href="{{ url_for('setup.paso4') }}" class="cl-btn cl-btn--outline">← Atrás</a>
-      <button type="submit" class="cl-btn cl-btn--primary" name="action" value="add">
-        Finalizar →
+      <a href="{{ url_for('setup.paso4') }}" class="cl-btn cl-btn--outline"><i data-lucide="arrow-left" style="width:16px;height:16px;"></i> Atrás</a>
+      <button type="submit" class="cl-btn cl-btn--primary">
+        Finalizar <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
       </button>
     </div>
 
     <div style="text-align:center;margin-top:var(--cl-space-3)">
-      <a href="{{ url_for('setup.completar') }}" style="font-size:var(--cl-text-sm);color:var(--cl-text-secondary)">
+      <button type="button" id="skipBtn" style="background:none;border:none;cursor:pointer;font-size:var(--cl-text-sm);color:var(--cl-text-secondary);text-decoration:underline">
         Omitir este paso
-      </a>
+      </button>
     </div>
+  </form>
+
+  <form method="POST" action="{{ url_for('setup.completar') }}" id="skipForm" style="display:none">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   </form>
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
-<script>
+<script nonce="{{ csp_nonce }}">
 (function(){
+  // Add user row
   document.getElementById('addUserBtn').addEventListener('click', function(){
     var container = document.getElementById('userRows');
-    var row = container.querySelector('.cl-setup__row').cloneNode(true);
-    row.querySelectorAll('input, select').forEach(function(el){ el.value = ''; });
+    var template = container.querySelector('.cl-setup__row');
+    var row = template.cloneNode(true);
+    // Clear all inputs in the cloned row
+    row.querySelectorAll('input').forEach(function(el){ el.value = ''; });
+    row.querySelectorAll('select').forEach(function(el){ el.selectedIndex = 0; });
     // Add remove button
     var removeBtn = document.createElement('button');
     removeBtn.type = 'button';
     removeBtn.className = 'btn-remove';
-    removeBtn.innerHTML = '✕';
+    removeBtn.innerHTML = '<i data-lucide="x" style="width:14px;height:14px;"></i>';
     removeBtn.title = 'Eliminar';
     removeBtn.addEventListener('click', function(){ row.remove(); });
     row.appendChild(removeBtn);
     container.appendChild(row);
+    if (window.lucide) lucide.createIcons();
+  });
+
+  // Skip step — submit hidden form
+  document.getElementById('skipBtn').addEventListener('click', function(){
+    document.getElementById('skipForm').submit();
   });
 })();
 </script>

@@ -1,0 +1,77 @@
+{# ═══════════════════════════════════════════════════════
+Admin wrapper for Mapa de Mesas — uses sidebar layout
+Content is identical to meseros/mapa_mesas.html
+═══════════════════════════════════════════════════════ #}
+{% extends 'layouts/_layout_admin.html' %}
+{% block page_title %}Mapa de Mesas{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mapa_mesas.css') }}?v={{ config.VERSION }}">
+{% endblock %}
+
+{% block admin_breadcrumb %}
+<div class="cl-breadcrumb">
+  <span>Operaciones</span>
+  <i data-lucide="chevron-right" style="width:13px;height:13px;"></i>
+  <span class="cl-breadcrumb__current">Mapa de Mesas</span>
+</div>
+{% endblock %}
+
+{% block admin_content %}
+<div class="cl-page-hdr">
+  <div>
+    <h1 class="d-flex align-items-center gap-2">
+      <i data-lucide="layout-grid" style="width:22px;height:22px;"></i>
+      Mapa de Mesas
+    </h1>
+  </div>
+  <div class="cl-page-hdr__right">
+    {% if is_admin %}
+    <button id="btnAutoArrange" class="cl-btn--v7-outline cl-btn--sm btn-auto-arrange" title="Reorganizar mesas automáticamente">
+      <i data-lucide="grid-3x3" class="icon-sm"></i> Auto-organizar
+    </button>
+    {% endif %}
+    <a href="{{ url_for('meseros.crear_orden_para_llevar') }}" class="cl-btn--v7-primary cl-btn--sm d-flex align-items-center gap-1">
+      <i data-lucide="package" class="icon-sm"></i> Para Llevar
+    </a>
+  </div>
+</div>
+
+{# Legend #}
+<div class="mapa-legend mb-3">
+  <div class="mapa-legend-item"><span class="mapa-legend-dot disponible"></span> Disponible</div>
+  <div class="mapa-legend-item"><span class="mapa-legend-dot ocupada"></span> Ocupada</div>
+  <div class="mapa-legend-item"><span class="mapa-legend-dot reservada"></span> Reservada</div>
+  <div class="mapa-legend-item"><span class="mapa-legend-dot mantenimiento"></span> Mantenimiento</div>
+</div>
+
+{# Zone filters #}
+{% if zonas %}
+<div class="zone-filters mb-3">
+  <button class="cl-btn--v7-outline cl-btn--sm active" data-zone-filter="todas">Todas</button>
+  {% for zona in zonas %}
+  <button class="cl-btn--v7-outline cl-btn--sm" data-zone-filter="{{ zona }}">{{ zona }}</button>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# Desktop/tablet: interactive map #}
+<div id="mapa-mesas" class="mapa-container {% if is_admin %}admin-mode{% endif %}"
+     data-admin="{{ 'true' if is_admin else 'false' }}">
+</div>
+{% if is_admin %}
+<small style="color:var(--cl-text-tertiary);font-size:12px;margin-top:8px;display:block;">
+  <i data-lucide="info" style="width:12px;height:12px;display:inline;"></i>
+  Modo admin: arrastra las mesas para reposicionarlas. Usa "Auto-organizar" para alinearlas en cuadrícula.
+</small>
+{% endif %}
+
+{# Mobile: list view #}
+<div id="mapa-list-view" class="mapa-list-view list-group mt-2" style="display:none;"></div>
+
+{# Scripts #}
+<script nonce="{{ csp_nonce }}">window.__csrfToken = "{{ csrf_token() }}";</script>
+<script nonce="{{ csp_nonce }}" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/mapa_mesas.js') }}?v={{ config.VERSION }}"></script>
+{% endblock %}

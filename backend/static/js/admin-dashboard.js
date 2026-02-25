@@ -83,25 +83,26 @@
         api('ultimo_corte'),
       ]);
 
-      document.getElementById('ventasHoy').innerHTML = currency(ventas.ventasHoy);
-      document.getElementById('ordenesHoy').textContent = ordenes.ordenesHoy;
-      document.getElementById('ticketPromedio').innerHTML = currency(ticket.ticketPromedio);
-      document.getElementById('propinasHoy').innerHTML = currency(propinas.propinas);
+      document.getElementById('kpi-ventasHoy').innerHTML = currency(ventas.ventasHoy);
+      document.getElementById('kpi-ordenesHoy').textContent = ordenes.ordenesHoy;
+      document.getElementById('kpi-ticketPromedio').innerHTML = currency(ticket.ticketPromedio);
+      document.getElementById('kpi-propinasHoy').innerHTML = currency(propinas.propinas);
 
       // Mesas
-      document.getElementById('mesasActivas').textContent = `${mesas.ocupadas}/${mesas.total}`;
+      document.getElementById('kpi-mesasActivas').textContent = `${mesas.ocupadas}/${mesas.total}`;
       const mesRes = document.getElementById('mesasReservadas');
       if (mesRes) mesRes.textContent = mesas.reservadas > 0 ? `${mesas.reservadas} reservada(s)` : '';
 
       // Cocina
-      document.getElementById('ordenesCocina').textContent = cocina.pendientes;
+      document.getElementById('kpi-ordenesCocina').textContent = cocina.pendientes;
       const timerEl = document.getElementById('timerCocina');
       if (timerEl) timerEl.textContent = cocina.timer_promedio_min > 0
         ? `~${cocina.timer_promedio_min} min promedio`
         : 'Sin órdenes activas';
 
       // Stock alerts count
-      const countEl = document.getElementById('alertasStockCount');
+      const countEl = document.getElementById('kpi-alertasStockCount');
+      if (!countEl) return;
       countEl.textContent = stock.count;
       countEl.classList.toggle('text-danger', stock.count > 0);
 
@@ -116,7 +117,7 @@
         stockList.innerHTML = `
           <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:10px;opacity:.5;">
             <i data-lucide="package-check" style="width:32px;height:32px;color:var(--cl-success-500);"></i>
-            <p style="font-size:13px;color:var(--cl-text-tertiary);margin:0;">Sin alertas de inventario ✓</p>
+            <p style="font-size:13px;color:var(--cl-text-tertiary);margin:0;">Sin alertas de inventario</p>
           </div>`;
         if (window.lucide) lucide.createIcons();
       } else {
@@ -141,7 +142,8 @@
       if (!corteEl) return;
       if (!corte.exists) {
         corteEl.innerHTML = '—';
-        corteEl.closest('.cl-kpi-card').querySelector('.cl-kpi-card__sub').textContent = 'Sin cortes registrados';
+        const subEl = corteEl.closest('.cl-kpi-card').querySelector('.cl-kpi-card__sub');
+        if (subEl) subEl.textContent = 'Sin cortes registrados';
       } else {
         corteEl.innerHTML = currency(corte.total_ingresos);
         const sub = corteEl.closest('.cl-kpi-card').querySelector('.cl-kpi-card__sub');

@@ -54,7 +54,7 @@
 
 {% block scripts %}
 {{ super() }}
-<script>
+<script nonce="{{ csp_nonce }}">
   (function () {
     // Password show/hide toggle
     var pwInput = document.getElementById('password');

@@ -19,13 +19,13 @@ Usage:
 {% block body_layout %}
 <a href="#main-content" class="skip-to-content">Saltar al contenido</a>
 {# ── Top Navigation Bar ── #}
-<nav class="cl-topbar" role="navigation" aria-label="Navegación operaciones" style="--cl-topbar-h:56px;">
+<nav class="cl-topbar" role="navigation" aria-label="Navegación operaciones">
   <div class="cl-topbar__left">
     <a href="/" class="cl-topbar__brand-link"
       style="display:flex;align-items:center;gap:8px;text-decoration:none;margin-right:16px;">
       <div
-        style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--cl-red-500),var(--cl-red-700));display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">
-        🦁</div>
+        style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--cl-red-500),var(--cl-red-700));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <img src="{{ url_for('static', filename='img/kairest-logo.svg') }}" alt="" style="width:20px;height:20px;border-radius:4px;"></div>
       <span style="font-size:13px;font-weight:700;color:var(--cl-text-primary);white-space:nowrap;">{{ brand_name |
         default('KaiRest') }}</span>
     </a>
@@ -33,23 +33,20 @@ Usage:
     {# Tab navigation #}
     <div style="display:flex;gap:2px;" class="d-none d-md-flex">
       <a href="{{ url_for('meseros.view_meseros') }}"
-        class="cl-sidebar__link{% if active_op_tab is defined and active_op_tab == 'meseros' %} active{% endif %}"
-        style="padding:6px 14px;border-radius:8px;font-size:13px;" {% if active_op_tab is defined and
-        active_op_tab=='meseros' %}aria-current="page" {% endif %}>
+        class="cl-topbar-tab{% if active_op_tab is defined and active_op_tab == 'meseros' %} active{% endif %}"
+        {% if active_op_tab is defined and active_op_tab=='meseros' %}aria-current="page"{% endif %}>
         <i data-lucide="clipboard-list" class="icon-sm"></i>
         <span>Mis Órdenes</span>
       </a>
       <a href="{{ url_for('meseros.mapa_mesas') }}"
-        class="cl-sidebar__link{% if active_op_tab is defined and active_op_tab == 'mapa' %} active{% endif %}"
-        style="padding:6px 14px;border-radius:8px;font-size:13px;" {% if active_op_tab is defined and
-        active_op_tab=='mapa' %}aria-current="page" {% endif %}>
+        class="cl-topbar-tab{% if active_op_tab is defined and active_op_tab == 'mapa' %} active{% endif %}"
+        {% if active_op_tab is defined and active_op_tab=='mapa' %}aria-current="page"{% endif %}>
         <i data-lucide="map" class="icon-sm"></i>
         <span>Mapa de Mesas</span>
       </a>
       <a href="{{ url_for('meseros.historial_dia') }}"
-        class="cl-sidebar__link{% if active_op_tab is defined and active_op_tab == 'historial' %} active{% endif %}"
-        style="padding:6px 14px;border-radius:8px;font-size:13px;" {% if active_op_tab is defined and
-        active_op_tab=='historial' %}aria-current="page" {% endif %}>
+        class="cl-topbar-tab{% if active_op_tab is defined and active_op_tab == 'historial' %} active{% endif %}"
+        {% if active_op_tab is defined and active_op_tab=='historial' %}aria-current="page"{% endif %}>
         <i data-lucide="history" class="icon-sm"></i>
         <span>Historial</span>
       </a>
@@ -65,14 +62,14 @@ Usage:
     {% endif %}
 
     <div class="cl-icon-btn" id="darkModeToggle" role="button" aria-label="Alternar modo oscuro" title="Modo oscuro">
-      <span id="darkModeIcon">🌙</span>
+      <span id="darkModeIcon"><i data-lucide="moon" style="width:16px;height:16px"></i></span>
     </div>
 
     {% if current_user.is_authenticated %}
     <div class="dropdown">
       <button class="cl-topbar__user-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"
         id="userMenuBtn"
-        style="background:rgba(255,255,255,0.07);border:1px solid var(--cl-border-color);border-radius:8px;padding:5px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;">
+        style="background:rgba(255,255,255,0.07);border:1px solid var(--cl-border-color);border-radius:100px;padding:5px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;">
         <span class="cl-user-avatar" style="width:26px;height:26px;font-size:10px;">{{ current_user.nombre[0]|upper
           }}</span>
         <span style="font-size:12.5px;font-weight:600;color:var(--cl-text-primary);" class="d-none d-md-inline">{{
@@ -131,7 +128,7 @@ Usage:
 </nav>
 
 {# ── Content ── #}
-<main id="main-content" style="background:var(--cl-canvas);min-height:calc(100vh - 56px);">
+<main id="main-content" style="background:var(--cl-canvas);min-height:calc(100vh - var(--cl-topbar-h, 60px));">
   {# Flash messages #}
   {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
@@ -161,7 +158,7 @@ Usage:
 </main>
 
 {# Auto-dismiss toasts (pause on hover/focus for a11y) #}
-<script>
+<script nonce="{{ csp_nonce }}">
   (function () {
     document.querySelectorAll('.cl-toast').forEach(function (t) {
       var timer;

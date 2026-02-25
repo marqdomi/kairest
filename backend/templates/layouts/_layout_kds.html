@@ -2,14 +2,14 @@
 Layout: Kitchen Display System (KDS) — v7
 Extends: base.html (overrides {% block body_layout %})
 Full-screen, always dark, timer-based urgency colors.
-Used by: Taqueros, Comal, Bebidas
+Used by: Dynamic kitchen stations (via cocina.py)
 
 Usage:
 {% extends 'layouts/_layout_kds.html' %}
-{% block page_title %}Taqueros{% endblock %}
-{% set kds_station = 'taqueros' %}
-{% set kds_label = 'Taqueros' %}
-{% set kds_icon = '🌮' %}
+{% block page_title %}{{ station_label }}{% endblock %}
+{% set kds_station = station %}
+{% set kds_label = station_label %}
+{% set kds_icon = station_icon %}
 {% block kds_content %}
 ...order cards strip...
 {% endblock %}
@@ -22,7 +22,6 @@ Usage:
 {{ super() }}
 {# Load KDS-specific stylesheet + original timer CSS #}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v7-kds.css') }}?v={{ config.VERSION }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/cocina_timers.css') }}?v={{ config.VERSION }}">
 <style>
   /* Force dark, no scroll on kds body */
   html,
@@ -50,7 +49,7 @@ Usage:
     {# Station pill #}
     <div class="cl-kds-station">
       <div class="cl-kds-station__dot"></div>
-      {{ kds_icon|default('👨‍🍳') }} {{ kds_label|default('Cocina') }}
+      <i data-lucide="chef-hat" style="width:16px;height:16px;"></i> {{ kds_label|default('Cocina') }}
     </div>
 
     {# Pending count #}
@@ -118,6 +117,10 @@ Usage:
         <i data-lucide="clock" style="width:14px;height:14px;color:var(--cl-warning-500);"></i>
         Tiempo prom: <strong id="kdsAvgTime">—</strong>
       </div>
+      <div class="cl-kds-stat">
+        <i data-lucide="trending-up" style="width:14px;height:14px;color:var(--cl-text-tertiary);"></i>
+        Turno anterior: <strong id="kdsAvgAyer">—</strong>
+      </div>
       {% block kds_stats_extra %}{% endblock %}
     </div>
     <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--cl-success-500);">
@@ -128,7 +131,7 @@ Usage:
 </div>
 
 {# ── KDS Clock JS ── #}
-<script>
+<script nonce="{{ csp_nonce }}">
   (function () {
     // Live clock
     var clockEl = document.getElementById('kdsClock');

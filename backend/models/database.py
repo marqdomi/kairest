@@ -15,16 +15,17 @@ def init_db():
 
     if engine.dialect.name == 'postgresql':
         lock_id = 72410931
-        conn = engine.connect()
-        try:
-            conn.execute(text('SELECT pg_advisory_lock(:lock_id)'), {'lock_id': lock_id})
-            db.metadata.create_all(bind=conn, checkfirst=True)
-        finally:
+        with engine.connect() as conn:
             try:
-                conn.execute(text('SELECT pg_advisory_unlock(:lock_id)'), {'lock_id': lock_id})
-            except Exception:
-                logger.exception('No se pudo liberar pg_advisory_unlock durante init_db.')
-            conn.close()
+                conn.execute(text('SELECT pg_advisory_lock(:lock_id)'), {'lock_id': lock_id})
+                db.metadata.create_all(bind=conn, checkfirst=True)
+                conn.commit()
+            finally:
+                try:
+                    conn.execute(text('SELECT pg_advisory_unlock(:lock_id)'), {'lock_id': lock_id})
+                    conn.commit()
+                except Exception:
+                    logger.exception('No se pudo liberar pg_advisory_unlock durante init_db.')
     else:
         db.create_all()
 

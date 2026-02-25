@@ -1,28 +1,50 @@
 {% extends 'setup/_layout_setup.html' %}
 
 {% block setup_content %}
-  <h1 class="cl-setup__title">Tu Menú</h1>
-  <p class="cl-setup__subtitle">Elige cómo cargar tus productos.</p>
+  <h1 class="cl-setup__title">Tu Menu</h1>
+  <p class="cl-setup__subtitle">Elige una plantilla o carga tus productos manualmente.</p>
 
   <form method="POST" action="{{ url_for('setup.paso3') }}" id="menuForm" novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="opcion_menu" id="opcionMenu" value="{{ templates[0].key if templates else 'manual' }}">
 
-    {# ── Option selector ── #}
-    <div style="display:flex;gap:var(--cl-space-3);margin-bottom:var(--cl-space-5);">
-      <label class="cl-option-card" id="optDefault" style="flex:1">
-        <input type="radio" name="opcion_menu" value="default" checked hidden>
-        <div class="cl-option-card__inner">
-          <span style="font-size:2rem">🌮</span>
-          <strong>Menú plantilla</strong>
-          <small>Barbacoa, carnitas, quesadillas, bebidas (~60 productos)</small>
+    {# ── Template cards ── #}
+    <div class="cl-tpl-grid">
+      {% for tpl in templates %}
+      <label class="cl-tpl-card" data-key="{{ tpl.key }}">
+        <input type="radio" name="_tpl_radio" value="{{ tpl.key }}"
+               {% if loop.first %}checked{% endif %} hidden>
+        <div class="cl-tpl-card__inner">
+          <div class="cl-tpl-card__icon">
+            <i data-lucide="{{ tpl.icon }}"></i>
+          </div>
+          <strong class="cl-tpl-card__name">{{ tpl.nombre }}</strong>
+          <small class="cl-tpl-card__desc">{{ tpl.descripcion }}</small>
+          <div class="cl-tpl-card__meta">
+            <span><i data-lucide="package" style="width:12px;height:12px"></i> {{ tpl.productos_count }} productos</span>
+            <span><i data-lucide="layout-grid" style="width:12px;height:12px"></i> {{ tpl.estaciones|length }} estaciones</span>
+          </div>
+          <div class="cl-tpl-card__tags">
+            {% for est in tpl.estaciones %}
+            <span class="cl-tpl-tag">{{ est }}</span>
+            {% endfor %}
+          </div>
         </div>
       </label>
-      <label class="cl-option-card" id="optManual" style="flex:1">
-        <input type="radio" name="opcion_menu" value="manual" hidden>
-        <div class="cl-option-card__inner">
-          <span style="font-size:2rem">✏️</span>
-          <strong>Manual</strong>
-          <small>Agrega tus propios productos uno por uno</small>
+      {% endfor %}
+
+      {# Manual option card #}
+      <label class="cl-tpl-card" data-key="manual">
+        <input type="radio" name="_tpl_radio" value="manual" hidden>
+        <div class="cl-tpl-card__inner">
+          <div class="cl-tpl-card__icon">
+            <i data-lucide="pencil-line"></i>
+          </div>
+          <strong class="cl-tpl-card__name">Manual</strong>
+          <small class="cl-tpl-card__desc">Agrega tus propios productos uno por uno</small>
+          <div class="cl-tpl-card__meta">
+            <span><i data-lucide="info" style="width:12px;height:12px"></i> Puedes agregar mas despues</span>
+          </div>
         </div>
       </label>
     </div>
@@ -30,7 +52,7 @@
     {# ── Manual products section (hidden by default) ── #}
     <div id="manualSection" style="display:none;">
       <p style="font-size:var(--cl-text-sm);color:var(--cl-text-secondary);margin-bottom:var(--cl-space-3)">
-        Agrega al menos 1 producto. Puedes agregar más después desde el panel de admin.
+        Agrega al menos 1 producto. Puedes agregar mas desde el panel de admin.
       </p>
       <div id="productRows">
         <div class="cl-setup__row">
@@ -43,17 +65,12 @@
             <input type="number" class="cl-form-input" name="prod_precio[]" placeholder="25" step="0.5" min="0">
           </div>
           <div class="cl-form-group" style="flex:1">
-            <label class="cl-form-label">Categoría</label>
+            <label class="cl-form-label">Categoria</label>
             <input type="text" class="cl-form-input" name="prod_categoria[]" placeholder="Tacos" list="catList">
           </div>
           <div class="cl-form-group" style="flex:1">
-            <label class="cl-form-label">Estación</label>
-            <select class="cl-form-input" name="prod_estacion[]">
-              <option value="">— Ninguna —</option>
-              <option value="taquero">Taquero</option>
-              <option value="comal">Comal</option>
-              <option value="bebidas">Bebidas</option>
-            </select>
+            <label class="cl-form-label">Estacion</label>
+            <input type="text" class="cl-form-input" name="prod_estacion[]" placeholder="Ej: Parrilla" list="estList">
           </div>
         </div>
       </div>
@@ -64,73 +81,144 @@
         {% endfor %}
       </datalist>
 
+      <datalist id="estList">
+        {% for est in estaciones %}
+        <option value="{{ est }}">
+        {% endfor %}
+      </datalist>
+
       <button type="button" class="cl-btn cl-btn--outline" id="addProductBtn"
               style="width:100%;margin-top:var(--cl-space-2)">
-        + Agregar otro producto
+        <i data-lucide="plus" style="width:16px;height:16px"></i>
+        Agregar otro producto
       </button>
     </div>
 
     <div class="cl-setup__actions">
-      <a href="{{ url_for('setup.paso2') }}" class="cl-btn cl-btn--outline">← Atrás</a>
-      <button type="submit" class="cl-btn cl-btn--primary">Siguiente →</button>
+      <a href="{{ url_for('setup.paso2') }}" class="cl-btn cl-btn--outline">
+        <i data-lucide="arrow-left" style="width:16px;height:16px"></i> Atras
+      </a>
+      <button type="submit" class="cl-btn cl-btn--primary">
+        Siguiente <i data-lucide="arrow-right" style="width:16px;height:16px"></i>
+      </button>
     </div>
   </form>
 
   <style>
-    .cl-option-card { cursor: pointer; display: block; }
-    .cl-option-card__inner {
+    .cl-tpl-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--cl-space-3);
+      margin-bottom: var(--cl-space-5);
+    }
+    @media (max-width: 520px) {
+      .cl-tpl-grid { grid-template-columns: 1fr; }
+    }
+    .cl-tpl-card { cursor: pointer; display: block; }
+    .cl-tpl-card__inner {
       border: 2px solid var(--cl-border-color);
       border-radius: var(--cl-radius-lg);
-      padding: var(--cl-space-4);
+      padding: var(--cl-space-4) var(--cl-space-3);
       text-align: center;
       transition: all .15s ease;
       display: flex;
       flex-direction: column;
+      align-items: center;
       gap: var(--cl-space-1);
+      height: 100%;
     }
-    .cl-option-card__inner small {
+    .cl-tpl-card__icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--cl-radius-md);
+      background: var(--cl-bg-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: var(--cl-space-1);
+      color: var(--cl-text-secondary);
+      transition: all .15s ease;
+    }
+    .cl-tpl-card__icon i { width: 22px; height: 22px; }
+    .cl-tpl-card__name { font-size: var(--cl-text-base); }
+    .cl-tpl-card__desc {
       font-size: var(--cl-text-xs);
       color: var(--cl-text-secondary);
+      line-height: 1.3;
     }
-    .cl-option-card input:checked + .cl-option-card__inner {
+    .cl-tpl-card__meta {
+      display: flex;
+      gap: var(--cl-space-3);
+      font-size: 11px;
+      color: var(--cl-text-tertiary);
+      margin-top: var(--cl-space-1);
+    }
+    .cl-tpl-card__meta span { display: flex; align-items: center; gap: 3px; }
+    .cl-tpl-card__tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      justify-content: center;
+      margin-top: var(--cl-space-2);
+    }
+    .cl-tpl-tag {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: var(--cl-bg-secondary);
+      color: var(--cl-text-secondary);
+    }
+
+    /* ── Selected state ── */
+    .cl-tpl-card input:checked + .cl-tpl-card__inner {
       border-color: var(--cl-red-600);
-      background: rgba(196,30,58,.05);
-      box-shadow: 0 0 0 3px rgba(196,30,58,.15);
+      background: rgba(196,30,58,.04);
+      box-shadow: 0 0 0 3px rgba(196,30,58,.12);
     }
-    [data-bs-theme="dark"] .cl-option-card input:checked + .cl-option-card__inner {
-      background: rgba(196,30,58,.15);
+    .cl-tpl-card input:checked + .cl-tpl-card__inner .cl-tpl-card__icon {
+      background: var(--cl-red-600);
+      color: #fff;
+    }
+    [data-bs-theme="dark"] .cl-tpl-card input:checked + .cl-tpl-card__inner {
+      background: rgba(196,30,58,.12);
     }
   </style>
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
-<script>
+<script nonce="{{ csp_nonce }}">
 (function(){
-  var radios = document.querySelectorAll('input[name="opcion_menu"]');
+  var radios = document.querySelectorAll('input[name="_tpl_radio"]');
+  var hidden = document.getElementById('opcionMenu');
   var manual = document.getElementById('manualSection');
 
-  radios.forEach(function(r){
-    r.addEventListener('change', function(){
-      manual.style.display = r.value === 'manual' ? 'block' : 'none';
-    });
-  });
+  function sync() {
+    var val = document.querySelector('input[name="_tpl_radio"]:checked').value;
+    hidden.value = val;
+    manual.style.display = val === 'manual' ? 'block' : 'none';
+  }
+  radios.forEach(function(r){ r.addEventListener('change', sync); });
+  sync();
 
   // Add product row
   document.getElementById('addProductBtn').addEventListener('click', function(){
     var container = document.getElementById('productRows');
     var row = container.querySelector('.cl-setup__row').cloneNode(true);
     row.querySelectorAll('input, select').forEach(function(el){ el.value = ''; });
-    // Add remove button
     var removeBtn = document.createElement('button');
     removeBtn.type = 'button';
     removeBtn.className = 'btn-remove';
-    removeBtn.innerHTML = '✕';
+    removeBtn.innerHTML = '<i data-lucide="x" style="width:14px;height:14px"></i>';
     removeBtn.title = 'Eliminar';
     removeBtn.addEventListener('click', function(){ row.remove(); });
     row.appendChild(removeBtn);
     container.appendChild(row);
+    if (window.lucide) lucide.createIcons();
   });
+
+  // Re-init Lucide icons
+  if (window.lucide) lucide.createIcons();
 })();
 </script>
 {% endblock %}

@@ -259,10 +259,15 @@ Flask + PostgreSQL + Socket.IO + Redis + Gunicorn. Backend: `backend/`, Frontend
 - **Sprint 11 ✅** Accessibility, Animation & QA (8/8 items: WCAG audit, focus management, aria-live, keyboard nav, prefers-reduced-motion, print CSS, performance audit, cross-browser/tablet)
 
 ## Instalador Multi-OS (Deployment)
-- `install.sh` — Installer script: detecta macOS/Ubuntu, instala Docker + Docker Compose, genera `.env` con secretos aleatorios, ejecuta `docker-compose up --build -d`
-- `uninstall.sh` — Limpieza completa: para containers, borra volúmenes, imágenes, `.env`, backups
-- `update.sh` — Actualización: `git pull`, rebuild containers, ejecuta migraciones Alembic
-- `.env` auto-generado con: `SECRET_KEY`, `DATABASE_URL`, `REDIS_URL`, `FLASK_ENV=production`
+- **macOS/Linux (Bash):**
+  - `install.sh` — Installer script: detecta macOS/Ubuntu, verifica Docker + Git, clona repo a `~/kairest`, genera `.env` con secretos aleatorios, ejecuta `docker compose up -d --build`, health check loop
+  - `uninstall.sh` — Limpieza completa: para containers, opción de borrar volúmenes (base de datos)
+  - `update.sh` — Actualización: backup DB, `git pull`, rebuild containers, health check con versión
+- **Windows (PowerShell):**
+  - `install.ps1` — Installer PowerShell: verifica Docker Desktop + Git, clona repo a `%USERPROFILE%\kairest`, genera `.env` con `RNGCryptoServiceProvider`, `docker compose up -d --build`, health check, abre navegador automáticamente
+  - `uninstall.ps1` — Detiene containers, opción de borrar volúmenes (base de datos)
+  - `update.ps1` — Backup DB, `git pull`, rebuild containers, health check con versión
+- `.env` auto-generado con: `SECRET_KEY`, `POSTGRES_PASSWORD`, `APP_PORT`, `CORS_ORIGINS`
 
 ## Onboarding Wizard (Setup)
 - Blueprint: `backend/routes/setup.py` — 5 pasos, sin auth requerido

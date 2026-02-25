@@ -9,7 +9,7 @@ import sqlalchemy as sa
 
 # revision identifiers
 revision = 'c005'
-down_revision = 'c004_fase4_multisucursal_delivery'
+down_revision = 'c004_fase4'
 branch_labels = None
 depends_on = None
 

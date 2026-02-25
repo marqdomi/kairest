@@ -44,19 +44,29 @@ def procesar_orden_delivery(plataforma, payload, db_session, socketio=None):
         return existente
 
     # Crear orden interna
+    # Use a system user for delivery orders (first superadmin as fallback)
+    from backend.models.models import Usuario
+    sistema_user = Usuario.query.filter_by(rol='superadmin').first()
+    sistema_user_id = sistema_user.id if sistema_user else None
+
     orden = Orden(
         es_para_llevar=True,
         estado='enviado',
         canal=plataforma,
+        mesero_id=sistema_user_id,
     )
     db_session.add(orden)
     db_session.flush()
 
     # Mapear items — intenta vincular con productos internos por nombre
     for item in data.get('items', []):
+        # Escape LIKE wildcards to prevent pattern injection
+        nombre_buscar = item['nombre'].replace('%', '\\%').replace('_', '\\_')
         producto = Producto.query.filter(
-            Producto.nombre.ilike(f'%{item["nombre"]}%')
+            Producto.nombre.ilike(f'%{nombre_buscar}%')
         ).first()
+        if not producto:
+            logger.warning('Producto delivery no encontrado: %s (plataforma=%s)', item['nombre'], plataforma)
 
         detalle = OrdenDetalle(
             orden_id=orden.id,

@@ -41,36 +41,8 @@ def dashboard():
 @admin_bp.route('/crear_usuario', methods=['GET', 'POST'])
 @login_required(roles=['admin','superadmin'])
 def crear_usuario():
-    if request.method == 'POST':
-        nombre = sanitizar_texto(request.form['nombre'], 100)
-        email = sanitizar_email(request.form['email']) or request.form['email'].strip()
-        password = request.form['password']
-        rol = request.form['rol']
-
-        if Usuario.query.filter_by(email=email).first():
-            flash('El correo ya está registrado.', 'danger')
-            return redirect(url_for('admin.crear_usuario'))
-
-        # Validar política de contraseñas
-        pw_valida, pw_errores = validar_password(password, nombre=nombre, email=email)
-        if not pw_valida:
-            for err in pw_errores:
-                flash(err, 'danger')
-            return redirect(url_for('admin.crear_usuario'))
-
-        nuevo_usuario = Usuario(
-            nombre=nombre,
-            email=email,
-            rol=rol
-        )
-        nuevo_usuario.set_password(password)
-        db.session.add(nuevo_usuario)
-        db.session.commit()
-
-        flash('Usuario creado exitosamente.', 'success')
-        return redirect(url_for('admin.lista_usuarios'))
-
-    return render_template('admin/usuario_form.html')
+    """Legacy redirect — use /usuarios/nuevo instead."""
+    return redirect(url_for('admin.usuario_nuevo'))
 
 @admin_bp.route('/api/dashboard/ventas_hoy')
 @login_required(roles=['admin','superadmin'])
@@ -270,18 +242,18 @@ def api_actividad_reciente():
 
 # --- Usuarios CRUD ---
 @admin_bp.route('/usuarios')
-@login_required(roles=['superadmin'])
+@login_required(roles=['admin', 'superadmin'])
 def lista_usuarios():
     usuarios = Usuario.query.order_by(Usuario.rol, Usuario.nombre).all()
     return render_template('admin/usuarios.html', usuarios=usuarios)
 
 @admin_bp.route('/usuarios/nuevo', methods=['GET', 'POST'])
-@login_required(roles=['superadmin'])
+@login_required(roles=['admin', 'superadmin'])
 def usuario_nuevo():
     if request.method == 'POST':
         nombre = sanitizar_texto(request.form['nombre'], 100)
         email = sanitizar_email(request.form['email']) or request.form['email'].strip()
-        rol = request.form['rol']
+        rol_raw = request.form['rol']
         password = request.form['password']
         if Usuario.query.filter_by(email=email).first():
             flash('Email ya existe', 'danger')
@@ -292,29 +264,50 @@ def usuario_nuevo():
             for err in pw_errores:
                 flash(err, 'danger')
             return redirect(url_for('admin.usuario_nuevo'))
-        u = Usuario(nombre=nombre, email=email, rol=rol)
+        # Parse cocina:station_name → rol='cocina' + estacion_id
+        estacion_id = None
+        if rol_raw.startswith('cocina:'):
+            station_name = rol_raw.split(':', 1)[1].strip()
+            est = Estacion.query.filter(db.func.lower(Estacion.nombre) == station_name.lower()).first()
+            if est:
+                estacion_id = est.id
+            rol = 'cocina'
+        else:
+            rol = rol_raw
+        u = Usuario(nombre=nombre, email=email, rol=rol, estacion_id=estacion_id)
         u.set_password(password)
         db.session.add(u)
         db.session.commit()
         flash('Usuario creado', 'success')
         return redirect(url_for('admin.lista_usuarios'))
-    return render_template('admin/usuario_form.html')
+    estaciones = Estacion.query.order_by(Estacion.nombre).all()
+    return render_template('admin/usuario_form.html', estaciones=estaciones)
 
 @admin_bp.route('/usuarios/<int:id>/editar', methods=['GET', 'POST'])
-@login_required(roles=['superadmin'])
+@login_required(roles=['admin', 'superadmin'])
 def usuario_editar(id):
     u = Usuario.query.get_or_404(id)
     if request.method == 'POST':
         u.nombre = sanitizar_texto(request.form['nombre'], 100)
         u.email = sanitizar_email(request.form['email']) or request.form['email'].strip()
-        u.rol = request.form['rol']
+        rol_raw = request.form['rol']
+        # Parse cocina:station_name → rol='cocina' + estacion_id
+        if rol_raw.startswith('cocina:'):
+            station_name = rol_raw.split(':', 1)[1].strip()
+            est = Estacion.query.filter(db.func.lower(Estacion.nombre) == station_name.lower()).first()
+            u.rol = 'cocina'
+            u.estacion_id = est.id if est else None
+        else:
+            u.rol = rol_raw
+            u.estacion_id = None
         db.session.commit()
         flash('Usuario actualizado', 'success')
         return redirect(url_for('admin.lista_usuarios'))
-    return render_template('admin/usuario_form.html', usuario=u)
+    estaciones = Estacion.query.order_by(Estacion.nombre).all()
+    return render_template('admin/usuario_form.html', usuario=u, estaciones=estaciones)
 
 @admin_bp.route('/usuarios/<int:id>/eliminar', methods=['POST'])
-@login_required(roles=['superadmin'])
+@login_required(roles=['admin', 'superadmin'])
 def usuario_eliminar(id):
     u = Usuario.query.get_or_404(id)
     db.session.delete(u)
@@ -522,12 +515,12 @@ def corte_caja():
             tarjeta_total=tarjeta_total,
             transferencia_total=transferencia_total,
             notas=notas,
-            usuario_id=current_user.id,
+            usuario_id=session.get('user_id'),
         )
         db.session.add(corte)
         db.session.commit()
         logger.info('Corte de caja generado por usuario_id=%s diferencia=$%.2f',
-                     current_user.id, diferencia)
+                     session.get('user_id'), diferencia)
         flash('Corte de caja generado.', 'success')
         return redirect(url_for('admin.corte_caja'))
 

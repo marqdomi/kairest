@@ -1,81 +1,100 @@
-{% extends 'base.html' %}
-{% block title %}Órdenes Delivery{% endblock %}
-{% block content %}
-<div class="container-fluid">
-  <h2 class="mt-4">Órdenes de Delivery</h2>
-  <p class="text-muted">Órdenes recibidas de plataformas externas (Uber Eats, Rappi, DiDi Food).</p>
-
-  {% if ordenes %}
-  <div class="table-responsive">
-    <table class="table table-striped table-sm">
-      <thead>
-        <tr><th>Plataforma</th><th>ID Ext.</th><th>Orden Int.</th><th>Cliente</th><th>Dirección</th><th>Total Plat.</th><th>Comisión</th><th>Estado</th><th>Recibido</th><th>Acciones</th></tr>
-      </thead>
-      <tbody>
-        {% for d in ordenes %}
-        <tr>
-          <td>
-            <span class="badge {% if d.plataforma == 'uber_eats' %}bg-dark{% elif d.plataforma == 'rappi' %}bg-warning text-dark{% else %}bg-info{% endif %}">
-              {{ d.plataforma }}
-            </span>
-          </td>
-          <td><small>{{ d.external_id }}</small></td>
-          <td>{{ '#' ~ d.orden_id if d.orden_id else '—' }}</td>
-          <td>{{ d.cliente_nombre or '—' }}</td>
-          <td><small>{{ d.direccion_entrega or '—' }}</small></td>
-          <td>${{ '%.2f'|format(d.total_plataforma or 0) }}</td>
-          <td>${{ '%.2f'|format(d.comision or 0) }}</td>
-          <td>
-            <span class="badge {% if d.estado_plataforma == 'aceptada' %}bg-primary{% elif d.estado_plataforma == 'lista_para_recoger' %}bg-success{% elif d.estado_plataforma == 'nueva' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-              {{ d.estado_plataforma }}
-            </span>
-          </td>
-          <td>{{ d.fecha_recibido.strftime('%H:%M') if d.fecha_recibido else '' }}</td>
-          <td>
-            {% if d.estado_plataforma in ('nueva', None) %}
-            <button class="btn btn-sm btn-primary btn-aceptar-delivery" data-id="{{ d.id }}">Aceptar</button>
-            {% elif d.estado_plataforma == 'aceptada' %}
-            <button class="btn btn-sm btn-success btn-listo-delivery" data-id="{{ d.id }}">Listo</button>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+{% extends 'layouts/_layout_admin.html' %}
+{% block page_title %}Delivery{% endblock %}
+{% block admin_content %}
+<div class="cl-page-header" style="margin-bottom:var(--cl-space-5);">
+  <div>
+    <h1 class="cl-page-header__title" style="display:flex;align-items:center;gap:10px;">
+      <i data-lucide="truck" class="icon-md"></i> Órdenes de Delivery
+    </h1>
+    <p class="text-muted" style="font-size:13px;margin:4px 0 0;">Órdenes recibidas de plataformas externas (Uber Eats, Rappi, DiDi Food).</p>
   </div>
+</div>
 
-  <script>
-  document.addEventListener('DOMContentLoaded', function() {
-      document.querySelectorAll('.btn-aceptar-delivery').forEach(btn => {
-          btn.addEventListener('click', async function() {
-              const id = this.dataset.id;
-              await fetch(`/delivery/admin/${id}/aceptar`, { method: 'POST' });
-              location.reload();
-          });
-      });
-      document.querySelectorAll('.btn-listo-delivery').forEach(btn => {
-          btn.addEventListener('click', async function() {
-              const id = this.dataset.id;
-              await fetch(`/delivery/admin/${id}/listo`, { method: 'POST' });
-              location.reload();
-          });
-      });
-  });
-  </script>
-  {% else %}
-  <div class="alert alert-info">No hay órdenes de delivery.</div>
-  {% endif %}
-
-  <div class="card mt-4">
-    <div class="card-header">Configuración de Webhooks</div>
-    <div class="card-body">
-      <p>Configura estos endpoints en tus plataformas de delivery:</p>
-      <ul class="list-unstyled">
-        <li><strong>Uber Eats:</strong> <code>POST {{ request.host_url }}delivery/webhook/uber_eats</code></li>
-        <li><strong>Rappi:</strong> <code>POST {{ request.host_url }}delivery/webhook/rappi</code></li>
-        <li><strong>DiDi Food:</strong> <code>POST {{ request.host_url }}delivery/webhook/didi_food</code></li>
-      </ul>
+{% if ordenes %}
+<div class="cl-card" style="margin-bottom:var(--cl-space-5);">
+  <div class="cl-card__body p-0">
+    <div class="table-responsive">
+      <table class="cl-table">
+        <thead>
+          <tr><th>Plataforma</th><th>ID Ext.</th><th>Orden Int.</th><th>Cliente</th><th>Dirección</th><th>Total Plat.</th><th>Comisión</th><th>Estado</th><th>Recibido</th><th>Acciones</th></tr>
+        </thead>
+        <tbody>
+          {% for d in ordenes %}
+          <tr>
+            <td>
+              <span class="badge {% if d.plataforma == 'uber_eats' %}bg-dark{% elif d.plataforma == 'rappi' %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                {{ d.plataforma }}
+              </span>
+            </td>
+            <td><small>{{ d.external_id }}</small></td>
+            <td>{{ '#' ~ d.orden_id if d.orden_id else '—' }}</td>
+            <td>{{ d.cliente_nombre or '—' }}</td>
+            <td><small>{{ d.direccion_entrega or '—' }}</small></td>
+            <td>${{ '%.2f'|format(d.total_plataforma or 0) }}</td>
+            <td>${{ '%.2f'|format(d.comision or 0) }}</td>
+            <td>
+              <span class="badge {% if d.estado_plataforma == 'aceptada' %}bg-primary{% elif d.estado_plataforma == 'lista_para_recoger' %}bg-success{% elif d.estado_plataforma == 'nueva' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                {{ d.estado_plataforma }}
+              </span>
+            </td>
+            <td>{{ d.fecha_recibido.strftime('%H:%M') if d.fecha_recibido else '' }}</td>
+            <td>
+              {% if d.estado_plataforma in ('nueva', None) %}
+              <button class="cl-btn cl-btn--sm cl-btn--primary btn-aceptar-delivery" data-id="{{ d.id }}">
+                <i data-lucide="check" style="width:14px;height:14px;"></i> Aceptar
+              </button>
+              {% elif d.estado_plataforma == 'aceptada' %}
+              <button class="cl-btn cl-btn--sm cl-btn--success btn-listo-delivery" data-id="{{ d.id }}">
+                <i data-lucide="check-circle" style="width:14px;height:14px;"></i> Listo
+              </button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-aceptar-delivery').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const id = this.dataset.id;
+            await fetch(`/delivery/admin/${id}/aceptar`, { method: 'POST' });
+            location.reload();
+        });
+    });
+    document.querySelectorAll('.btn-listo-delivery').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const id = this.dataset.id;
+            await fetch(`/delivery/admin/${id}/listo`, { method: 'POST' });
+            location.reload();
+        });
+    });
+});
+</script>
+{% else %}
+<div class="cl-card">
+  <div class="cl-card__body text-center py-5">
+    <i data-lucide="truck" style="width:40px;height:40px;opacity:.4;"></i>
+    <p class="mt-2 text-muted">No hay órdenes de delivery.</p>
+  </div>
+</div>
+{% endif %}
+
+<div class="cl-card mt-4">
+  <div class="cl-card__header">
+    <i data-lucide="settings" style="width:16px;height:16px;"></i> Configuración de Webhooks
+  </div>
+  <div class="cl-card__body">
+    <p style="font-size:13px;">Configura estos endpoints en tus plataformas de delivery:</p>
+    <ul class="list-unstyled" style="font-size:13px;">
+      <li class="mb-1"><strong>Uber Eats:</strong> <code>POST {{ request.host_url }}delivery/webhook/uber_eats</code></li>
+      <li class="mb-1"><strong>Rappi:</strong> <code>POST {{ request.host_url }}delivery/webhook/rappi</code></li>
+      <li class="mb-1"><strong>DiDi Food:</strong> <code>POST {{ request.host_url }}delivery/webhook/didi_food</code></li>
+    </ul>
   </div>
 </div>
 {% endblock %}

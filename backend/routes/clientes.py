@@ -108,10 +108,12 @@ def buscar_cliente():
     q = sanitizar_texto(request.args.get('q', ''), 100)
     if len(q) < 2:
         return jsonify([])
+    # Escape LIKE wildcards to prevent pattern injection
+    q_escaped = q.replace('%', '\\%').replace('_', '\\_')
     clientes = Cliente.query.filter(
         db.or_(
-            Cliente.nombre.ilike(f'%{q}%'),
-            Cliente.telefono.ilike(f'%{q}%'),
+            Cliente.nombre.ilike(f'%{q_escaped}%'),
+            Cliente.telefono.ilike(f'%{q_escaped}%'),
         )
     ).limit(10).all()
     return jsonify([{

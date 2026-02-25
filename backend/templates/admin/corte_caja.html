@@ -240,7 +240,7 @@
   {% endif %}
 </div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
   var _cl_efectivo_esp = {{ resumen.efectivo_esperado }};
   function calcularDiferencia() {
     var contado = parseFloat(document.getElementById('efectivo_contado').value) || 0;

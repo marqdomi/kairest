@@ -196,7 +196,7 @@ button.cl-mesa-tile--available {
 .cl-mesa-tile--maintenance:hover { transform: none; box-shadow: none; }
 </style>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 function filterZone(zone, btn) {
   // Update active button
   document.querySelectorAll('.mesa-zone-filter').forEach(b => {

@@ -195,7 +195,7 @@ Extends: base.html — no navbar, centered card with progress
       <div
         class="cl-setup__step {% if s < paso %}cl-setup__step--done{% elif s == paso %}cl-setup__step--active{% endif %}"
         aria-label="Paso {{ s }}{% if s < paso %} completado{% elif s == paso %} actual{% endif %}">
-        {% if s < paso %}✓{% else %}{{ s }}{% endif %} </div>
+        {% if s < paso %}<i data-lucide="check" style="width:16px;height:16px;"></i>{% else %}{{ s }}{% endif %} </div>
           {% if s < 5 %}<div class="cl-setup__line {% if s < paso %}cl-setup__line--done{% endif %}">
       </div>{% endif %}
       {% endfor %}

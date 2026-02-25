@@ -52,7 +52,7 @@
   </div>
 </div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 document.addEventListener('DOMContentLoaded', function() {
     const tbody = document.getElementById('recetaBody');
     const ingredientesOptions = `{% for i in ingredientes %}<option value="{{ i.id }}">{{ i.nombre }} ({{ i.unidad }})</option>{% endfor %}`;

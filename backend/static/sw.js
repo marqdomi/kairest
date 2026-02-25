@@ -11,7 +11,7 @@ const CACHE_NAME = 'casaleones-v3';
 const STATIC_ASSETS = [
   '/static/css/styles.css',
   '/static/js/meseros.js',
-  '/static/js/cocina_timers.js',
+
   '/static/img/logoCasaLeones.svg',
   '/static/manifest.json',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
