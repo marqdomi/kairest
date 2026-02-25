@@ -294,3 +294,29 @@ Flask + PostgreSQL + Socket.IO + Redis + Gunicorn. Backend: `backend/`, Frontend
 - `tests/test_setup.py`: 26 tests (ConfiguracionSistema 6, SetupWizard 13, ModoSistema 2, Seeder 4)
 - Conftest: SQLite in-memory, Redis deshabilitado (`REDIS_URL=''`), filesystem sessions, memory limiter
 - Test infrastructure: `_get_app()` guard para TESTING env, pool options condicionales para SQLite
+
+## Bug Fixes & Hardening (Post-Sprint 11)
+Auditoría completa del backend: 37 issues identificados, 17 corregidos (6 P0, 5 P1, 6 P2).
+
+### P0 — Data Corruption / Crash
+- `producto_form.py` + `productos.py`: Form↔Model mismatch corregido (precio_unitario→precio, categoria→categoria_id, estacion→estacion_id como SelectField coerce=int)
+- `cocina.py` línea 169: Estados incorrectos 'pagado'→'pagada', 'finalizada'→'cancelada' (leak de órdenes cerradas)
+- `meseros.py` cobrar_orden_post: Agregado `with_for_update()`, `begin_nested()` savepoint, inventario antes de commit, flag reconciliación
+- `meseros.py` registrar_pago: Savepoint `begin_nested()` alrededor de `descontar_inventario_por_orden()`
+- `meseros.py` agregar_productos: Merge ahora compara notas antes de fusionar items (consistente con orders.py)
+- `app.py`: Removido `csrf.exempt(ventas_bp)` — fetch ya auto-inyecta CSRF token
+
+### P1 — Security / Functional
+- `app.py` format_money: Retorna `Markup()` para evitar double-escaping en Jinja2
+- `auth.py` logout: Cambiado GET→POST, auditoría null-safe (verifica user_id antes de registrar)
+- Templates (base.html, _layout_operations.html, _layout_admin.html): Links logout→POST forms con csrf_token
+- `admin_routes.py` usuario_editar: Agregado update opcional de contraseña con `validar_password()`
+- `ventas.py`: Null-body checks, ownership check (sale.usuario_id), re-close guard, validación cantidad
+
+### P2 — Robustness
+- `admin_routes.py` usuario_eliminar: Guard self-delete + check órdenes activas FK
+- `admin_routes.py` producto_eliminar: Guard OrdenDetalle FK count
+- `productos.py` eliminar_producto: Guard OrdenDetalle FK count
+- `admin_routes.py` mesa_nuevo: Uniqueness check en número de mesa
+- `admin_routes.py` mesa_eliminar: Check órdenes activas antes de borrar
+- `orders.py`: Null-body checks en create_order, update_order_status, add_product_to_order, update_order_detail + validación FK mesa_id

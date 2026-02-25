@@ -199,10 +199,13 @@ Children: list of (label, endpoint) for sub-nav #}
         <div class="cl-user-name">{{ current_user.nombre }}</div>
         <div class="cl-user-role">{{ current_user.rol|capitalize }}</div>
       </div>
-      <a href="{{ url_for('auth.logout') }}" class="cl-user-pill__logout" title="Cerrar sesión" aria-label="Cerrar sesión"
-        style="margin-left:auto;display:flex;align-items:center;text-decoration:none;">
-        <i data-lucide="log-out" style="width:14px;height:14px;color:var(--cl-text-tertiary);"></i>
-      </a>
+      <form action="{{ url_for('auth.logout') }}" method="post" style="display:inline;margin-left:auto;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="cl-user-pill__logout" title="Cerrar sesión" aria-label="Cerrar sesión"
+          style="display:flex;align-items:center;text-decoration:none;border:none;background:none;cursor:pointer;padding:0;">
+          <i data-lucide="log-out" style="width:14px;height:14px;color:var(--cl-text-tertiary);"></i>
+        </button>
+      </form>
     </div>
   </div>
   {% endif %}

@@ -197,13 +197,14 @@ def create_app():
     # Custom Jinja filter for Next-Gen money formatting
     @app.template_filter('money')
     def format_money(amount):
+        from markupsafe import Markup
         if amount is None:
-            return '<span class="cl-money"><span class="cl-money-symbol">$</span>0<span class="cl-money-decimal">.00</span></span>'
+            return Markup('<span class="cl-money"><span class="cl-money-symbol">$</span>0<span class="cl-money-decimal">.00</span></span>')
         amount_str = f"{float(amount):,.2f}"
         parts = amount_str.split('.')
         enteros = parts[0]
         decimales = parts[1]
-        return f'<span class="cl-money"><span class="cl-money-symbol">$</span>{enteros}<span class="cl-money-decimal">.{decimales}</span></span>'
+        return Markup(f'<span class="cl-money"><span class="cl-money-symbol">$</span>{enteros}<span class="cl-money-decimal">.{decimales}</span></span>')
 
     # Security headers (Fase 4 - Item 24) + CSP (Fase 5 - Sprint 1)
     @app.after_request
@@ -235,7 +236,6 @@ def create_app():
     # Exempt API blueprints from CSRF (they use JSON, not forms)
     csrf.exempt(api_bp)
     csrf.exempt(orders_bp)
-    csrf.exempt(ventas_bp)
     csrf.exempt(setup_bp)
 
     login_manager.user_loader(load_user)

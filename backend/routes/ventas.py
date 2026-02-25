@@ -8,7 +8,10 @@ ventas_bp = Blueprint('ventas', __name__, url_prefix='/ventas')
 @ventas_bp.route('/abrir', methods=['POST'])
 @login_required(roles=['admin', 'superadmin', 'mesero'])
 def abrir_venta():
-    mesa_id = request.json.get('mesa_id')
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Body JSON requerido.'}), 400
+    mesa_id = data.get('mesa_id')
     sale = Sale(
         usuario_id=session.get('user_id'),
         mesa_id=mesa_id,
@@ -21,9 +24,19 @@ def abrir_venta():
 @ventas_bp.route('/<int:sale_id>/items', methods=['POST'])
 @login_required(roles=['admin', 'superadmin', 'mesero'])
 def agregar_item(sale_id):
-    data = request.json
+    data = request.get_json()
+    if not data or 'producto_id' not in data:
+        return jsonify({'error': 'Body JSON con producto_id requerido.'}), 400
+    sale = Sale.query.get_or_404(sale_id)
+    # Ownership check (admin/superadmin bypass)
+    if session.get('rol') not in ('admin', 'superadmin') and sale.usuario_id != session.get('user_id'):
+        return jsonify({'error': 'No tienes permiso para modificar esta venta.'}), 403
+    if sale.estado == 'cerrada':
+        return jsonify({'error': 'La venta ya está cerrada.'}), 400
     producto = Producto.query.get_or_404(data['producto_id'])
-    cantidad = data['cantidad']
+    cantidad = data.get('cantidad', 1)
+    if not isinstance(cantidad, (int, float)) or cantidad < 1:
+        return jsonify({'error': 'Cantidad debe ser >= 1.'}), 400
     precio = producto.precio
     item = SaleItem(
         sale_id=sale_id,
@@ -32,7 +45,6 @@ def agregar_item(sale_id):
         precio_unitario=precio,
         subtotal=precio * cantidad
     )
-    sale = Sale.query.get_or_404(sale_id)
     sale.total += item.subtotal
     db.session.add(item)
     db.session.commit()
@@ -42,6 +54,11 @@ def agregar_item(sale_id):
 @login_required(roles=['admin', 'superadmin', 'mesero'])
 def cerrar_venta(sale_id):
     sale = Sale.query.get_or_404(sale_id)
+    # Ownership check
+    if session.get('rol') not in ('admin', 'superadmin') and sale.usuario_id != session.get('user_id'):
+        return jsonify({'error': 'No tienes permiso para cerrar esta venta.'}), 403
+    if sale.estado == 'cerrada':
+        return jsonify({'error': 'La venta ya está cerrada.'}), 400
     sale.estado = 'cerrada'
     db.session.commit()
     return jsonify({'estado': sale.estado, 'total': float(sale.total)})

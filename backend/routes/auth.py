@@ -58,14 +58,15 @@ def login():
     return render_template('login.html')
 
 
-@auth_bp.route('/logout')
+@auth_bp.route('/logout', methods=['POST'])
 def logout():
     user_id = session.get('user_id')
-    # Auditoría antes de limpiar sesión
-    from backend.services.audit import registrar_auditoria
-    registrar_auditoria('logout', 'Usuario', user_id, 'Cierre de sesión', user_id)
-    from backend.extensions import db
-    db.session.commit()
+    # Auditoría antes de limpiar sesión (null-safe)
+    if user_id:
+        from backend.services.audit import registrar_auditoria
+        registrar_auditoria('logout', 'Usuario', user_id, 'Cierre de sesión', user_id)
+        from backend.extensions import db
+        db.session.commit()
     logout_user()  # Clean Flask-Login state + remember cookie
     session.clear()
     logger.info('Logout: usuario_id=%s', user_id)

@@ -300,6 +300,16 @@ def usuario_editar(id):
         else:
             u.rol = rol_raw
             u.estacion_id = None
+        # Optional password update
+        new_pw = request.form.get('password', '').strip()
+        if new_pw:
+            pw_valida, pw_errores = validar_password(new_pw, nombre=u.nombre, email=u.email)
+            if not pw_valida:
+                for err in pw_errores:
+                    flash(err, 'danger')
+                estaciones = Estacion.query.order_by(Estacion.nombre).all()
+                return render_template('admin/usuario_form.html', usuario=u, estaciones=estaciones)
+            u.set_password(new_pw)
         db.session.commit()
         flash('Usuario actualizado', 'success')
         return redirect(url_for('admin.lista_usuarios'))
@@ -310,6 +320,17 @@ def usuario_editar(id):
 @login_required(roles=['admin', 'superadmin'])
 def usuario_eliminar(id):
     u = Usuario.query.get_or_404(id)
+    # Prevent self-delete
+    if u.id == current_user.id:
+        flash('No puedes eliminarte a ti mismo.', 'danger')
+        return redirect(url_for('admin.lista_usuarios'))
+    # Check active orders
+    ordenes_count = Orden.query.filter_by(mesero_id=u.id).filter(
+        Orden.estado.notin_(['pagada', 'cancelada'])
+    ).count()
+    if ordenes_count:
+        flash(f'No se puede eliminar: tiene {ordenes_count} orden(es) activa(s).', 'danger')
+        return redirect(url_for('admin.lista_usuarios'))
     db.session.delete(u)
     db.session.commit()
     flash('Usuario eliminado', 'success')
@@ -377,6 +398,10 @@ def producto_editar(id):
 @login_required(roles=['superadmin'])
 def producto_eliminar(id):
     p = Producto.query.get_or_404(id)
+    refs = OrdenDetalle.query.filter_by(producto_id=p.id).count()
+    if refs:
+        flash(f'No se puede eliminar: tiene {refs} detalle(s) de orden asociados.', 'danger')
+        return redirect(url_for('admin.lista_productos'))
     db.session.delete(p)
     db.session.commit()
     flash('Producto eliminado', 'success')
@@ -394,8 +419,17 @@ def lista_mesas():
 @login_required(roles=['superadmin'])
 def mesa_nuevo():
     if request.method == 'POST':
+        numero = request.form['numero']
+        # Uniqueness check
+        suc_id = getattr(g, 'sucursal_id', None)
+        existing = Mesa.query.filter_by(numero=numero)
+        if suc_id is not None:
+            existing = existing.filter_by(sucursal_id=suc_id)
+        if existing.first():
+            flash(f'Ya existe una mesa con número "{numero}".', 'danger')
+            return render_template('admin/mesa_form.html')
         m = Mesa(
-            numero=request.form['numero'],
+            numero=numero,
             capacidad=int(request.form.get('capacidad', 4)),
             zona=request.form.get('zona', ''),
         )
@@ -422,6 +456,13 @@ def mesa_editar(id):
 @login_required(roles=['superadmin'])
 def mesa_eliminar(id):
     m = Mesa.query.get_or_404(id)
+    # Check active orders on this table
+    ordenes_activas = Orden.query.filter_by(mesa_id=m.id).filter(
+        Orden.estado.notin_(['pagada', 'cancelada'])
+    ).count()
+    if ordenes_activas:
+        flash(f'No se puede eliminar: tiene {ordenes_activas} orden(es) activa(s).', 'danger')
+        return redirect(url_for('admin.lista_mesas'))
     db.session.delete(m)
     db.session.commit()
     flash('Mesa eliminada', 'success')

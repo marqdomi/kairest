@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, session, g, current_app
 from backend.utils import login_required, verificar_orden_completa, verificar_stock_disponible, verificar_propiedad_orden
-from backend.models.models import Orden, OrdenDetalle, Producto
+from backend.models.models import Orden, OrdenDetalle, Producto, Mesa
 from backend.extensions import db, socketio
 
 orders_bp = Blueprint('orders', __name__, url_prefix='/api')
@@ -9,8 +9,15 @@ orders_bp = Blueprint('orders', __name__, url_prefix='/api')
 @login_required()
 def create_order():
     data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Body JSON requerido.'}), 400
     es_para_llevar = data.get('es_para_llevar', False)
     mesa_id = data.get('mesa_id') if not es_para_llevar else None
+    # Validate mesa_id FK if provided
+    if mesa_id is not None:
+        mesa = Mesa.query.get(mesa_id)
+        if not mesa:
+            return jsonify({'error': f'Mesa {mesa_id} no existe.'}), 404
     mesero_id = session.get('user_id')
     nueva_orden = Orden(mesa_id=mesa_id, mesero_id=mesero_id,
                         es_para_llevar=es_para_llevar,
@@ -30,6 +37,8 @@ def create_order():
 @verificar_propiedad_orden
 def update_order_status(orden_id):
     data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Body JSON requerido.'}), 400
     nuevo_estado = data.get('estado')
     ESTADOS_VALIDOS = ['pendiente', 'enviado', 'en_preparacion', 'lista_para_entregar', 'completada', 'pagada', 'cancelada']
     if nuevo_estado not in ESTADOS_VALIDOS:
@@ -48,6 +57,8 @@ def update_order_status(orden_id):
 @verificar_propiedad_orden
 def add_product_to_order(orden_id):
     data = request.get_json()
+    if not data or 'producto_id' not in data:
+        return jsonify({'error': 'Body JSON con producto_id requerido.'}), 400
     producto_id = data.get('producto_id')
     cantidad = data.get('cantidad', 1)
     notas = data.get('notas', '').strip()
@@ -142,6 +153,8 @@ def update_order_detail(orden_id, detalle_id):
     """Update quantity or notes of an order detail item."""
     detalle = OrdenDetalle.query.filter_by(id=detalle_id, orden_id=orden_id).first_or_404()
     data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Body JSON requerido.'}), 400
     if 'cantidad' in data:
         nueva_cantidad = int(data['cantidad'])
         if nueva_cantidad < 1:

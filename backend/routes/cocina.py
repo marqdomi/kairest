@@ -166,7 +166,7 @@ def _emit_item_progreso(orden_id):
 @cocina_bp.route('/api/orders')
 @login_required(roles=['cocina', 'mesero', 'admin', 'superadmin'])
 def api_orders():
-    ordenes = Orden.query.filter(Orden.estado != 'pagado', Orden.estado != 'finalizada').all()
+    ordenes = Orden.query.filter(Orden.estado != 'pagada', Orden.estado != 'cancelada').all()
     return jsonify([{
         'id': o.id, 'estado': o.estado,
         'tiempo_registro': o.tiempo_registro.isoformat()

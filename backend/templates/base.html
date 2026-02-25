@@ -131,7 +131,10 @@
             <span class="navbar-text">Hola, {{ current_user.nombre }} ({{ current_user.rol }})</span>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('auth.logout') }}">Cerrar sesión</a>
+            <form action="{{ url_for('auth.logout') }}" method="post" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="nav-link btn btn-link" style="cursor:pointer;">Cerrar sesión</button>
+            </form>
           </li>
           {% endif %}
         </ul>

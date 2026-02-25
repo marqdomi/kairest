@@ -94,10 +94,13 @@ Usage:
         </li>
         {% endif %}
         <li>
-          <a class="dropdown-item" href="{{ url_for('auth.logout') }}"
-            style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--cl-text-secondary);">
-            <i data-lucide="log-out" class="icon-sm"></i>Cerrar sesión
-          </a>
+          <form action="{{ url_for('auth.logout') }}" method="post" style="display:inline;width:100%;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="dropdown-item" 
+              style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--cl-text-secondary);border:none;background:none;width:100%;cursor:pointer;">
+              <i data-lucide="log-out" class="icon-sm"></i>Cerrar sesión
+            </button>
+          </form>
         </li>
       </ul>
     </div>

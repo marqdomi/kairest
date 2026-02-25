@@ -300,6 +300,7 @@ def agregar_productos_a_orden(orden_id):
             if not prod:
                 continue
             cantidad = int(p_data['cantidad'])
+            notas = (p_data.get('notas') or '').strip()
 
             # Validación de stock (Sprint 2 — 3.2)
             if current_app.config.get('INVENTARIO_VALIDAR_STOCK'):
@@ -310,15 +311,21 @@ def agregar_productos_a_orden(orden_id):
                     continue
                 stock_warnings.extend(warns)
 
-            existente = OrdenDetalle.query.filter_by(
+            # Merge: only merge with items that share the same notes
+            existentes = OrdenDetalle.query.filter_by(
                 orden_id=orden_id, producto_id=prod.id, estado='pendiente',
-            ).first()
-            if existente:
-                existente.cantidad += cantidad
-            else:
+            ).all()
+            merged = False
+            for existente in existentes:
+                if (existente.notas or '').strip() == notas:
+                    existente.cantidad += cantidad
+                    merged = True
+                    break
+            if not merged:
                 d = OrdenDetalle(
                     orden_id=orden_id, producto_id=prod.id,
-                    cantidad=cantidad, precio_unitario=prod.precio, estado='pendiente',
+                    cantidad=cantidad, notas=notas or None,
+                    precio_unitario=prod.precio, estado='pendiente',
                 )
                 db.session.add(d)
                 nuevos.append(d)
@@ -610,11 +617,14 @@ def registrar_pago(orden_id):
         socketio.emit('orden_pagada_notificacion', {
             'orden_id': orden.id, 'mensaje': f'Orden #{orden.id} pagada.',
         })
-        # Descontar inventario según receta estándar
+        # Descontar inventario según receta estándar (savepoint)
         inventario_ok = True
         try:
+            db.session.begin_nested()
             descontar_inventario_por_orden(orden, session.get('user_id'))
+            db.session.commit()  # release savepoint
         except Exception:
+            db.session.rollback()  # rollback savepoint only
             inventario_ok = False
             logger.exception('Error descontando inventario orden %s — requiere reconciliación', orden_id)
             # Flag for reconciliation via ConfiguracionSistema
@@ -668,10 +678,12 @@ def registrar_pago(orden_id):
 @verificar_propiedad_orden
 def cobrar_orden_post(orden_id):
     """Compatibilidad: convierte pago único legacy al nuevo modelo multi-pago."""
-    orden = Orden.query.options(
-        joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
-        joinedload(Orden.pagos),
-    ).get_or_404(orden_id)
+    orden = db.session.query(Orden).with_for_update().get(orden_id)
+    if not orden:
+        return jsonify(success=False, message='Orden no encontrada.'), 404
+    db.session.refresh(orden)
+    orden.detalles
+    orden.pagos
 
     if orden.estado not in ('completada', 'lista_para_entregar'):
         return jsonify(success=False, message=f"No lista para cobro ({orden.estado})."), 400
@@ -717,12 +729,23 @@ def cobrar_orden_post(orden_id):
             subtotal=det.cantidad * precio,
         ))
 
-    db.session.commit()
-    # Descontar inventario (Sprint 6)
+    # Descontar inventario before final commit (savepoint)
     try:
+        db.session.begin_nested()
         descontar_inventario_por_orden(orden, session.get('user_id'))
+        db.session.commit()  # release savepoint
     except Exception:
-        logger.exception('Error descontando inventario en cobrar_orden_post orden %s', orden_id)
+        db.session.rollback()  # rollback savepoint only
+        logger.exception('Error descontando inventario en cobrar_orden_post orden %s — requiere reconciliación', orden_id)
+        try:
+            from backend.models.models import ConfiguracionSistema
+            pending = ConfiguracionSistema.get('inventario_pendiente', '')
+            ids = f"{pending},{orden_id}" if pending else str(orden_id)
+            ConfiguracionSistema.set('inventario_pendiente', ids)
+        except Exception:
+            pass
+
+    db.session.commit()
     # Liberar mesa si no quedan órdenes activas (Sprint 2 — 3.3)
     actualizar_estado_mesa(orden.mesa_id)
     db.session.commit()
