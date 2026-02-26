@@ -4,12 +4,13 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from backend.utils import login_required, filtrar_por_sucursal
 from backend.extensions import db
 from backend.services.sanitizer import sanitizar_texto, sanitizar_email
-from backend.models.models import Sale, SaleItem, Producto, Mesa, CorteCaja, Usuario, Categoria, Estacion, Pago, Orden, Ingrediente, OrdenDetalle
+from backend.models.models import Sale, SaleItem, Producto, Mesa, CorteCaja, Usuario, Categoria, Estacion, Pago, Orden, Ingrediente, OrdenDetalle, OrdenEstado
 from backend.services.password_policy import validar_password
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
 from werkzeug.security import generate_password_hash
 from datetime import date, datetime, timedelta
+from backend.models.models import utc_now
 from flask_login import current_user
 
 logger = logging.getLogger(__name__)
@@ -119,12 +120,12 @@ def api_mesas_activas():
 def api_ordenes_cocina():
     """Órdenes con items pendientes en cocina."""
     pendientes = filtrar_por_sucursal(
-        Orden.query.filter(Orden.estado.in_(['pendiente', 'en_preparacion'])), Orden
+        Orden.query.filter(Orden.estado.in_([OrdenEstado.PENDIENTE, OrdenEstado.EN_PREPARACION])), Orden
     ).count()
     # Timer promedio de órdenes activas
-    ahora = datetime.utcnow()
+    ahora = utc_now()
     ordenes_activas = filtrar_por_sucursal(
-        Orden.query.filter(Orden.estado.in_(['pendiente', 'en_preparacion'])), Orden
+        Orden.query.filter(Orden.estado.in_([OrdenEstado.PENDIENTE, OrdenEstado.EN_PREPARACION])), Orden
     ).all()
     if ordenes_activas:
         tiempos = [(ahora - o.tiempo_registro).total_seconds() / 60 for o in ordenes_activas]
@@ -326,7 +327,7 @@ def usuario_eliminar(id):
         return redirect(url_for('admin.lista_usuarios'))
     # Check active orders
     ordenes_count = Orden.query.filter_by(mesero_id=u.id).filter(
-        Orden.estado.notin_(['pagada', 'cancelada'])
+        Orden.estado.notin_([OrdenEstado.PAGADA, OrdenEstado.CANCELADA])
     ).count()
     if ordenes_count:
         flash(f'No se puede eliminar: tiene {ordenes_count} orden(es) activa(s).', 'danger')
@@ -458,7 +459,7 @@ def mesa_eliminar(id):
     m = Mesa.query.get_or_404(id)
     # Check active orders on this table
     ordenes_activas = Orden.query.filter_by(mesa_id=m.id).filter(
-        Orden.estado.notin_(['pagada', 'cancelada'])
+        Orden.estado.notin_([OrdenEstado.PAGADA, OrdenEstado.CANCELADA])
     ).count()
     if ordenes_activas:
         flash(f'No se puede eliminar: tiene {ordenes_activas} orden(es) activa(s).', 'danger')
@@ -533,7 +534,7 @@ def corte_caja():
 
     # Propinas del día (Sprint 6 — 3.6)
     propinas_q = db.session.query(func.sum(Orden.propina)).filter(
-        Orden.estado == 'pagada',
+        Orden.estado == OrdenEstado.PAGADA,
         func.date(Orden.fecha_pago) == hoy,
     )
     if suc_id is not None:
@@ -615,7 +616,7 @@ def export_corte_pdf():
     pagos_hoy = pago_q.group_by(Pago.metodo).all()
 
     propinas_q = db.session.query(func.sum(Orden.propina)).filter(
-        Orden.estado == 'pagada', func.date(Orden.fecha_pago) == hoy)
+        Orden.estado == OrdenEstado.PAGADA, func.date(Orden.fecha_pago) == hoy)
     if suc_id is not None:
         propinas_q = propinas_q.filter(Orden.sucursal_id == suc_id)
 

@@ -4,7 +4,7 @@ from decimal import Decimal
 from flask import Blueprint, render_template, session, redirect, url_for, flash, request, jsonify, g, current_app
 from backend.models.models import (
     Mesa, Orden, Producto, OrdenDetalle, Sale, SaleItem, Usuario, Pago, IVA_RATE,
-    descontar_inventario_por_orden, Cliente, MovimientoInventario,
+    descontar_inventario_por_orden, Cliente, MovimientoInventario, OrdenEstado, utc_now,
 )
 from backend.extensions import db, socketio
 from backend.utils import login_required, verificar_propiedad_orden, filtrar_por_sucursal, verificar_stock_disponible, actualizar_estado_mesa
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 meseros_bp = Blueprint('meseros', __name__, url_prefix='/meseros')
 
-ESTADOS_MODIFICABLES = ['pendiente', 'enviado', 'en_preparacion', 'lista_para_entregar']
+ESTADOS_MODIFICABLES = [OrdenEstado.PENDIENTE, OrdenEstado.ENVIADO, OrdenEstado.EN_PREPARACION, OrdenEstado.LISTA_PARA_ENTREGAR]
 
 
 def _revertir_inventario_orden(orden, usuario_id):
@@ -53,7 +53,7 @@ def view_meseros():
         joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
         joinedload(Orden.mesero),
     ).filter(
-        Orden.estado.notin_(['pagada', 'finalizada', 'cancelada']),
+        Orden.estado.notin_([OrdenEstado.PAGADA, OrdenEstado.FINALIZADA, OrdenEstado.CANCELADA]),
     )
     if not is_admin:
         query = query.filter(Orden.mesero_id == user_id)
@@ -76,7 +76,7 @@ def view_meseros():
         joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
         joinedload(Orden.mesero),
     ).filter(
-        Orden.estado.in_(['pagada', 'finalizada']),
+        Orden.estado.in_([OrdenEstado.PAGADA, OrdenEstado.FINALIZADA]),
         db.or_(
             db.func.date(Orden.fecha_pago) == hoy,
             db.func.date(Orden.tiempo_registro) == hoy,
@@ -89,7 +89,7 @@ def view_meseros():
 
     template = 'admin/ordenes_activas.html' if is_admin else 'meseros.html'
     return render_template(template, ordenes_mesero=ordenes_mesero,
-                           ordenes_pagadas=ordenes_pagadas, now_utc=datetime.utcnow())
+                           ordenes_pagadas=ordenes_pagadas, now_utc=utc_now())
 
 
 # =====================================================================
@@ -116,7 +116,7 @@ def historial_dia():
         joinedload(Orden.mesa),
         joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
     ).filter(
-        Orden.estado.in_(['finalizada', 'pagada']),
+        Orden.estado.in_([OrdenEstado.FINALIZADA, OrdenEstado.PAGADA]),
         db.or_(
             db.func.date(Orden.fecha_pago) == hoy,
             db.func.date(Orden.tiempo_registro) == hoy,
@@ -144,7 +144,7 @@ def historial_csv():
         joinedload(Orden.mesa),
         joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
     ).filter(
-        Orden.estado.in_(['finalizada', 'pagada']),
+        Orden.estado.in_([OrdenEstado.FINALIZADA, OrdenEstado.PAGADA]),
         db.or_(
             db.func.date(Orden.fecha_pago) == hoy,
             db.func.date(Orden.tiempo_registro) == hoy,
@@ -177,7 +177,7 @@ def historial_csv():
 @login_required(roles='mesero')
 def crear_orden_para_llevar():
     nueva_orden = Orden(
-        mesero_id=session.get('user_id'), es_para_llevar=True, estado='pendiente',
+        mesero_id=session.get('user_id'), es_para_llevar=True, estado=OrdenEstado.PENDIENTE,
         sucursal_id=g.sucursal_id,
     )
     db.session.add(nueva_orden)
@@ -195,7 +195,7 @@ def seleccionar_mesa():
         if mesa_id:
             orden_existente = Orden.query.filter(
                 Orden.mesa_id == int(mesa_id),
-                Orden.estado.notin_(['pagada', 'finalizada', 'cancelada']),
+                Orden.estado.notin_([OrdenEstado.PAGADA, OrdenEstado.FINALIZADA, OrdenEstado.CANCELADA]),
             ).first()
             if orden_existente:
                 flash(f'Mesa ya tiene orden activa (ID: {orden_existente.id}).', 'warning')
@@ -203,7 +203,7 @@ def seleccionar_mesa():
 
             nueva_orden = Orden(
                 mesero_id=session.get('user_id'), mesa_id=int(mesa_id),
-                es_para_llevar=False, estado='pendiente',
+                es_para_llevar=False, estado=OrdenEstado.PENDIENTE,
                 sucursal_id=g.sucursal_id,
             )
             db.session.add(nueva_orden)
@@ -220,7 +220,7 @@ def seleccionar_mesa():
 
     # Sprint 9 — 9.4: enrich mesas with active order info
     active_orders = Orden.query.filter(
-        Orden.estado.notin_(['pagada', 'finalizada', 'cancelada']),
+        Orden.estado.notin_([OrdenEstado.PAGADA, OrdenEstado.FINALIZADA, OrdenEstado.CANCELADA]),
     ).all()
     mesa_order_map = {}
     for o in active_orders:
@@ -286,7 +286,7 @@ def agregar_productos_a_orden(orden_id):
         flash('No se recibieron productos.', 'warning')
         return redirect(url_for('meseros.detalle_orden', orden_id=orden_id))
 
-    orden_ya_enviada = orden.estado != 'pendiente'
+    orden_ya_enviada = orden.estado != OrdenEstado.PENDIENTE
     try:
         productos_sel = json.loads(data)
         if not productos_sel:
@@ -313,7 +313,7 @@ def agregar_productos_a_orden(orden_id):
 
             # Merge: only merge with items that share the same notes
             existentes = OrdenDetalle.query.filter_by(
-                orden_id=orden_id, producto_id=prod.id, estado='pendiente',
+                orden_id=orden_id, producto_id=prod.id, estado=OrdenEstado.PENDIENTE,
             ).all()
             merged = False
             for existente in existentes:
@@ -325,7 +325,7 @@ def agregar_productos_a_orden(orden_id):
                 d = OrdenDetalle(
                     orden_id=orden_id, producto_id=prod.id,
                     cantidad=cantidad, notas=notas or None,
-                    precio_unitario=prod.precio, estado='pendiente',
+                    precio_unitario=prod.precio, estado=OrdenEstado.PENDIENTE,
                 )
                 db.session.add(d)
                 nuevos.append(d)
@@ -373,10 +373,10 @@ def enviar_orden_a_cocina(orden_id):
     if not orden.detalles:
         flash('Orden vacía.', 'warning')
         return redirect(url_for('meseros.detalle_orden', orden_id=orden_id))
-    if orden.estado != 'pendiente':
+    if orden.estado != OrdenEstado.PENDIENTE:
         flash(f'Orden ya enviada ({orden.estado}).', 'warning')
     else:
-        orden.estado = 'enviado'
+        orden.estado = OrdenEstado.ENVIADO
         db.session.commit()
         socketio.emit('nueva_orden_cocina', {'orden_id': orden.id, 'mensaje': f'Orden #{orden.id} para cocina.'})
         # Auto-imprimir comanda si está configurado (Sprint 3 — 3.1)
@@ -393,15 +393,15 @@ def entregar_item(orden_id, detalle_id):
     detalle = OrdenDetalle.query.filter_by(id=detalle_id, orden_id=orden_id).first_or_404()
     if detalle.estado == 'entregado':
         return jsonify(success=False, message="Ya entregado."), 400
-    if detalle.estado != 'listo':
+    if detalle.estado != OrdenEstado.LISTO:
         return jsonify(success=False, message="No está listo."), 400
 
     detalle.estado = 'entregado'
     orden = Orden.query.options(joinedload(Orden.detalles)).get_or_404(orden_id)
 
     if all(d.estado == 'entregado' for d in orden.detalles):
-        if orden.estado not in ['pagada', 'finalizada', 'cancelada', 'completada']:
-            orden.estado = 'completada'
+        if orden.estado not in [OrdenEstado.PAGADA, OrdenEstado.FINALIZADA, OrdenEstado.CANCELADA, OrdenEstado.COMPLETADA]:
+            orden.estado = OrdenEstado.COMPLETADA
             socketio.emit('orden_actualizada_para_cobro', {
                 'orden_id': orden.id, 'estado_orden': 'completada',
                 'mensaje': f'Orden #{orden.id} lista para cobro.',
@@ -417,18 +417,18 @@ def cancelar_orden(orden_id):
         joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
         joinedload(Orden.pagos),
     ).get_or_404(orden_id)
-    if orden.estado in ['pagada', 'finalizada', 'cancelada']:
+    if orden.estado in [OrdenEstado.PAGADA, OrdenEstado.FINALIZADA, OrdenEstado.CANCELADA]:
         flash('No se puede cancelar.', 'warning')
         return redirect(url_for('meseros.view_meseros'))
 
     # Reverse inventory if it was already deducted (order went through payment flow)
-    if orden.estado == 'pagada' or orden.pagos:
+    if orden.estado == OrdenEstado.PAGADA or orden.pagos:
         try:
             _revertir_inventario_orden(orden, session.get('user_id'))
         except Exception:
             logger.exception('Error revirtiendo inventario orden %s', orden_id)
 
-    orden.estado = 'cancelada'
+    orden.estado = OrdenEstado.CANCELADA
     db.session.commit()
     # Liberar mesa si no quedan órdenes activas (Sprint 2 — 3.3)
     actualizar_estado_mesa(orden.mesa_id)
@@ -597,8 +597,8 @@ def registrar_pago(orden_id):
         cambio = abs(saldo) if metodo == 'efectivo' else Decimal('0')
         orden.monto_recibido = total_pagado
         orden.cambio = cambio
-        orden.fecha_pago = datetime.utcnow()
-        orden.estado = 'pagada'
+        orden.fecha_pago = utc_now()
+        orden.estado = OrdenEstado.PAGADA
 
         # Crear Sale record
         venta = Sale(mesa_id=orden.mesa_id, usuario_id=session.get('user_id'),
@@ -653,20 +653,20 @@ def registrar_pago(orden_id):
     db.session.commit()
 
     # Liberar mesa si orden pagada (Sprint 2 — 3.3)
-    if orden.estado == 'pagada':
+    if orden.estado == OrdenEstado.PAGADA:
         actualizar_estado_mesa(orden.mesa_id)
         db.session.commit()
 
     return jsonify(
         success=True,
-        message="Pago registrado." + (" Orden pagada." if orden.estado == 'pagada' else ""),
+        message="Pago registrado." + (" Orden pagada." if orden.estado == OrdenEstado.PAGADA else ""),
         pago_id=pago.id,
         metodo=metodo,
         monto=float(monto),
         total_pagado=float(orden.total_pagado()),
         saldo_pendiente=float(max(orden.saldo_pendiente(), Decimal('0'))),
         cambio=float(orden.cambio or 0),
-        orden_pagada=(orden.estado == 'pagada'),
+        orden_pagada=(orden.estado == OrdenEstado.PAGADA),
     )
 
 
@@ -712,8 +712,8 @@ def cobrar_orden_post(orden_id):
 
     orden.monto_recibido = monto_recibido
     orden.cambio = monto_recibido - orden.total
-    orden.fecha_pago = datetime.utcnow()
-    orden.estado = 'pagada'
+    orden.fecha_pago = utc_now()
+    orden.estado = OrdenEstado.PAGADA
 
     venta = Sale(mesa_id=orden.mesa_id, usuario_id=session.get('user_id'),
                  total=orden.total, estado='cerrada',

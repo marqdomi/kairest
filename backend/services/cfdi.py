@@ -17,6 +17,8 @@ import logging
 from datetime import datetime
 from decimal import Decimal
 
+from backend.models.models import utc_now
+
 logger = logging.getLogger(__name__)
 
 FACTURAPI_KEY = os.getenv('FACTURAPI_KEY', '')
@@ -96,7 +98,7 @@ def crear_factura_cfdi(orden, cliente, db_session, metodo_pago='PUE'):
             factura.xml_url = resultado.get('xml_url', '')
             factura.pdf_url = resultado.get('pdf_url', '')
             factura.pac_response = str(resultado)
-            factura.fecha_timbrado = datetime.utcnow()
+            factura.fecha_timbrado = utc_now()
             factura.estado = 'timbrada'
             logger.info('CFDI timbrado: factura=%s uuid=%s', factura.id, factura.uuid_cfdi)
         except Exception as e:
@@ -411,7 +413,7 @@ def crear_complemento_pago(factura, monto_pago, forma_pago_real, db_session):
                 'type': 'pago',
                 'data': [{
                     'payment_form': forma_pago_real,
-                    'date': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S'),
+                    'date': utc_now().strftime('%Y-%m-%dT%H:%M:%S'),
                     'amount': float(monto_pago),
                     'related_documents': [{
                         'uuid': factura.uuid_cfdi,

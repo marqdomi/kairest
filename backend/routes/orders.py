@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, session, g, current_app
 from backend.utils import login_required, verificar_orden_completa, verificar_stock_disponible, verificar_propiedad_orden
-from backend.models.models import Orden, OrdenDetalle, Producto, Mesa
+from backend.models.models import Orden, OrdenDetalle, Producto, Mesa, OrdenEstado
 from backend.extensions import db, socketio
 
 orders_bp = Blueprint('orders', __name__, url_prefix='/api')
@@ -40,7 +40,9 @@ def update_order_status(orden_id):
     if not data:
         return jsonify({'error': 'Body JSON requerido.'}), 400
     nuevo_estado = data.get('estado')
-    ESTADOS_VALIDOS = ['pendiente', 'enviado', 'en_preparacion', 'lista_para_entregar', 'completada', 'pagada', 'cancelada']
+    ESTADOS_VALIDOS = [OrdenEstado.PENDIENTE, OrdenEstado.ENVIADO, OrdenEstado.EN_PREPARACION,
+                        OrdenEstado.LISTA_PARA_ENTREGAR, OrdenEstado.COMPLETADA,
+                        OrdenEstado.PAGADA, OrdenEstado.CANCELADA]
     if nuevo_estado not in ESTADOS_VALIDOS:
         return jsonify({'error': f'Estado no válido. Debe ser uno de: {", ".join(ESTADOS_VALIDOS)}.'}), 400
     orden = Orden.query.get_or_404(orden_id)
@@ -76,7 +78,7 @@ def add_product_to_order(orden_id):
 
     # Merge: only merge with items that are still 'pendiente' (not listo/entregado)
     existing = OrdenDetalle.query.filter_by(
-        orden_id=orden.id, producto_id=producto.id, estado='pendiente'
+        orden_id=orden.id, producto_id=producto.id, estado=OrdenEstado.PENDIENTE
     ).all()
     merged = False
     for d in existing:
@@ -94,7 +96,7 @@ def add_product_to_order(orden_id):
             cantidad=cantidad,
             notas=notas,
             precio_unitario=producto.precio,
-            estado='pendiente',
+            estado=OrdenEstado.PENDIENTE,
         )
         db.session.add(detalle)
 
@@ -199,9 +201,9 @@ def delete_order_detail(orden_id, detalle_id):
 def notificar_cocina(orden_id):
     """Manually re-notify kitchen about pending items in an already-sent order."""
     orden = Orden.query.get_or_404(orden_id)
-    if orden.estado == 'pendiente':
+    if orden.estado == OrdenEstado.PENDIENTE:
         return jsonify({'error': 'Usa "Enviar a Cocina" para órdenes pendientes.'}), 400
-    pendientes = OrdenDetalle.query.filter_by(orden_id=orden_id, estado='pendiente').count()
+    pendientes = OrdenDetalle.query.filter_by(orden_id=orden_id, estado=OrdenEstado.PENDIENTE).count()
     if pendientes == 0:
         return jsonify({'error': 'No hay productos nuevos pendientes.'}), 400
     socketio.emit('nueva_orden_cocina', {

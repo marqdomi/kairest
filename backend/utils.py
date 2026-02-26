@@ -2,7 +2,7 @@ import logging
 from functools import wraps
 from decimal import Decimal
 from flask import session, redirect, url_for, flash, request, jsonify, g, current_app
-from backend.models.models import Orden, OrdenDetalle, Producto, RecetaDetalle, Mesa
+from backend.models.models import Orden, OrdenDetalle, Producto, RecetaDetalle, Mesa, OrdenEstado
 from backend.extensions import db, socketio
 
 logger = logging.getLogger(__name__)
@@ -95,7 +95,7 @@ def actualizar_estado_mesa(mesa_id, nuevo_estado=None):
         # Calcular: ¿hay órdenes activas en esta mesa?
         ordenes_activas = Orden.query.filter(
             Orden.mesa_id == mesa_id,
-            Orden.estado.notin_(['pagada', 'finalizada', 'cancelada']),
+            Orden.estado.notin_([OrdenEstado.PAGADA, OrdenEstado.FINALIZADA, OrdenEstado.CANCELADA]),
         ).count()
         nuevo_estado = 'ocupada' if ordenes_activas > 0 else 'disponible'
 
@@ -126,10 +126,10 @@ def verificar_orden_completa(orden_id):
     """
     detalles = OrdenDetalle.query.filter_by(orden_id=orden_id).all()
     try:
-        if detalles and all(d.estado == 'listo' for d in detalles):
+        if detalles and all(d.estado == OrdenEstado.LISTO for d in detalles):
             orden = Orden.query.get(orden_id)
-            if orden.estado not in ['finalizada', 'pagada', 'lista_para_entregar']:
-                orden.estado = 'lista_para_entregar'
+            if orden.estado not in [OrdenEstado.FINALIZADA, OrdenEstado.PAGADA, OrdenEstado.LISTA_PARA_ENTREGAR]:
+                orden.estado = OrdenEstado.LISTA_PARA_ENTREGAR
                 db.session.commit()
                 socketio.emit('orden_completa_lista', {
                     'orden_id': orden.id,
@@ -221,7 +221,7 @@ def obtener_ordenes_por_estacion(estacion):
     detalles = (
         OrdenDetalle.query
         .filter(
-            OrdenDetalle.estado != 'listo',
+            OrdenDetalle.estado != OrdenEstado.LISTO,
             OrdenDetalle.producto.has(Producto.estacion_id == estacion.id)
         )
         .all()

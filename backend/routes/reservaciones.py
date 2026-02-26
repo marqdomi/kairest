@@ -1,6 +1,7 @@
 """Fase 3 — Item 19: Reservaciones y estados de mesa avanzados."""
 import logging
 from datetime import datetime, date, timedelta
+from backend.models.models import utc_now
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from backend.utils import login_required, filtrar_por_sucursal
 from backend.extensions import db
@@ -76,7 +77,7 @@ def nueva_reservacion():
         if mesa_id:
             mesa = Mesa.query.get(int(mesa_id))
             if mesa and mesa.estado == 'disponible':
-                now = datetime.utcnow()
+                now = utc_now()
                 if fecha_hora <= now + timedelta(hours=RESERVACION_DURACION_HORAS):
                     mesa.estado = 'reservada'
 

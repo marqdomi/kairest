@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from backend.models.models import Orden, OrdenDetalle, Producto
+from backend.models.models import Orden, OrdenDetalle, Producto, utc_now, OrdenEstado
 from backend.extensions import db, socketio
 from backend.utils import obtener_ordenes_por_estacion, verificar_orden_completa, login_required
 
@@ -50,16 +50,15 @@ def listar_ordenes():
 @api_bp.route('/ordenes/<int:orden_id>/detalle/<int:detalle_id>/listo', methods=['POST'])
 @login_required()
 def marcar_detalle_listo(orden_id, detalle_id):
-    from datetime import datetime as dt
     detalle = OrdenDetalle.query.get_or_404(detalle_id)
-    if detalle.estado == 'listo':
+    if detalle.estado == OrdenEstado.LISTO:
         return jsonify({'message': 'Ya estaba marcado como listo'}), 200
-    detalle.estado = 'listo'
-    detalle.fecha_listo = dt.utcnow()
+    detalle.estado = OrdenEstado.LISTO
+    detalle.fecha_listo = utc_now()
     orden = Orden.query.get(orden_id)
     # Transition to en_preparacion on first item marked listo
-    if orden and orden.estado == 'enviado':
-        orden.estado = 'en_preparacion'
+    if orden and orden.estado == OrdenEstado.ENVIADO:
+        orden.estado = OrdenEstado.EN_PREPARACION
         socketio.emit('orden_en_preparacion', {
             'orden_id': orden.id,
             'mesa_nombre': orden.mesa.numero if orden.mesa else 'Para Llevar',
@@ -76,7 +75,7 @@ def marcar_detalle_listo(orden_id, detalle_id):
     })
     # Emit progress
     all_detalles = OrdenDetalle.query.filter_by(orden_id=orden_id).all()
-    items_listos = sum(1 for d in all_detalles if d.estado == 'listo')
+    items_listos = sum(1 for d in all_detalles if d.estado == OrdenEstado.LISTO)
     socketio.emit('item_progreso', {
         'orden_id': orden_id,
         'items_listos': items_listos,

@@ -12,7 +12,7 @@ from backend.utils import login_required, filtrar_por_sucursal
 from backend.extensions import db
 from backend.models.models import (
     Sale, SaleItem, Producto, Pago, Orden, Usuario, Ingrediente,
-    MovimientoInventario, Categoria, RecetaDetalle, DeliveryOrden,
+    MovimientoInventario, Categoria, RecetaDetalle, DeliveryOrden, OrdenEstado,
 )
 from sqlalchemy import func, extract, case
 from sqlalchemy.orm import joinedload
@@ -275,7 +275,7 @@ def reporte_meseros():
         func.sum(Orden.propina).label('total_propinas'),
     ).join(Orden, Orden.mesero_id == Usuario.id
     ).filter(
-        Orden.estado == 'pagada',
+        Orden.estado == OrdenEstado.PAGADA,
         func.date(Orden.fecha_pago) >= fi,
         func.date(Orden.fecha_pago) <= ff,
     )
@@ -727,7 +727,7 @@ def reporte_delivery():
         func.count(Orden.id).label('num_ordenes'),
         func.sum(Orden.total).label('total_ventas'),
     ).filter(
-        Orden.estado == 'pagada',
+        Orden.estado == OrdenEstado.PAGADA,
         func.date(Orden.fecha_pago) >= fi,
         func.date(Orden.fecha_pago) <= ff,
     )
@@ -791,7 +791,7 @@ def export_delivery_csv():
         func.count(Orden.id).label('num_ordenes'),
         func.sum(Orden.total).label('total_ventas'),
     ).filter(
-        Orden.estado == 'pagada',
+        Orden.estado == OrdenEstado.PAGADA,
         func.date(Orden.fecha_pago) >= fi,
         func.date(Orden.fecha_pago) <= ff,
     )
@@ -825,7 +825,7 @@ def api_delivery_chart():
         func.count(Orden.id).label('num_ordenes'),
         func.sum(Orden.total).label('total'),
     ).filter(
-        Orden.estado == 'pagada',
+        Orden.estado == OrdenEstado.PAGADA,
         func.date(Orden.fecha_pago) >= fi,
         func.date(Orden.fecha_pago) <= ff,
     )

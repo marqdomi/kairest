@@ -340,3 +340,14 @@ Segunda auditoría: 30 issues identificados.
 - `meseros.js` `moveCardToPagadas()`: Nombres y cantidades de producto escapados con `esc()`
 - `detalle_orden.html`: `nombre`, `item.notas`, `_notasRapidas` escapados con `_esc()` antes de innerHTML
 - `admin-dashboard.js`: `item.nombre` (stock alerts), `item.mesero`, `item.mesa` (activity feed) escapados
+
+### Grupo 5 — DB Indexes + datetime.utcnow Deprecation
+- `models.py`: `index=True` en 20+ columnas FK/filtro (Orden, OrdenDetalle, Pago, MovimientoInventario, Factura, Sale, SaleItem)
+- `models.py`: Helper `utc_now()` → `datetime.now(timezone.utc)` reemplaza `datetime.utcnow` (deprecated Python 3.12)
+- Todos los `default=datetime.utcnow` en columnas → `default=utc_now`
+- Runtime calls `datetime.utcnow()` → `utc_now()` en: meseros.py, cocina.py, orders.py, api.py, admin_routes.py, delivery.py, reservaciones.py, cfdi.py
+
+### Grupo 6 — OrdenEstado Constants
+- `models.py`: Clase `OrdenEstado` con 11 constantes (PENDIENTE, ENVIADO, EN_PREPARACION, EN_COCINA, LISTA, LISTA_PARA_ENTREGAR, COMPLETADA, PAGADA, CANCELADA, FINALIZADA, LISTO)
+- Magic strings reemplazados en: meseros.py, cocina.py, orders.py, api.py, admin_routes.py, reportes.py, utils.py, services/delivery.py
+- Column defaults: `Orden.estado` y `OrdenDetalle.estado` usan `OrdenEstado.PENDIENTE`

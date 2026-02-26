@@ -1,10 +1,11 @@
 import logging
 from flask import Blueprint, render_template, session, flash, redirect, url_for, jsonify, abort, request
-from backend.models.models import Orden, OrdenDetalle, Producto, Estacion, Usuario
+from backend.models.models import Orden, OrdenDetalle, Producto, Estacion, Usuario, OrdenEstado
 from backend.utils import login_required, verificar_orden_completa
 from backend.extensions import db, socketio
 from flask_login import current_user
 from datetime import date, datetime
+from backend.models.models import utc_now
 from text_unidecode import unidecode
 import re
 
@@ -97,8 +98,8 @@ def _query_pending_detalles(estacion_nombre):
         .join(Estacion, Producto.estacion_id == Estacion.id) \
         .filter(
             Estacion.nombre == estacion_nombre,
-            OrdenDetalle.estado.in_(['pendiente', 'listo']),
-            Orden.estado.in_(['enviado', 'en_preparacion'])
+            OrdenDetalle.estado.in_([OrdenEstado.PENDIENTE, OrdenEstado.LISTO]),
+            Orden.estado.in_([OrdenEstado.ENVIADO, OrdenEstado.EN_PREPARACION])
         ) \
         .order_by(Orden.tiempo_registro.asc(), OrdenDetalle.id.asc()).all()
 
@@ -114,15 +115,15 @@ def _group_by_orden(detalles):
 def _marcar_listo(orden_id, detalle_id):
     """Mark a single OrdenDetalle as 'listo', set fecha_listo, handle en_preparacion transition."""
     detalle = OrdenDetalle.query.get_or_404(detalle_id)
-    if detalle.estado == 'listo':
+    if detalle.estado == OrdenEstado.LISTO:
         return jsonify({'message': 'Ya estaba marcado como listo'}), 200
-    detalle.estado = 'listo'
-    detalle.fecha_listo = datetime.utcnow()
+    detalle.estado = OrdenEstado.LISTO
+    detalle.fecha_listo = utc_now()
     orden = Orden.query.get(orden_id)
 
     # Transition to en_preparacion on first item marked listo
-    if orden and orden.estado == 'enviado':
-        orden.estado = 'en_preparacion'
+    if orden and orden.estado == OrdenEstado.ENVIADO:
+        orden.estado = OrdenEstado.EN_PREPARACION
         socketio.emit('orden_en_preparacion', {
             'orden_id': orden.id,
             'mesa_nombre': orden.mesa.numero if orden.mesa else 'Para Llevar',
@@ -151,7 +152,7 @@ def _marcar_listo(orden_id, detalle_id):
 def _emit_item_progreso(orden_id):
     """Emit item_progreso Socket.IO event with listo/total counts."""
     all_detalles = OrdenDetalle.query.filter_by(orden_id=orden_id).all()
-    items_listos = sum(1 for d in all_detalles if d.estado == 'listo')
+    items_listos = sum(1 for d in all_detalles if d.estado == OrdenEstado.LISTO)
     items_total = len(all_detalles)
     orden = Orden.query.get(orden_id)
     socketio.emit('item_progreso', {
@@ -166,7 +167,7 @@ def _emit_item_progreso(orden_id):
 @cocina_bp.route('/api/orders')
 @login_required(roles=['cocina', 'mesero', 'admin', 'superadmin'])
 def api_orders():
-    ordenes = Orden.query.filter(Orden.estado != 'pagada', Orden.estado != 'cancelada').all()
+    ordenes = Orden.query.filter(Orden.estado != OrdenEstado.PAGADA, Orden.estado != OrdenEstado.CANCELADA).all()
     return jsonify([{
         'id': o.id, 'estado': o.estado,
         'tiempo_registro': o.tiempo_registro.isoformat()
@@ -189,7 +190,7 @@ def station_stats(slug):
         .join(Orden, OrdenDetalle.orden_id == Orden.id) \
         .filter(
             Estacion.nombre == estacion.nombre,
-            OrdenDetalle.estado == 'listo',
+            OrdenDetalle.estado == OrdenEstado.LISTO,
             OrdenDetalle.fecha_listo.isnot(None),
             db.func.date(OrdenDetalle.fecha_listo) == hoy,
         ).all()
@@ -216,7 +217,7 @@ def station_stats(slug):
         .join(Orden, OrdenDetalle.orden_id == Orden.id) \
         .filter(
             Estacion.nombre == estacion.nombre,
-            OrdenDetalle.estado == 'listo',
+            OrdenDetalle.estado == OrdenEstado.LISTO,
             OrdenDetalle.fecha_listo.isnot(None),
             db.func.date(OrdenDetalle.fecha_listo) == ayer,
         ).all()
@@ -293,7 +294,7 @@ def station_view(slug):
     detalles = _query_pending_detalles(estacion.nombre)
     ordenes_data = _group_by_orden(detalles)
     return render_template('kds_station.html',
-                           ordenes_data=ordenes_data, now_utc=datetime.utcnow(),
+                           ordenes_data=ordenes_data, now_utc=utc_now(),
                            station=cfg['slug'], station_slug=cfg['slug'], cfg=cfg)
 
 
@@ -308,7 +309,7 @@ def station_fragment(slug):
     ordenes_data = _group_by_orden(detalles)
     total = sum(d.cantidad for d in detalles)
     html = render_template('cocina/_kds_cards_fragment.html',
-                           ordenes_data=ordenes_data, now_utc=datetime.utcnow())
+                           ordenes_data=ordenes_data, now_utc=utc_now())
     return jsonify({'html': html, 'conteo_productos': total})
 
 
@@ -338,8 +339,8 @@ def station_batch_listo(slug):
 
     orden = Orden.query.get_or_404(orden_id)
     # Transition to en_preparacion on first item if still enviado
-    if orden.estado == 'enviado':
-        orden.estado = 'en_preparacion'
+    if orden.estado == OrdenEstado.ENVIADO:
+        orden.estado = OrdenEstado.EN_PREPARACION
         socketio.emit('orden_en_preparacion', {
             'orden_id': orden.id,
             'mesa_nombre': orden.mesa.numero if orden.mesa else 'Para Llevar',
@@ -347,11 +348,11 @@ def station_batch_listo(slug):
         logger.info('Orden %s → en_preparacion (batch)', orden_id)
 
     marked = []
-    now = datetime.utcnow()
+    now = utc_now()
     for did in detalle_ids:
         detalle = OrdenDetalle.query.get(did)
-        if detalle and detalle.estado != 'listo':
-            detalle.estado = 'listo'
+        if detalle and detalle.estado != OrdenEstado.LISTO:
+            detalle.estado = OrdenEstado.LISTO
             detalle.fecha_listo = now
             marked.append(detalle)
 
@@ -429,7 +430,7 @@ def historial_dia():
             joinedload(OrdenDetalle.orden).joinedload(Orden.mesa),
         ) \
         .filter(
-            OrdenDetalle.estado == 'listo',
+            OrdenDetalle.estado == OrdenEstado.LISTO,
             OrdenDetalle.fecha_listo.isnot(None),
             db.func.date(OrdenDetalle.fecha_listo) == fecha,
         )

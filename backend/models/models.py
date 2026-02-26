@@ -1,12 +1,34 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 
 from backend.extensions import db
 
+
+def utc_now():
+    """Timezone-aware UTC now (replaces deprecated datetime.utcnow)."""
+    return datetime.now(timezone.utc)
+
+
 # -------------------- CONSTANTES FISCALES --------------------
 IVA_RATE = Decimal('0.16')  # 16% IVA México
+
+
+# -------------------- CONSTANTES DE ESTADO --------------------
+class OrdenEstado:
+    PENDIENTE = 'pendiente'
+    ENVIADO = 'enviado'
+    EN_PREPARACION = 'en_preparacion'
+    EN_COCINA = 'en_cocina'
+    LISTA = 'lista'
+    LISTA_PARA_ENTREGAR = 'lista_para_entregar'
+    COMPLETADA = 'completada'
+    PAGADA = 'pagada'
+    CANCELADA = 'cancelada'
+    FINALIZADA = 'finalizada'
+    # OrdenDetalle-specific
+    LISTO = 'listo'
 
 
 # -------------------- CONFIGURACIÓN DEL SISTEMA (Fase 7 - Onboarding) --------------------
@@ -58,7 +80,7 @@ class Sucursal(db.Model):
     direccion = db.Column(db.String(300), nullable=True)
     telefono = db.Column(db.String(20), nullable=True)
     activa = db.Column(db.Boolean, default=True)
-    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_creacion = db.Column(db.DateTime, default=utc_now)
 
     # White-label customization (Fase 9)
     logo_url = db.Column(db.String(500), nullable=True)       # Path to uploaded logo
@@ -183,7 +205,7 @@ class Cliente(db.Model):
     regimen_fiscal = db.Column(db.String(5), nullable=True)  # 601, 612, 616, etc.
     domicilio_fiscal = db.Column(db.String(10), nullable=True)  # CP
     notas = db.Column(db.Text, nullable=True)
-    fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_registro = db.Column(db.DateTime, default=utc_now)
     visitas = db.Column(db.Integer, default=0)
     total_gastado = db.Column(db.Numeric(12, 2), default=0)
 
@@ -205,7 +227,7 @@ class Reservacion(db.Model):
     estado = db.Column(db.String(20), default='confirmada')  # confirmada, cancelada, completada, no_show
     notas = db.Column(db.Text, nullable=True)
     creada_por = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=True)
-    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_creacion = db.Column(db.DateTime, default=utc_now)
 
     cliente_rel = db.relationship('Cliente', overlaps='reservaciones')
     usuario = db.relationship('Usuario')
@@ -215,15 +237,15 @@ class Reservacion(db.Model):
 
 class Orden(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    mesa_id = db.Column(db.Integer, db.ForeignKey('mesa.id'))
-    mesero_id = db.Column(db.Integer, db.ForeignKey('usuario.id'))
+    mesa_id = db.Column(db.Integer, db.ForeignKey('mesa.id'), index=True)
+    mesero_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), index=True)
     cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=True)
-    sucursal_id = db.Column(db.Integer, db.ForeignKey('sucursales.id'), nullable=True)
-    estado = db.Column(db.String(50), default='pendiente')
+    sucursal_id = db.Column(db.Integer, db.ForeignKey('sucursales.id'), nullable=True, index=True)
+    estado = db.Column(db.String(50), default=OrdenEstado.PENDIENTE, index=True)
     es_para_llevar = db.Column(db.Boolean, default=False)
     canal = db.Column(db.String(30), default='local')  # local, uber_eats, rappi, didi_food
-    tiempo_registro = db.Column(db.DateTime, default=datetime.utcnow)
-    fecha_pago = db.Column(db.DateTime, nullable=True)
+    tiempo_registro = db.Column(db.DateTime, default=utc_now)
+    fecha_pago = db.Column(db.DateTime, nullable=True, index=True)
     monto_recibido = db.Column(db.Numeric(10, 2), nullable=True)
     cambio = db.Column(db.Numeric(10, 2), nullable=True)
 
@@ -309,11 +331,11 @@ class Orden(db.Model):
 
 class OrdenDetalle(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    orden_id = db.Column(db.Integer, db.ForeignKey('orden.id'))
-    producto_id = db.Column(db.Integer, db.ForeignKey('producto.id'))
+    orden_id = db.Column(db.Integer, db.ForeignKey('orden.id'), index=True)
+    producto_id = db.Column(db.Integer, db.ForeignKey('producto.id'), index=True)
     cantidad = db.Column(db.Integer, default=1)
     notas = db.Column(db.String(200))
-    estado = db.Column(db.String(20), nullable=False, default='pendiente')
+    estado = db.Column(db.String(20), nullable=False, default=OrdenEstado.PENDIENTE, index=True)
     entregado = db.Column(db.Boolean, default=False)
     precio_unitario = db.Column(db.Numeric(10, 2), nullable=True)
     fecha_listo = db.Column(db.DateTime, nullable=True)
@@ -339,11 +361,11 @@ class OrdenDetalle(db.Model):
 class Pago(db.Model):
     __tablename__ = 'pagos'
     id = db.Column(db.Integer, primary_key=True)
-    orden_id = db.Column(db.Integer, db.ForeignKey('orden.id'), nullable=False)
+    orden_id = db.Column(db.Integer, db.ForeignKey('orden.id'), nullable=False, index=True)
     metodo = db.Column(db.String(30), nullable=False)
     monto = db.Column(db.Numeric(10, 2), nullable=False)
     referencia = db.Column(db.String(100), nullable=True)
-    fecha = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha = db.Column(db.DateTime, default=utc_now, index=True)
     registrado_por = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
 
     usuario = db.relationship('Usuario')
@@ -385,14 +407,14 @@ class MovimientoInventario(db.Model):
     """Registro de entradas, salidas, mermas y ajustes de stock."""
     __tablename__ = 'movimientos_inventario'
     id = db.Column(db.Integer, primary_key=True)
-    ingrediente_id = db.Column(db.Integer, db.ForeignKey('ingredientes.id'), nullable=False)
-    tipo = db.Column(db.String(20), nullable=False)  # entrada, salida_venta, merma, ajuste
+    ingrediente_id = db.Column(db.Integer, db.ForeignKey('ingredientes.id'), nullable=False, index=True)
+    tipo = db.Column(db.String(20), nullable=False, index=True)  # entrada, salida_venta, merma, ajuste
     cantidad = db.Column(db.Numeric(12, 4), nullable=False)
     costo = db.Column(db.Numeric(10, 2), nullable=True)
     motivo = db.Column(db.String(200), nullable=True)
     orden_id = db.Column(db.Integer, db.ForeignKey('orden.id'), nullable=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
-    fecha = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha = db.Column(db.DateTime, default=utc_now, index=True)
 
     usuario = db.relationship('Usuario')
 
@@ -410,7 +432,7 @@ class AuditLog(db.Model):
     descripcion = db.Column(db.Text, nullable=True)
     ip_address = db.Column(db.String(45), nullable=True)
     user_agent = db.Column(db.String(300), nullable=True)
-    fecha = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    fecha = db.Column(db.DateTime, default=utc_now, index=True)
 
     usuario = db.relationship('Usuario', backref='audit_logs')
 
@@ -420,8 +442,8 @@ class AuditLog(db.Model):
 class Factura(db.Model):
     __tablename__ = 'facturas'
     id = db.Column(db.Integer, primary_key=True)
-    orden_id = db.Column(db.Integer, db.ForeignKey('orden.id'), nullable=False)
-    cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=False)
+    orden_id = db.Column(db.Integer, db.ForeignKey('orden.id'), nullable=False, index=True)
+    cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=False, index=True)
     uuid_cfdi = db.Column(db.String(40), nullable=True, unique=True)
     serie = db.Column(db.String(10), nullable=True)
     folio = db.Column(db.String(20), nullable=True)
@@ -433,7 +455,7 @@ class Factura(db.Model):
     subtotal = db.Column(db.Numeric(10, 2), nullable=False)
     iva = db.Column(db.Numeric(10, 2), nullable=False)
     total = db.Column(db.Numeric(10, 2), nullable=False)
-    estado = db.Column(db.String(20), default='pendiente')  # pendiente, timbrada, cancelada, error
+    estado = db.Column(db.String(20), default='pendiente', index=True)  # pendiente, timbrada, cancelada, error
     forma_pago = db.Column(db.String(5), nullable=True)  # 01=Efectivo, 03=Transferencia, 04=Tarjeta
     metodo_pago_cfdi = db.Column(db.String(5), default='PUE')  # PUE=Pago en una sola exhibición, PPD=Parcialidades o diferido
     facturapi_id = db.Column(db.String(50), nullable=True)  # ID interno Facturapi
@@ -441,7 +463,7 @@ class Factura(db.Model):
     pdf_url = db.Column(db.String(500), nullable=True)
     pac_response = db.Column(db.Text, nullable=True)
     fecha_timbrado = db.Column(db.DateTime, nullable=True)
-    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_creacion = db.Column(db.DateTime, default=utc_now)
 
     orden = db.relationship('Orden', backref='facturas')
     notas_credito = db.relationship('NotaCredito', backref='factura_origen', lazy=True)
@@ -464,7 +486,7 @@ class NotaCredito(db.Model):
     xml_url = db.Column(db.String(500), nullable=True)
     pdf_url = db.Column(db.String(500), nullable=True)
     pac_response = db.Column(db.Text, nullable=True)
-    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_creacion = db.Column(db.DateTime, default=utc_now)
 
 
 # -------------------- VENTAS --------------------
@@ -488,10 +510,10 @@ class CorteCaja(db.Model):
 class Sale(db.Model):
     __tablename__ = 'sales'
     id = db.Column(db.Integer, primary_key=True)
-    fecha_hora = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    fecha_hora = db.Column(db.DateTime, default=utc_now, nullable=False, index=True)
     mesa_id = db.Column(db.Integer, db.ForeignKey('mesa.id'), nullable=True)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
-    sucursal_id = db.Column(db.Integer, db.ForeignKey('sucursales.id'), nullable=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False, index=True)
+    sucursal_id = db.Column(db.Integer, db.ForeignKey('sucursales.id'), nullable=True, index=True)
     total = db.Column(db.Numeric(10, 2), default=0, nullable=False)
     estado = db.Column(db.String(20), default='abierta', nullable=False)
     usuario = db.relationship('Usuario', backref='ventas')
@@ -502,8 +524,8 @@ class Sale(db.Model):
 class SaleItem(db.Model):
     __tablename__ = 'sale_items'
     id = db.Column(db.Integer, primary_key=True)
-    sale_id = db.Column(db.Integer, db.ForeignKey('sales.id'), nullable=False)
-    producto_id = db.Column(db.Integer, db.ForeignKey('producto.id'), nullable=False)
+    sale_id = db.Column(db.Integer, db.ForeignKey('sales.id'), nullable=False, index=True)
+    producto_id = db.Column(db.Integer, db.ForeignKey('producto.id'), nullable=False, index=True)
     cantidad = db.Column(db.Integer, nullable=False)
     precio_unitario = db.Column(db.Numeric(10, 2), nullable=False)
     subtotal = db.Column(db.Numeric(10, 2), nullable=False)
@@ -526,7 +548,7 @@ class DeliveryOrden(db.Model):
     direccion_entrega = db.Column(db.Text, nullable=True)
     total_plataforma = db.Column(db.Numeric(10, 2), nullable=True)
     comision = db.Column(db.Numeric(10, 2), nullable=True)
-    fecha_recibido = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_recibido = db.Column(db.DateTime, default=utc_now)
     fecha_aceptado = db.Column(db.DateTime, nullable=True)
     fecha_listo = db.Column(db.DateTime, nullable=True)
 

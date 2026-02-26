@@ -27,7 +27,7 @@ DIDI_FOOD_API_KEY = os.getenv('DIDI_FOOD_API_KEY', '')
 
 def procesar_orden_delivery(plataforma, payload, db_session, socketio=None):
     """Procesa un webhook de delivery y crea la orden interna."""
-    from backend.models.models import Orden, OrdenDetalle, DeliveryOrden, Producto
+    from backend.models.models import Orden, OrdenDetalle, DeliveryOrden, Producto, OrdenEstado
 
     parser = PARSERS.get(plataforma)
     if not parser:
@@ -51,7 +51,7 @@ def procesar_orden_delivery(plataforma, payload, db_session, socketio=None):
 
     orden = Orden(
         es_para_llevar=True,
-        estado='enviado',
+        estado=OrdenEstado.ENVIADO,
         canal=plataforma,
         mesero_id=sistema_user_id,
     )
@@ -74,7 +74,7 @@ def procesar_orden_delivery(plataforma, payload, db_session, socketio=None):
             cantidad=item.get('cantidad', 1),
             precio_unitario=Decimal(str(item.get('precio', 0))),
             notas=item.get('notas', ''),
-            estado='pendiente',
+            estado=OrdenEstado.PENDIENTE,
         )
         db_session.add(detalle)
 

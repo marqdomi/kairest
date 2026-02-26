@@ -4,7 +4,7 @@ from datetime import datetime
 from flask import Blueprint, render_template, request, jsonify
 from backend.utils import login_required
 from backend.extensions import db, socketio
-from backend.models.models import DeliveryOrden, Orden
+from backend.models.models import DeliveryOrden, Orden, utc_now
 from backend.services.delivery import procesar_orden_delivery
 from backend.services.webhook_auth import verificar_webhook_signature
 from sqlalchemy.orm import joinedload
@@ -50,7 +50,7 @@ def admin_delivery():
 def aceptar_delivery(id):
     d = DeliveryOrden.query.get_or_404(id)
     d.estado_plataforma = 'aceptada'
-    d.fecha_aceptado = datetime.utcnow()
+    d.fecha_aceptado = utc_now()
     db.session.commit()
     return jsonify(success=True)
 
@@ -60,7 +60,7 @@ def aceptar_delivery(id):
 def marcar_listo_delivery(id):
     d = DeliveryOrden.query.get_or_404(id)
     d.estado_plataforma = 'lista_para_recoger'
-    d.fecha_listo = datetime.utcnow()
+    d.fecha_listo = utc_now()
     db.session.commit()
     return jsonify(success=True)
 
