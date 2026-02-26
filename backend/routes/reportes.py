@@ -23,10 +23,30 @@ reportes_bp = Blueprint('reportes', __name__, url_prefix='/admin/reportes')
 
 
 def _parse_rango(args):
-    """Extrae fecha_inicio y fecha_fin de los query params."""
-    fi = args.get('fecha_inicio', '') or date.today().replace(day=1).isoformat()
-    ff = args.get('fecha_fin', '') or date.today().isoformat()
-    return date.fromisoformat(fi), date.fromisoformat(ff)
+    """Extrae fecha_inicio y fecha_fin de los query params.
+
+    Falls back to first-of-month / today when values are missing or malformed.
+    """
+    hoy = date.today()
+    default_inicio = hoy.replace(day=1)
+
+    fi_raw = args.get('fecha_inicio', '') or default_inicio.isoformat()
+    ff_raw = args.get('fecha_fin', '') or hoy.isoformat()
+
+    try:
+        fi = date.fromisoformat(fi_raw)
+    except (ValueError, TypeError):
+        fi = default_inicio
+    try:
+        ff = date.fromisoformat(ff_raw)
+    except (ValueError, TypeError):
+        ff = hoy
+
+    # Ensure inicio <= fin
+    if fi > ff:
+        fi, ff = ff, fi
+
+    return fi, ff
 
 
 # =====================================================================

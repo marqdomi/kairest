@@ -328,3 +328,6 @@ Segunda auditoría: 30 issues identificados.
 - `app.py`: Removido `csrf.exempt(orders_bp)` y `csrf.exempt(setup_bp)` — solo queda `csrf.exempt(api_bp)` para JSON puro
 - Setup templates (paso1-5.html) ya tenían `csrf_token()` en hidden fields
 - Frontend CSRF ya cubierto: fetch override + jQuery `$.ajaxSetup` en base.html auto-inyectan `X-CSRFToken`
+
+### Grupo 2 — Reportes Date Crash
+- `reportes.py` `_parse_rango()`: try/except alrededor de `date.fromisoformat()`, fallback a primer-día-del-mes / hoy, guard `fi > ff` swap
