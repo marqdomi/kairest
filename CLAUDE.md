@@ -334,3 +334,9 @@ Segunda auditoría: 30 issues identificados.
 
 ### Grupo 3 — Ventas Query Memory
 - `reportes.py` `reporte_ventas()`: Eliminado `.all()` que cargaba todos los Sale a memoria; KPIs ahora calculados desde `ventas_por_dia` aggregation (misma técnica que `export_ventas_pdf`)
+
+### Grupo 4 — XSS Sanitización DOM
+- `base.html`: Agregado `window.__escapeHtml()` helper global para sanitizar texto antes de inyectar en innerHTML
+- `meseros.js` `moveCardToPagadas()`: Nombres y cantidades de producto escapados con `esc()`
+- `detalle_orden.html`: `nombre`, `item.notas`, `_notasRapidas` escapados con `_esc()` antes de innerHTML
+- `admin-dashboard.js`: `item.nombre` (stock alerts), `item.mesero`, `item.mesa` (activity feed) escapados

@@ -6,6 +6,8 @@
 (function() {
   'use strict';
 
+  const esc = window.__escapeHtml || (s => String(s));
+
   const COLORS = {
     // v7 Design System palette
     red:     '#C41E3A',
@@ -128,11 +130,11 @@
           return `
             <div class="cl-alert-item">
               <div class="cl-alert-dot" style="background:${dotColor};"></div>
-              <div class="cl-alert-name">${item.nombre}</div>
+              <div class="cl-alert-name">${esc(item.nombre)}</div>
               <div class="cl-bar-wrap" style="width:80px;">
                 <div class="cl-bar-fill" style="width:${pct}%;background:${barColor};"></div>
               </div>
-              <span class="cl-alert-qty">${item.stock}/${item.minimo} ${item.unidad}</span>
+              <span class="cl-alert-qty">${esc(item.stock)}/${esc(item.minimo)} ${esc(item.unidad)}</span>
             </div>`;
         }).join('') + '</div>';
       }
@@ -310,10 +312,10 @@
         const hasTotal = item.total > 0;
         return `
         <div class="cl-feed__item">
-          <div class="cl-feed__avatar" style="background:${avatarColor};">${initials}</div>
+          <div class="cl-feed__avatar" style="background:${avatarColor};">${esc(initials)}</div>
           <div style="flex:1;min-width:0;">
             <div class="cl-feed__text">
-              <strong>Orden #${item.id}</strong> · ${item.mesa ? 'Mesa ' + item.mesa : 'Para llevar'} · ${item.mesero}
+              <strong>Orden #${item.id}</strong> · ${item.mesa ? 'Mesa ' + esc(item.mesa) : 'Para llevar'} · ${esc(item.mesero)}
             </div>
             <div class="cl-feed__time">${item.hora} &nbsp; ${estadoBadge(item.estado)}</div>
           </div>

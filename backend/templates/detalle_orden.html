@@ -860,8 +860,9 @@ function abrirModalNotas(el) {
   document.getElementById('notasCantidad').value = '1';
 
   const container = document.getElementById('notasRapidasBtns');
+  var _escNota = window.__escapeHtml || function(s){ return s; };
   container.innerHTML = _notasRapidas.map(n =>
-    `<button type="button" class="cl-btn cl-btn--sm cl-btn--outline nota-rapida-btn">${n}</button>`
+    `<button type="button" class="cl-btn cl-btn--sm cl-btn--outline nota-rapida-btn">${_escNota(n)}</button>`
   ).join('');
   container.querySelectorAll('.nota-rapida-btn').forEach(btn => {
     btn.addEventListener('click', function() {
@@ -997,7 +998,8 @@ function cargarDetalleProductos(ordenId) {
 
       let html = '';
       detalles.forEach(item => {
-        const nombre = item.nombre || item.producto_nombre;
+        const _esc = window.__escapeHtml || (s => s);
+        const nombre = _esc(item.nombre || item.producto_nombre);
         const precio = item.precio_unitario || 0;
         const lineTotal = precio * item.cantidad;
         subtotal += lineTotal;
@@ -1017,7 +1019,7 @@ function cargarDetalleProductos(ordenId) {
         }
 
         const notasHtml = item.notas
-          ? `<div class="cart-item__notes"><i data-lucide="file-text" style="width:12px;height:12px;"></i> ${item.notas}</div>`
+          ? `<div class="cart-item__notes"><i data-lucide="file-text" style="width:12px;height:12px;"></i> ${_esc(item.notas)}</div>`
           : '';
         const priceHtml = precio > 0
           ? `<div class="cart-item__line-price">$${precio.toFixed(2)} × ${item.cantidad} = $${lineTotal.toFixed(2)}</div>`

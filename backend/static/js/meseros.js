@@ -273,11 +273,12 @@ $(document).ready(function() {
             var qtyEl = el.querySelector('.cl-item-qty');
             var name = nameEl ? nameEl.textContent.trim() : '';
             var qty = qtyEl ? qtyEl.textContent.trim() : '';
+            var esc = window.__escapeHtml || function(s){ return s; };
             if (name) {
                 itemsHtml += '<div style="display:flex;align-items:center;gap:8px;font-size:13px;">' +
                     '<span style="width:6px;height:6px;border-radius:50%;background:var(--cl-success-500);flex-shrink:0;opacity:0.5;"></span>' +
-                    '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--cl-text-tertiary);font-weight:500;">' + name + '</span>' +
-                    (qty ? '<span style="flex-shrink:0;font-size:12px;color:var(--cl-text-tertiary);">' + qty + '</span>' : '') +
+                    '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--cl-text-tertiary);font-weight:500;">' + esc(name) + '</span>' +
+                    (qty ? '<span style="flex-shrink:0;font-size:12px;color:var(--cl-text-tertiary);">' + esc(qty) + '</span>' : '') +
                     '</div>';
             }
         });

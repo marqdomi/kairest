@@ -153,6 +153,15 @@
   {% block scripts %}
   {% endblock %}
   <script nonce="{{ csp_nonce }}">
+    // Global HTML escape helper — use before injecting user text into innerHTML
+    window.__escapeHtml = function(str) {
+      if (!str) return '';
+      var div = document.createElement('div');
+      div.appendChild(document.createTextNode(String(str)));
+      return div.innerHTML;
+    };
+  </script>
+  <script nonce="{{ csp_nonce }}">
     // CSRF token for Fetch (always available, no jQuery needed)
     (function () {
       var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
