@@ -233,10 +233,8 @@ def create_app():
             response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         return response
 
-    # Exempt API blueprints from CSRF (they use JSON, not forms)
+    # Exempt API blueprint from CSRF (machine-to-machine JSON only)
     csrf.exempt(api_bp)
-    csrf.exempt(orders_bp)
-    csrf.exempt(setup_bp)
 
     login_manager.user_loader(load_user)
 

@@ -320,3 +320,11 @@ Auditoría completa del backend: 37 issues identificados, 17 corregidos (6 P0, 5
 - `admin_routes.py` mesa_nuevo: Uniqueness check en número de mesa
 - `admin_routes.py` mesa_eliminar: Check órdenes activas antes de borrar
 - `orders.py`: Null-body checks en create_order, update_order_status, add_product_to_order, update_order_detail + validación FK mesa_id
+
+## Bug Fixes & Hardening — Ronda 2 (Post-Sprint 11)
+Segunda auditoría: 30 issues identificados.
+
+### Grupo 1 — CSRF Hardening
+- `app.py`: Removido `csrf.exempt(orders_bp)` y `csrf.exempt(setup_bp)` — solo queda `csrf.exempt(api_bp)` para JSON puro
+- Setup templates (paso1-5.html) ya tenían `csrf_token()` en hidden fields
+- Frontend CSRF ya cubierto: fetch override + jQuery `$.ajaxSetup` en base.html auto-inyectan `X-CSRFToken`
