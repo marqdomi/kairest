@@ -66,19 +66,9 @@ def dashboard_reportes():
 @login_required(roles=['admin', 'superadmin'])
 def reporte_ventas():
     fi, ff = _parse_rango(request.args)
+    suc_id = getattr(g, 'sucursal_id', None)
 
-    ventas = filtrar_por_sucursal(
-        Sale.query.filter(
-            func.date(Sale.fecha_hora) >= fi,
-            func.date(Sale.fecha_hora) <= ff,
-        ), Sale,
-    ).order_by(Sale.fecha_hora.desc()).all()
-
-    total_ventas = sum(float(v.total) for v in ventas)
-    num_ventas = len(ventas)
-    ticket_promedio = (total_ventas / num_ventas) if num_ventas else 0
-
-    # Ventas por día
+    # Ventas por día (aggregated at DB level)
     ventas_dia_q = db.session.query(
         func.date(Sale.fecha_hora).label('dia'),
         func.sum(Sale.total).label('total'),
@@ -87,10 +77,14 @@ def reporte_ventas():
         func.date(Sale.fecha_hora) >= fi,
         func.date(Sale.fecha_hora) <= ff,
     )
-    suc_id = getattr(g, 'sucursal_id', None)
     if suc_id is not None:
         ventas_dia_q = ventas_dia_q.filter(Sale.sucursal_id == suc_id)
     ventas_por_dia = ventas_dia_q.group_by(func.date(Sale.fecha_hora)).order_by(func.date(Sale.fecha_hora)).all()
+
+    # KPIs from already-aggregated rows (no extra query needed)
+    total_ventas = sum(float(r.total) for r in ventas_por_dia)
+    num_ventas = sum(int(r.cantidad) for r in ventas_por_dia)
+    ticket_promedio = (total_ventas / num_ventas) if num_ventas else 0
 
     return render_template('admin/reportes/ventas.html',
                            fecha_inicio=fi, fecha_fin=ff,

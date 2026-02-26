@@ -331,3 +331,6 @@ Segunda auditoría: 30 issues identificados.
 
 ### Grupo 2 — Reportes Date Crash
 - `reportes.py` `_parse_rango()`: try/except alrededor de `date.fromisoformat()`, fallback a primer-día-del-mes / hoy, guard `fi > ff` swap
+
+### Grupo 3 — Ventas Query Memory
+- `reportes.py` `reporte_ventas()`: Eliminado `.all()` que cargaba todos los Sale a memoria; KPIs ahora calculados desde `ventas_por_dia` aggregation (misma técnica que `export_ventas_pdf`)
