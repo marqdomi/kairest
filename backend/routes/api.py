@@ -50,12 +50,12 @@ def listar_ordenes():
 @api_bp.route('/ordenes/<int:orden_id>/detalle/<int:detalle_id>/listo', methods=['POST'])
 @login_required()
 def marcar_detalle_listo(orden_id, detalle_id):
-    detalle = OrdenDetalle.query.get_or_404(detalle_id)
+    detalle = db.get_or_404(OrdenDetalle, detalle_id)
     if detalle.estado == OrdenEstado.LISTO:
         return jsonify({'message': 'Ya estaba marcado como listo'}), 200
     detalle.estado = OrdenEstado.LISTO
     detalle.fecha_listo = utc_now()
-    orden = Orden.query.get(orden_id)
+    orden = db.session.get(Orden, orden_id)
     # Transition to en_preparacion on first item marked listo
     if orden and orden.estado == OrdenEstado.ENVIADO:
         orden.estado = OrdenEstado.EN_PREPARACION

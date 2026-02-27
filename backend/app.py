@@ -47,7 +47,7 @@ login_manager.login_view = 'auth.login'
 
 
 def load_user(user_id):
-    return Usuario.query.get(int(user_id))
+    return db.session.get(Usuario, int(user_id))
 
 
 def create_app():

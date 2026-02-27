@@ -11,7 +11,7 @@ Flask + PostgreSQL + Socket.IO + Redis + Gunicorn. Backend: `backend/`, Frontend
 - WSGI: Gunicorn (2 workers, 4 threads, Docker)
 - DB: PostgreSQL 16 (Docker), connection pooling (pool_size=5, max_overflow=10, pool_pre_ping)
 - Redis: sesiones (db1), rate limiting (db0), caché (db2)
-- Migraciones: Flask-Migrate (Alembic) — c001, c002, c003, c004, c005, c006
+- Migraciones: Flask-Migrate (Alembic) — c001, c002, c003, c004, c005, c006, c009
 - Docker: Multi-stage build (python:3.12-slim), healthcheck, non-root user
 - Backups: pg_dump cada hora via Docker, retención 7 días
 
@@ -351,3 +351,29 @@ Segunda auditoría: 30 issues identificados.
 - `models.py`: Clase `OrdenEstado` con 11 constantes (PENDIENTE, ENVIADO, EN_PREPARACION, EN_COCINA, LISTA, LISTA_PARA_ENTREGAR, COMPLETADA, PAGADA, CANCELADA, FINALIZADA, LISTO)
 - Magic strings reemplazados en: meseros.py, cocina.py, orders.py, api.py, admin_routes.py, reportes.py, utils.py, services/delivery.py
 - Column defaults: `Orden.estado` y `OrdenDetalle.estado` usan `OrdenEstado.PENDIENTE`
+
+## Launch Readiness Fixes (Post-Audit)
+Auditoría de lanzamiento: 5 issues corregidos para demo con primeros clientes.
+
+### Blocker 1 — Socket.IO Production Worker
+- `docker-compose.prod.yml`: Cambiado gunicorn de `--workers N --threads N` a `--worker-class eventlet --workers 1`
+- Sin eventlet worker, Socket.IO fallback a polling (sin WebSocket real-time)
+
+### Blocker 2 — test_auth Logout
+- `tests/test_auth.py`: `client.get('/logout')` → `client.post('/logout')` para coincidir con cambio POST-only en auth.py
+
+### Important 3 — Favicon 404
+- `backend/templates/base.html`: Referencia corregida de `img/favicon.ico` (no existe) a `img/kairest-logo.svg` (existe), type `image/svg+xml`
+
+### Important 4 — Migration c009 Indexes
+- `migrations/versions/c009_add_indexes_fk_filter_columns.py`: Migración Alembic para 24 índices FK/filtro (Grupo 5)
+- Indexes en: configuracion_sistema, orden (5), orden_detalle (3), pago (2), movimientos_inventario (3), reservaciones, facturas (3), sales (3), sale_items (2)
+- Usa `if_not_exists=True` para idempotencia
+
+### Important 5 — Query.get() Deprecation (SQLAlchemy 2.0)
+- 69 ocurrencias migradas en 15 archivos:
+  - `Model.query.get(id)` → `db.session.get(Model, id)`
+  - `Model.query.get_or_404(id)` → `db.get_or_404(Model, id)`
+  - `Model.query.options(...).get_or_404(id)` → `db.get_or_404(Model, id, options=[...])`
+  - `db.session.query(Model).with_for_update().get(id)` → `db.session.get(Model, id, with_for_update=True)`
+- Archivos: app.py, utils.py, orders.py, api.py, clientes.py, productos.py, delivery.py, sucursales.py, ventas.py, cocina.py, reservaciones.py, inventario.py, facturacion.py, admin_routes.py, meseros.py

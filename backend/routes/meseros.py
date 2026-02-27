@@ -239,10 +239,10 @@ def seleccionar_mesa():
 @login_required(roles='mesero')
 @verificar_propiedad_orden
 def detalle_orden(orden_id):
-    orden = Orden.query.options(
+    orden = db.get_or_404(Orden, orden_id, options=[
         joinedload(Orden.mesa),
         joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
-    ).get_or_404(orden_id)
+    ])
 
     if orden.estado not in ESTADOS_MODIFICABLES:
         flash(f'Orden #{orden.id} no puede modificarse ({orden.estado}).', 'warning')
@@ -276,7 +276,7 @@ def detalle_orden(orden_id):
 @login_required(roles='mesero')
 @verificar_propiedad_orden
 def agregar_productos_a_orden(orden_id):
-    orden = Orden.query.get_or_404(orden_id)
+    orden = db.get_or_404(Orden, orden_id)
     if orden.estado not in ESTADOS_MODIFICABLES:
         flash(f'No se pueden agregar productos ({orden.estado}).', 'danger')
         return redirect(url_for('meseros.detalle_orden', orden_id=orden_id))
@@ -296,7 +296,7 @@ def agregar_productos_a_orden(orden_id):
         nuevos = []
         stock_warnings = []
         for p_data in productos_sel:
-            prod = Producto.query.get(p_data['id'])
+            prod = db.session.get(Producto, p_data['id'])
             if not prod:
                 continue
             cantidad = int(p_data['cantidad'])
@@ -355,10 +355,10 @@ def agregar_productos_a_orden(orden_id):
 @login_required(roles='mesero')
 @verificar_propiedad_orden
 def pago_view(orden_id):
-    orden = Orden.query.options(
+    orden = db.get_or_404(Orden, orden_id, options=[
         joinedload(Orden.mesa),
         joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
-    ).get_or_404(orden_id)
+    ])
     return render_template('pago.html', orden=orden)
 
 
@@ -369,7 +369,7 @@ def pago_view(orden_id):
 @login_required(roles='mesero')
 @verificar_propiedad_orden
 def enviar_orden_a_cocina(orden_id):
-    orden = Orden.query.get_or_404(orden_id)
+    orden = db.get_or_404(Orden, orden_id)
     if not orden.detalles:
         flash('Orden vacía.', 'warning')
         return redirect(url_for('meseros.detalle_orden', orden_id=orden_id))
@@ -397,7 +397,7 @@ def entregar_item(orden_id, detalle_id):
         return jsonify(success=False, message="No está listo."), 400
 
     detalle.estado = 'entregado'
-    orden = Orden.query.options(joinedload(Orden.detalles)).get_or_404(orden_id)
+    orden = db.get_or_404(Orden, orden_id, options=[joinedload(Orden.detalles)])
 
     if all(d.estado == 'entregado' for d in orden.detalles):
         if orden.estado not in [OrdenEstado.PAGADA, OrdenEstado.FINALIZADA, OrdenEstado.CANCELADA, OrdenEstado.COMPLETADA]:
@@ -413,10 +413,10 @@ def entregar_item(orden_id, detalle_id):
 @meseros_bp.route('/ordenes/<int:orden_id>/cancelar', methods=['POST'])
 @login_required(roles=['mesero', 'admin', 'superadmin'])
 def cancelar_orden(orden_id):
-    orden = Orden.query.options(
+    orden = db.get_or_404(Orden, orden_id, options=[
         joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
         joinedload(Orden.pagos),
-    ).get_or_404(orden_id)
+    ])
     if orden.estado in [OrdenEstado.PAGADA, OrdenEstado.FINALIZADA, OrdenEstado.CANCELADA]:
         flash('No se puede cancelar.', 'warning')
         return redirect(url_for('meseros.view_meseros'))
@@ -445,7 +445,7 @@ def cancelar_orden(orden_id):
 @login_required(roles=['mesero', 'admin', 'superadmin'])
 def aplicar_descuento(orden_id):
     """Aplica descuento; requiere credenciales de admin/superadmin para autorizar."""
-    orden = Orden.query.get_or_404(orden_id)
+    orden = db.get_or_404(Orden, orden_id)
     data = request.get_json()
     if not data:
         return jsonify(success=False, message="Datos faltantes."), 400
@@ -493,11 +493,11 @@ def aplicar_descuento(orden_id):
 @login_required(roles='mesero')
 @verificar_propiedad_orden
 def get_cobrar_orden_info(orden_id):
-    orden = Orden.query.options(
+    orden = db.get_or_404(Orden, orden_id, options=[
         joinedload(Orden.mesa),
         joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
         joinedload(Orden.pagos),
-    ).get_or_404(orden_id)
+    ])
 
     # Recalcular siempre al pedir info
     orden.calcular_totales()
@@ -544,7 +544,7 @@ def get_cobrar_orden_info(orden_id):
 def registrar_pago(orden_id):
     """Registra un pago parcial o total. Se pueden hacer múltiples."""
     # Lock the order row to prevent concurrent double-payment race condition
-    orden = db.session.query(Orden).with_for_update().get(orden_id)
+    orden = db.session.get(Orden, orden_id, with_for_update=True)
     if not orden:
         return jsonify(success=False, message="Orden no encontrada."), 404
     # Eager-load relationships after locking
@@ -638,7 +638,7 @@ def registrar_pago(orden_id):
 
         # Actualizar visitas/gasto del cliente
         if orden.cliente_id:
-            cli = Cliente.query.get(orden.cliente_id)
+            cli = db.session.get(Cliente, orden.cliente_id)
             if cli:
                 cli.visitas = (cli.visitas or 0) + 1
                 cli.total_gastado = (cli.total_gastado or 0) + orden.total
@@ -678,7 +678,7 @@ def registrar_pago(orden_id):
 @verificar_propiedad_orden
 def cobrar_orden_post(orden_id):
     """Compatibilidad: convierte pago único legacy al nuevo modelo multi-pago."""
-    orden = db.session.query(Orden).with_for_update().get(orden_id)
+    orden = db.session.get(Orden, orden_id, with_for_update=True)
     if not orden:
         return jsonify(success=False, message='Orden no encontrada.'), 404
     db.session.refresh(orden)
@@ -770,11 +770,11 @@ def cobrar_orden_post(orden_id):
 def imprimir_comanda_endpoint(orden_id):
     """Imprime comanda de cocina. Fallback: retorna texto para window.print()."""
     from backend.services.printer import imprimir_comanda, generar_texto_comanda, PRINTER_TYPE
-    orden = Orden.query.options(
+    orden = db.get_or_404(Orden, orden_id, options=[
         joinedload(Orden.mesa),
         joinedload(Orden.mesero),
         joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
-    ).get_or_404(orden_id)
+    ])
 
     if PRINTER_TYPE != 'none':
         ok = imprimir_comanda(orden)
@@ -791,12 +791,12 @@ def imprimir_comanda_endpoint(orden_id):
 def imprimir_ticket_endpoint(orden_id):
     """Imprime ticket de cuenta. Fallback: retorna texto para window.print()."""
     from backend.services.printer import imprimir_ticket_cuenta, generar_texto_ticket, PRINTER_TYPE
-    orden = Orden.query.options(
+    orden = db.get_or_404(Orden, orden_id, options=[
         joinedload(Orden.mesa),
         joinedload(Orden.mesero),
         joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
         joinedload(Orden.pagos),
-    ).get_or_404(orden_id)
+    ])
 
     if PRINTER_TYPE != 'none':
         ok = imprimir_ticket_cuenta(orden)

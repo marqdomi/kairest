@@ -62,7 +62,7 @@ def cliente_nuevo():
 @clientes_bp.route('/<int:id>/editar', methods=['GET', 'POST'])
 @login_required(roles=['admin', 'superadmin'])
 def cliente_editar(id):
-    c = Cliente.query.get_or_404(id)
+    c = db.get_or_404(Cliente, id)
     if request.method == 'POST':
         rfc_raw = request.form.get('rfc', '').strip()
         if rfc_raw:
@@ -96,7 +96,7 @@ def cliente_editar(id):
 @clientes_bp.route('/<int:id>/perfil')
 @login_required(roles=['admin', 'superadmin'])
 def perfil_cliente(id):
-    c = Cliente.query.get_or_404(id)
+    c = db.get_or_404(Cliente, id)
     ordenes = Orden.query.filter_by(cliente_id=id).order_by(Orden.tiempo_registro.desc()).limit(20).all()
     return render_template('admin/clientes/perfil.html', cliente=c, ordenes=ordenes)
 

@@ -87,7 +87,7 @@ def actualizar_estado_mesa(mesa_id, nuevo_estado=None):
     if not mesa_id:
         return None
 
-    mesa = Mesa.query.get(mesa_id)
+    mesa = db.session.get(Mesa, mesa_id)
     if not mesa:
         return None
 
@@ -127,7 +127,7 @@ def verificar_orden_completa(orden_id):
     detalles = OrdenDetalle.query.filter_by(orden_id=orden_id).all()
     try:
         if detalles and all(d.estado == OrdenEstado.LISTO for d in detalles):
-            orden = Orden.query.get(orden_id)
+            orden = db.session.get(Orden, orden_id)
             if orden.estado not in [OrdenEstado.FINALIZADA, OrdenEstado.PAGADA, OrdenEstado.LISTA_PARA_ENTREGAR]:
                 orden.estado = OrdenEstado.LISTA_PARA_ENTREGAR
                 db.session.commit()
@@ -193,7 +193,7 @@ def verificar_propiedad_orden(f):
         if user_rol in ('admin', 'superadmin'):
             return f(orden_id, *args, **kwargs)
 
-        orden = Orden.query.get(orden_id)
+        orden = db.session.get(Orden, orden_id)
         if not orden:
             return jsonify(error='Orden no encontrada'), 404
 

@@ -51,7 +51,7 @@ class TestLogin:
         db.session.commit()
 
         login(client, 'admin_test@test.com', 'Test1234!')
-        resp = client.get('/logout', follow_redirects=True)
+        resp = client.post('/logout', follow_redirects=True)
         assert resp.status_code == 200
 
 

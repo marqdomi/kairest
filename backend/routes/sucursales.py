@@ -37,7 +37,7 @@ def nueva_sucursal():
 @sucursales_bp.route('/<int:id>/editar', methods=['GET', 'POST'])
 @login_required(roles=['superadmin'])
 def editar_sucursal(id):
-    s = Sucursal.query.get_or_404(id)
+    s = db.get_or_404(Sucursal, id)
     if request.method == 'POST':
         s.nombre = sanitizar_texto(request.form['nombre'], 100)
         s.direccion = sanitizar_texto(request.form.get('direccion', ''), 200)
@@ -53,7 +53,7 @@ def editar_sucursal(id):
 @login_required(roles=['superadmin', 'admin', 'mesero'])
 def seleccionar_sucursal(id):
     """Guarda la sucursal activa en sesión."""
-    s = Sucursal.query.get_or_404(id)
+    s = db.get_or_404(Sucursal, id)
     session['sucursal_id'] = s.id
     session['sucursal_nombre'] = s.nombre
     flash(f'Sucursal: {s.nombre}', 'info')

@@ -75,7 +75,7 @@ def nueva_reservacion():
 
         # Only mark mesa as 'reservada' if the reservation is within the next 2 hours (same-day)
         if mesa_id:
-            mesa = Mesa.query.get(int(mesa_id))
+            mesa = db.session.get(Mesa, int(mesa_id))
             if mesa and mesa.estado == 'disponible':
                 now = utc_now()
                 if fecha_hora <= now + timedelta(hours=RESERVACION_DURACION_HORAS):
@@ -93,11 +93,11 @@ def nueva_reservacion():
 @reservaciones_bp.route('/<int:id>/cancelar', methods=['POST'])
 @login_required(roles=['admin', 'superadmin'])
 def cancelar_reservacion(id):
-    r = Reservacion.query.get_or_404(id)
+    r = db.get_or_404(Reservacion, id)
     r.estado = 'cancelada'
     # Liberar mesa
     if r.mesa_id:
-        mesa = Mesa.query.get(r.mesa_id)
+        mesa = db.session.get(Mesa, r.mesa_id)
         if mesa and mesa.estado == 'reservada':
             mesa.estado = 'disponible'
     db.session.commit()
@@ -108,10 +108,10 @@ def cancelar_reservacion(id):
 @reservaciones_bp.route('/<int:id>/completar', methods=['POST'])
 @login_required(roles=['admin', 'superadmin', 'mesero'])
 def completar_reservacion(id):
-    r = Reservacion.query.get_or_404(id)
+    r = db.get_or_404(Reservacion, id)
     r.estado = 'completada'
     if r.mesa_id:
-        mesa = Mesa.query.get(r.mesa_id)
+        mesa = db.session.get(Mesa, r.mesa_id)
         if mesa:
             mesa.estado = 'ocupada'
     db.session.commit()
@@ -140,7 +140,7 @@ def api_mesas_estado():
 @reservaciones_bp.route('/api/mesas/<int:id>/estado', methods=['POST'])
 @login_required(roles=['admin', 'superadmin', 'mesero'])
 def api_cambiar_estado_mesa(id):
-    mesa = Mesa.query.get_or_404(id)
+    mesa = db.get_or_404(Mesa, id)
     data = request.get_json()
     nuevo_estado = data.get('estado')
     if nuevo_estado not in ('disponible', 'ocupada', 'reservada', 'mantenimiento'):

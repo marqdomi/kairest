@@ -287,7 +287,7 @@ def usuario_nuevo():
 @admin_bp.route('/usuarios/<int:id>/editar', methods=['GET', 'POST'])
 @login_required(roles=['admin', 'superadmin'])
 def usuario_editar(id):
-    u = Usuario.query.get_or_404(id)
+    u = db.get_or_404(Usuario, id)
     if request.method == 'POST':
         u.nombre = sanitizar_texto(request.form['nombre'], 100)
         u.email = sanitizar_email(request.form['email']) or request.form['email'].strip()
@@ -320,7 +320,7 @@ def usuario_editar(id):
 @admin_bp.route('/usuarios/<int:id>/eliminar', methods=['POST'])
 @login_required(roles=['admin', 'superadmin'])
 def usuario_eliminar(id):
-    u = Usuario.query.get_or_404(id)
+    u = db.get_or_404(Usuario, id)
     # Prevent self-delete
     if u.id == current_user.id:
         flash('No puedes eliminarte a ti mismo.', 'danger')
@@ -375,7 +375,7 @@ def producto_nuevo():
 @admin_bp.route('/productos/<int:id>/editar', methods=['GET', 'POST'])
 @login_required(roles=['superadmin'])
 def producto_editar(id):
-    p = Producto.query.get_or_404(id)
+    p = db.get_or_404(Producto, id)
     if request.method == 'POST':
         p.nombre = sanitizar_texto(request.form['nombre'], 100)
         p.precio = float(request.form['precio'])
@@ -398,7 +398,7 @@ def producto_editar(id):
 @admin_bp.route('/productos/<int:id>/eliminar', methods=['POST'])
 @login_required(roles=['superadmin'])
 def producto_eliminar(id):
-    p = Producto.query.get_or_404(id)
+    p = db.get_or_404(Producto, id)
     refs = OrdenDetalle.query.filter_by(producto_id=p.id).count()
     if refs:
         flash(f'No se puede eliminar: tiene {refs} detalle(s) de orden asociados.', 'danger')
@@ -443,7 +443,7 @@ def mesa_nuevo():
 @admin_bp.route('/mesas/<int:id>/editar', methods=['GET', 'POST'])
 @login_required(roles=['superadmin'])
 def mesa_editar(id):
-    m = Mesa.query.get_or_404(id)
+    m = db.get_or_404(Mesa, id)
     if request.method == 'POST':
         m.numero = request.form['numero']
         m.capacidad = int(request.form.get('capacidad', 4))
@@ -456,7 +456,7 @@ def mesa_editar(id):
 @admin_bp.route('/mesas/<int:id>/eliminar', methods=['POST'])
 @login_required(roles=['superadmin'])
 def mesa_eliminar(id):
-    m = Mesa.query.get_or_404(id)
+    m = db.get_or_404(Mesa, id)
     # Check active orders on this table
     ordenes_activas = Orden.query.filter_by(mesa_id=m.id).filter(
         Orden.estado.notin_([OrdenEstado.PAGADA, OrdenEstado.CANCELADA])
@@ -474,7 +474,7 @@ def mesa_eliminar(id):
 @login_required(roles=['admin', 'superadmin'])
 def mesa_guardar_posicion(id):
     """Sprint 4 — 5.1: Guardar posición de mesa (drag-and-drop en mapa)."""
-    m = Mesa.query.get_or_404(id)
+    m = db.get_or_404(Mesa, id)
     data = request.get_json()
     m.pos_x = int(data.get('pos_x', 0))
     m.pos_y = int(data.get('pos_y', 0))
@@ -583,7 +583,7 @@ def corte_caja():
 def imprimir_corte(corte_id):
     """Imprime corte de caja. Fallback: retorna JSON para window.print()."""
     from backend.services.printer import imprimir_corte_caja, PRINTER_TYPE
-    corte = CorteCaja.query.options(joinedload(CorteCaja.usuario)).get_or_404(corte_id)
+    corte = db.get_or_404(CorteCaja, corte_id, options=[joinedload(CorteCaja.usuario)])
 
     if PRINTER_TYPE != 'none':
         ok = imprimir_corte_caja(corte)

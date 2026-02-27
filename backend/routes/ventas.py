@@ -27,13 +27,13 @@ def agregar_item(sale_id):
     data = request.get_json()
     if not data or 'producto_id' not in data:
         return jsonify({'error': 'Body JSON con producto_id requerido.'}), 400
-    sale = Sale.query.get_or_404(sale_id)
+    sale = db.get_or_404(Sale, sale_id)
     # Ownership check (admin/superadmin bypass)
     if session.get('rol') not in ('admin', 'superadmin') and sale.usuario_id != session.get('user_id'):
         return jsonify({'error': 'No tienes permiso para modificar esta venta.'}), 403
     if sale.estado == 'cerrada':
         return jsonify({'error': 'La venta ya está cerrada.'}), 400
-    producto = Producto.query.get_or_404(data['producto_id'])
+    producto = db.get_or_404(Producto, data['producto_id'])
     cantidad = data.get('cantidad', 1)
     if not isinstance(cantidad, (int, float)) or cantidad < 1:
         return jsonify({'error': 'Cantidad debe ser >= 1.'}), 400
@@ -53,7 +53,7 @@ def agregar_item(sale_id):
 @ventas_bp.route('/<int:sale_id>/cerrar', methods=['POST'])
 @login_required(roles=['admin', 'superadmin', 'mesero'])
 def cerrar_venta(sale_id):
-    sale = Sale.query.get_or_404(sale_id)
+    sale = db.get_or_404(Sale, sale_id)
     # Ownership check
     if session.get('rol') not in ('admin', 'superadmin') and sale.usuario_id != session.get('user_id'):
         return jsonify({'error': 'No tienes permiso para cerrar esta venta.'}), 403

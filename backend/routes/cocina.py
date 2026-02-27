@@ -114,12 +114,12 @@ def _group_by_orden(detalles):
 
 def _marcar_listo(orden_id, detalle_id):
     """Mark a single OrdenDetalle as 'listo', set fecha_listo, handle en_preparacion transition."""
-    detalle = OrdenDetalle.query.get_or_404(detalle_id)
+    detalle = db.get_or_404(OrdenDetalle, detalle_id)
     if detalle.estado == OrdenEstado.LISTO:
         return jsonify({'message': 'Ya estaba marcado como listo'}), 200
     detalle.estado = OrdenEstado.LISTO
     detalle.fecha_listo = utc_now()
-    orden = Orden.query.get(orden_id)
+    orden = db.session.get(Orden, orden_id)
 
     # Transition to en_preparacion on first item marked listo
     if orden and orden.estado == OrdenEstado.ENVIADO:
@@ -154,7 +154,7 @@ def _emit_item_progreso(orden_id):
     all_detalles = OrdenDetalle.query.filter_by(orden_id=orden_id).all()
     items_listos = sum(1 for d in all_detalles if d.estado == OrdenEstado.LISTO)
     items_total = len(all_detalles)
-    orden = Orden.query.get(orden_id)
+    orden = db.session.get(Orden, orden_id)
     socketio.emit('item_progreso', {
         'orden_id': orden_id,
         'items_listos': items_listos,
@@ -264,7 +264,7 @@ def index():
 
     # If user has an assigned station, go directly there
     if user_estacion_id:
-        est = Estacion.query.get(user_estacion_id)
+        est = db.session.get(Estacion, user_estacion_id)
         if est:
             return redirect(url_for('cocina.station_view', slug=_slugify(est.nombre)))
 
@@ -337,7 +337,7 @@ def station_batch_listo(slug):
     if not detalle_ids or not orden_id:
         return jsonify({'error': 'Se requiere orden_id y detalle_ids'}), 400
 
-    orden = Orden.query.get_or_404(orden_id)
+    orden = db.get_or_404(Orden, orden_id)
     # Transition to en_preparacion on first item if still enviado
     if orden.estado == OrdenEstado.ENVIADO:
         orden.estado = OrdenEstado.EN_PREPARACION
@@ -350,7 +350,7 @@ def station_batch_listo(slug):
     marked = []
     now = utc_now()
     for did in detalle_ids:
-        detalle = OrdenDetalle.query.get(did)
+        detalle = db.session.get(OrdenDetalle, did)
         if detalle and detalle.estado != OrdenEstado.LISTO:
             detalle.estado = OrdenEstado.LISTO
             detalle.fecha_listo = now

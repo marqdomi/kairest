@@ -33,9 +33,9 @@ def lista_facturas():
 @login_required(roles=['admin', 'superadmin'])
 def crear_factura(orden_id):
     from backend.models.models import OrdenDetalle
-    orden = Orden.query.options(
+    orden = db.get_or_404(Orden, orden_id, options=[
         joinedload(Orden.detalles).joinedload(OrdenDetalle.producto),
-    ).get_or_404(orden_id)
+    ])
 
     if request.method == 'POST':
         cliente_id = request.form.get('cliente_id')
@@ -65,7 +65,7 @@ def crear_factura(orden_id):
             db.session.add(cliente)
             db.session.flush()
         else:
-            cliente = Cliente.query.get_or_404(int(cliente_id))
+            cliente = db.get_or_404(Cliente, int(cliente_id))
 
         factura = crear_factura_cfdi(orden, cliente, db.session,
                                     metodo_pago=request.form.get('metodo_pago', 'PUE'))
@@ -93,18 +93,18 @@ def crear_factura(orden_id):
 @login_required(roles=['admin', 'superadmin'])
 def detalle_factura(factura_id):
     """Detalle de una factura con sus notas de crédito."""
-    factura = Factura.query.options(
+    factura = db.get_or_404(Factura, factura_id, options=[
         joinedload(Factura.orden),
         joinedload(Factura.cliente),
         joinedload(Factura.notas_credito),
-    ).get_or_404(factura_id)
+    ])
     return render_template('admin/facturacion/detalle.html', factura=factura)
 
 
 @facturacion_bp.route('/<int:factura_id>/cancelar', methods=['POST'])
 @login_required(roles=['superadmin'])
 def cancelar(factura_id):
-    factura = Factura.query.get_or_404(factura_id)
+    factura = db.get_or_404(Factura, factura_id)
     motivo = request.form.get('motivo_cancelacion', '02')
     ok = cancelar_factura_cfdi(factura, db.session, motivo=motivo)
     # Auditoría (Sprint 6 — 3.5)
@@ -123,7 +123,7 @@ def cancelar(factura_id):
 @login_required(roles=['admin', 'superadmin'])
 def download_xml(factura_id):
     """Descarga el XML de la factura."""
-    factura = Factura.query.get_or_404(factura_id)
+    factura = db.get_or_404(Factura, factura_id)
     xml_data = descargar_xml(factura)
     if xml_data:
         return Response(
@@ -139,7 +139,7 @@ def download_xml(factura_id):
 @login_required(roles=['admin', 'superadmin'])
 def download_pdf(factura_id):
     """Descarga el PDF de la factura."""
-    factura = Factura.query.get_or_404(factura_id)
+    factura = db.get_or_404(Factura, factura_id)
     pdf_data = descargar_pdf(factura)
     if pdf_data:
         return Response(
@@ -155,7 +155,7 @@ def download_pdf(factura_id):
 @login_required(roles=['admin', 'superadmin'])
 def reenviar(factura_id):
     """Reenvía la factura por email."""
-    factura = Factura.query.options(joinedload(Factura.cliente)).get_or_404(factura_id)
+    factura = db.get_or_404(Factura, factura_id, options=[joinedload(Factura.cliente)])
     email = request.form.get('email', '') or (factura.cliente.email if factura.cliente else '')
     if not email:
         flash('No hay email para enviar la factura.', 'warning')
@@ -175,10 +175,10 @@ def reenviar(factura_id):
 @login_required(roles=['admin', 'superadmin'])
 def crear_nota_credito_view(factura_id):
     """Crea una nota de crédito (parcial o total) de una factura."""
-    factura = Factura.query.options(
+    factura = db.get_or_404(Factura, factura_id, options=[
         joinedload(Factura.orden),
         joinedload(Factura.cliente),
-    ).get_or_404(factura_id)
+    ])
 
     if factura.estado != 'timbrada':
         flash('Solo se pueden crear notas de crédito de facturas timbradas.', 'warning')
@@ -220,10 +220,10 @@ def lista_notas_credito():
 @login_required(roles=['admin', 'superadmin'])
 def complemento_pago(factura_id):
     """Registra un complemento de pago CFDI tipo P para facturas PPD."""
-    factura = Factura.query.options(
+    factura = db.get_or_404(Factura, factura_id, options=[
         joinedload(Factura.orden),
         joinedload(Factura.cliente),
-    ).get_or_404(factura_id)
+    ])
 
     if factura.metodo_pago_cfdi != 'PPD':
         flash('Solo facturas con método de pago PPD requieren complemento.', 'warning')

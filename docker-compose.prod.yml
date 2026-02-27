@@ -25,7 +25,7 @@ services:
       - CACHE_REDIS_URL=redis://redis:6379/2
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5005}
       - SENTRY_DSN=${SENTRY_DSN:-}
-    command: gunicorn --bind 0.0.0.0:5005 --workers ${GUNICORN_WORKERS:-2} --threads ${GUNICORN_THREADS:-4} --timeout 120 --access-logfile - --error-logfile - "backend.app:app"
+    command: gunicorn --bind 0.0.0.0:5005 --worker-class eventlet --workers 1 --timeout 120 --access-logfile - --error-logfile - "backend.app:app"
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5005/health')"]
       interval: 30s

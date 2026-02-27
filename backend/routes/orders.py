@@ -15,7 +15,7 @@ def create_order():
     mesa_id = data.get('mesa_id') if not es_para_llevar else None
     # Validate mesa_id FK if provided
     if mesa_id is not None:
-        mesa = Mesa.query.get(mesa_id)
+        mesa = db.session.get(Mesa, mesa_id)
         if not mesa:
             return jsonify({'error': f'Mesa {mesa_id} no existe.'}), 404
     mesero_id = session.get('user_id')
@@ -45,7 +45,7 @@ def update_order_status(orden_id):
                         OrdenEstado.PAGADA, OrdenEstado.CANCELADA]
     if nuevo_estado not in ESTADOS_VALIDOS:
         return jsonify({'error': f'Estado no válido. Debe ser uno de: {", ".join(ESTADOS_VALIDOS)}.'}), 400
-    orden = Orden.query.get_or_404(orden_id)
+    orden = db.get_or_404(Orden, orden_id)
     orden.estado = nuevo_estado
     db.session.commit()
     socketio.emit('order_updated', {
@@ -64,8 +64,8 @@ def add_product_to_order(orden_id):
     producto_id = data.get('producto_id')
     cantidad = data.get('cantidad', 1)
     notas = data.get('notas', '').strip()
-    producto = Producto.query.get_or_404(producto_id)
-    orden = Orden.query.get_or_404(orden_id)
+    producto = db.get_or_404(Producto, producto_id)
+    orden = db.get_or_404(Orden, orden_id)
 
     # Validación de stock (Sprint 2 — 3.2)
     if current_app.config.get('INVENTARIO_VALIDAR_STOCK'):
@@ -200,7 +200,7 @@ def delete_order_detail(orden_id, detalle_id):
 @verificar_propiedad_orden
 def notificar_cocina(orden_id):
     """Manually re-notify kitchen about pending items in an already-sent order."""
-    orden = Orden.query.get_or_404(orden_id)
+    orden = db.get_or_404(Orden, orden_id)
     if orden.estado == OrdenEstado.PENDIENTE:
         return jsonify({'error': 'Usa "Enviar a Cocina" para órdenes pendientes.'}), 400
     pendientes = OrdenDetalle.query.filter_by(orden_id=orden_id, estado=OrdenEstado.PENDIENTE).count()

@@ -52,7 +52,7 @@ def ingrediente_nuevo():
 @inventario_bp.route('/ingrediente/<int:id>/editar', methods=['GET', 'POST'])
 @login_required(roles=['admin', 'superadmin'])
 def ingrediente_editar(id):
-    i = Ingrediente.query.get_or_404(id)
+    i = db.get_or_404(Ingrediente, id)
     if request.method == 'POST':
         i.nombre = sanitizar_texto(request.form['nombre'], 100)
         i.unidad = sanitizar_texto(request.form['unidad'], 20)
@@ -71,7 +71,7 @@ def ingrediente_editar(id):
 @login_required(roles=['admin', 'superadmin'])
 def entrada_stock():
     if request.method == 'POST':
-        ing = Ingrediente.query.get_or_404(int(request.form['ingrediente_id']))
+        ing = db.get_or_404(Ingrediente, int(request.form['ingrediente_id']))
         cantidad = Decimal(request.form['cantidad'])
         costo = Decimal(request.form.get('costo', '0'))
 
@@ -102,7 +102,7 @@ def entrada_stock():
 @login_required(roles=['admin', 'superadmin'])
 def registrar_merma():
     if request.method == 'POST':
-        ing = Ingrediente.query.get_or_404(int(request.form['ingrediente_id']))
+        ing = db.get_or_404(Ingrediente, int(request.form['ingrediente_id']))
         cantidad = Decimal(request.form['cantidad'])
         motivo = sanitizar_texto(request.form.get('motivo', 'Merma'), 200)
 
@@ -137,9 +137,9 @@ def lista_recetas():
 @inventario_bp.route('/recetas/<int:producto_id>', methods=['GET', 'POST'])
 @login_required(roles=['admin', 'superadmin'])
 def editar_receta(producto_id):
-    producto = Producto.query.options(
+    producto = db.get_or_404(Producto, producto_id, options=[
         joinedload(Producto.receta_items).joinedload(RecetaDetalle.ingrediente),
-    ).get_or_404(producto_id)
+    ])
 
     if request.method == 'POST':
         # Recibir JSON con items [{ingrediente_id, cantidad_por_unidad}]

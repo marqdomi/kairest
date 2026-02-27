@@ -48,7 +48,7 @@ def admin_delivery():
 @delivery_bp.route('/admin/<int:id>/aceptar', methods=['POST'])
 @login_required(roles=['admin', 'superadmin'])
 def aceptar_delivery(id):
-    d = DeliveryOrden.query.get_or_404(id)
+    d = db.get_or_404(DeliveryOrden, id)
     d.estado_plataforma = 'aceptada'
     d.fecha_aceptado = utc_now()
     db.session.commit()
@@ -58,7 +58,7 @@ def aceptar_delivery(id):
 @delivery_bp.route('/admin/<int:id>/listo', methods=['POST'])
 @login_required(roles=['admin', 'superadmin'])
 def marcar_listo_delivery(id):
-    d = DeliveryOrden.query.get_or_404(id)
+    d = db.get_or_404(DeliveryOrden, id)
     d.estado_plataforma = 'lista_para_recoger'
     d.fecha_listo = utc_now()
     db.session.commit()

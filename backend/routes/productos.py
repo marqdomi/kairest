@@ -46,7 +46,7 @@ def crear_producto():
 @productos_bp.route('/<int:id>/editar', methods=['GET','POST'])
 @login_required(roles=['admin','superadmin'])
 def editar_producto(id):
-    p = Producto.query.get_or_404(id)
+    p = db.get_or_404(Producto, id)
     form = ProductoForm(obj=p)
     _populate_form_choices(form)
     if form.validate_on_submit():
@@ -65,7 +65,7 @@ def editar_producto(id):
 @login_required(roles=['superadmin'])
 def eliminar_producto(id):
     from backend.models.models import OrdenDetalle
-    p = Producto.query.get_or_404(id)
+    p = db.get_or_404(Producto, id)
     refs = OrdenDetalle.query.filter_by(producto_id=p.id).count()
     if refs:
         flash(f'No se puede eliminar: tiene {refs} detalle(s) de orden asociados.', 'danger')
