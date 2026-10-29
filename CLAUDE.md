@@ -930,3 +930,47 @@ fragmentos por fetch: a la hora de abierto, cada "listo" regresaba 400 — y
 - Páginas de error en español también para `CSRFError` ("La sesión expiró") y 405
 - Tests: `tests/test_csrf_turno.py` (7, CSRF encendido, reloj adelantado 8 h, control
   negativo verificado quitando la línea del config). Suite total 166 passed.
+
+## Mejoras visuales de la evaluación (v6.8)
+Implementadas las prioridades de `docs/EVALUACION_VISUAL.md`. Guardas en
+`tests/test_identidad_visual.py` (7, con control negativo).
+
+### Identidad
+- **Un solo ícono**: `img/kairest-logo.svg` = la K de cuatro piezas de kainet en rojo
+  KaiRest (fondo degradado `#C41E3A→#8E1526`). De él salen `icon-192/512.png`,
+  `icon-maskable-512.png` (a sangre, para Android), `apple-touch-icon.png` y
+  `windows-installer/assets/kairest.ico` (`rsvg-convert` + Pillow). Retirados
+  `kainetResto.png` (1.5 MB), `logo.svg` y `logoCasaLeones.svg`
+- `brand_logo` (context processor) = logo del negocio o, si no hay, el ícono de KaiRest.
+  Login, topbar de operaciones y navbar lo usan; el login saluda con `brand_name`
+- Manifest de la PWA: "KaiRest" (decía "Casa Leones POS"); `sw.js` → cache `kairest-v5`
+- **Versión única**: `config.VERSION` (6.8.0) se muestra en el sidebar y es el `?v=` de
+  los estáticos. Subirla en cada release
+
+### Tipografía
+- Inter vendorizada en `static/vendor/fonts/` (latin 400 y 600, OFL). Cada archivo cubre un
+  rango de pesos en `@font-face` (300–500 y 600–900) para que no haya negritas falsas
+- Mono = la del sistema (`ui-monospace`…); JetBrains Mono nunca había cargado
+- **Regla: nada de `@import` a servidores externos** — el CSP es 'self' y el sistema opera
+  offline (lo revisa `test_sin_fuentes_externas`)
+
+### Mesero / cobro
+- Estado vacío sin FAB duplicado; ícono `clipboard-list`; "Cobrar" con ícono `wallet`
+- Avisos de "producto agregado" arriba en celular (tapaban Enviar a Cocina / Cobrar)
+- Etiqueta de categoría oculta cuando hay una categoría elegida; atajo "/" sólo con
+  puntero fino
+- **Cobro**: montos rápidos = siguientes billetes sobre lo que se debe; el cambio en pantalla
+  incluye la propina (`porCobrarEfectivo()`); en efectivo se manda lo que ENTREGÓ el
+  cliente (antes `min(monto, saldo)` → el server guardaba cambio $0)
+- Avisos de Socket.IO y modal de cobro con el folio (`numOrden()`), no el id interno
+- Estaciones en nav y `/cocina/api/estaciones` en orden de alta (`Estacion.id`)
+
+### Bugs de main corregidos de paso
+- `seleccionar_mesa.html`: el modal "¿cuántas personas?" corría antes de
+  `bootstrap.bundle` → tocar una mesa no hacía nada. Ahora en `DOMContentLoaded`.
+  **Regla: código que use `bootstrap.*` al cargar va en DOMContentLoaded** (el bundle se
+  carga al final de base.html)
+- `admin/ordenes_activas.html` cargaba `meseros.js` sin jQuery
+- Test de ticket que asumía máquina en UTC (`datetime.now()` → `datetime.now(timezone.utc)`)
+
+Suite: 347 passed.

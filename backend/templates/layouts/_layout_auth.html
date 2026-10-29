@@ -94,11 +94,17 @@ Usage:
   }
 
   .cl-auth__logo {
-    width: 160px;
-    height: 160px;
+    width: 88px;
+    height: 88px;
     object-fit: contain;
-    border-radius: 28px;
-    filter: drop-shadow(0 10px 30px rgba(0,0,0,0.6));
+    border-radius: 22px;
+    box-shadow: var(--cl-shadow-lg);
+  }
+
+  /* Avisos dentro de la tarjeta: a lo ancho y sin entrar deslizándose (ver setup) */
+  .cl-auth__card .cl-toast {
+    max-width: none;
+    animation: none;
   }
 
   .cl-auth__title {

@@ -202,11 +202,13 @@ def create_app():
             from backend.models.models import Sucursal
             sucursal = Sucursal.query.first()
             brand_name = sucursal.nombre if sucursal else 'KaiRest'
+            # Sin logo propio del negocio, el ícono de KaiRest (la mascota de 1.5 MB que
+            # iba aquí se pintaba a 28px en cada pantalla y no se alcanzaba a leer)
             brand_logo = getattr(sucursal, 'logo_url', None) or _url_for(
-                'static', filename='img/kainetResto.png')
+                'static', filename='img/kairest-logo.svg')
         except Exception:
             brand_name = 'KaiRest'
-            brand_logo = _url_for('static', filename='img/kainetResto.png')
+            brand_logo = _url_for('static', filename='img/kairest-logo.svg')
         return dict(
             brand_name=brand_name,
             brand_logo=brand_logo,
@@ -230,7 +232,8 @@ def create_app():
             from backend.models.models import Estacion
             from text_unidecode import unidecode
             import re as _re
-            estaciones = Estacion.query.order_by(Estacion.nombre).all()
+            # En el orden en que el negocio las definió en el wizard (no alfabético)
+            estaciones = Estacion.query.order_by(Estacion.id).all()
             nav = []
             for e in estaciones:
                 slug = _re.sub(r'[^a-z0-9]+', '-', unidecode(e.nombre).lower()).strip('-')

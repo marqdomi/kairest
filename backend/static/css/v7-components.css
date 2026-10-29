@@ -29,6 +29,9 @@
     border: 1px solid var(--cl-border-color);
     border-radius: var(--cl-radius-lg, 16px);
     padding: 20px;
+    /* tokens.css (v6) le pone gap a la columna y aquí (v7) cada pieza trae su margen:
+       los dos sumados inflaban la tarjeta ~32px */
+    gap: 0;
     position: relative;
     overflow: hidden;
     transition: transform var(--cl-transition-spring), border-color var(--cl-transition-fast), box-shadow var(--cl-transition-base);
@@ -190,6 +193,13 @@
 }
 
 /* Sparkline canvas */
+/* Ningún script dibuja las mini-gráficas de las tarjetas KPI (admin-dashboard.js no las
+   toca): el canvas vacío reservaba 40px en blanco en cada tarjeta. Se ocultan hasta que
+   algo las pinte (y ese código deberá quitar esta regla). */
+.cl-kpi-card .cl-sparkline {
+    display: none;
+}
+
 .cl-sparkline {
     height: var(--cl-sparkline-h, 32px);
     width: 100%;
@@ -1371,4 +1381,29 @@ select.cl-input {
 .cl-producto-firma__nombre {
     font-weight: 600;
     letter-spacing: .01em;
+}
+
+/* Botón de cerrar de los avisos: no tenía estilo y se veía como el botón gris nativo
+   del navegador */
+.cl-toast__close {
+    margin-left: auto;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: var(--cl-radius-sm);
+    background: transparent;
+    color: var(--cl-text-tertiary);
+    cursor: pointer;
+    transition: background var(--cl-transition-fast, 150ms), color var(--cl-transition-fast, 150ms);
+}
+
+.cl-toast__close:hover,
+.cl-toast__close:focus-visible {
+    background: var(--cl-overlay-subtle);
+    color: var(--cl-text-primary);
 }

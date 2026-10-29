@@ -76,11 +76,9 @@
     {# Quick cash buttons (for efectivo) #}
     <div id="quickCashSection">
       <p style="font-size: var(--cl-text-sm); color: var(--cl-text-secondary); margin: var(--cl-space-3) 0 var(--cl-space-2);">Monto rápido</p>
-      <div class="pago-quick-cash">
-        <button class="cl-btn cl-btn--outline cl-btn--sm" data-monto="100">$100</button>
-        <button class="cl-btn cl-btn--outline cl-btn--sm" data-monto="200">$200</button>
-        <button class="cl-btn cl-btn--outline cl-btn--sm" data-monto="500">$500</button>
-        <button class="cl-btn cl-btn--outline cl-btn--sm" data-monto="1000">$1,000</button>
+      {# Los montos se calculan contra lo que hay que cobrar (renderMontosRapidos):
+         con $100/$200/$500/$1,000 fijos, una cuenta de $700 sólo podía usar uno #}
+      <div class="pago-quick-cash" id="montosRapidos">
         <button class="cl-btn cl-btn--primary cl-btn--sm" id="btnMontoExacto" title="Pago exacto">Exacto</button>
       </div>
     </div>
@@ -409,6 +407,7 @@ function loadOrderInfo() {
 
       // Pre-fill monto with saldo
       document.getElementById('montoInput').value = data.saldo_pendiente.toFixed(2);
+      renderMontosRapidos();
       calcularCambio();
     })
     .catch(err => console.error('Error loading order info:', err));
@@ -496,10 +495,39 @@ function setMonto(val) {
   document.getElementById('montoInput').value = val.toFixed(2);
   calcularCambio();
 }
+// Lo que el cliente tiene que entregar en efectivo: saldo + propina. El server calcula el
+// cambio igual (recibido − saldo − propina); antes la pantalla restaba sólo el saldo y,
+// con propina, anunciaba más cambio del que el sistema registraba.
+function porCobrarEfectivo() {
+  return (_orderData.saldo_pendiente || 0) + (_propina || 0);
+}
+
 function setMontoExacto() {
-  const saldo = _orderData.saldo_pendiente || 0;
-  document.getElementById('montoInput').value = saldo.toFixed(2);
+  document.getElementById('montoInput').value = porCobrarEfectivo().toFixed(2);
   calcularCambio();
+}
+
+// Billetes con los que el cliente probablemente paga: el siguiente múltiplo de 50, 100,
+// 200, 500 y 1000 por encima de lo que debe (el monto exacto ya tiene su botón).
+function renderMontosRapidos() {
+  const cont = document.getElementById('montosRapidos');
+  if (!cont) return;
+  cont.querySelectorAll('[data-monto]').forEach(b => b.remove());
+  const x = porCobrarEfectivo();
+  if (x <= 0) return;
+  const montos = [...new Set([50, 100, 200, 500, 1000].map(m => Math.ceil(x / m) * m))]
+    .filter(m => m > x + 0.001)
+    .sort((a, b) => a - b)
+    .slice(0, 4);
+  const exacto = document.getElementById('btnMontoExacto');
+  montos.forEach(m => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'cl-btn cl-btn--outline cl-btn--sm';
+    b.dataset.monto = m;
+    b.textContent = '$' + m.toLocaleString('es-MX');
+    cont.insertBefore(b, exacto);
+  });
 }
 
 function calcularCambio() {
@@ -508,7 +536,7 @@ function calcularCambio() {
   const btn = document.getElementById('btnConfirmar');
 
   if (_selectedMethod === 'efectivo') {
-    const cambio = monto - saldo;
+    const cambio = monto - porCobrarEfectivo();
     const cambioEl = document.getElementById('cambioDisplay');
     if (monto > 0 && cambio >= 0) {
       cambioEl.style.display = 'flex';
@@ -548,8 +576,22 @@ function customPropina() {
   updatePropinaLabel();
 }
 
+let _exactoPrevio = null;  // lo que había que cobrar antes de mover la propina
+
 function updatePropinaLabel() {
   document.getElementById('propinaLabel').textContent = 'Propina: $' + _propina.toFixed(2);
+  // Si el monto estaba en "exacto", se mueve con la propina; si el mesero ya tecleó lo
+  // que le dieron, se respeta
+  const input = document.getElementById('montoInput');
+  const actual = parseFloat(input.value) || 0;
+  const exactoAntes = _exactoPrevio != null ? _exactoPrevio : (_orderData.saldo_pendiente || 0);
+  if (_selectedMethod === 'efectivo' && Math.abs(actual - exactoAntes) < 0.005) {
+    input.value = porCobrarEfectivo().toFixed(2);
+  }
+  _exactoPrevio = porCobrarEfectivo();
+  // La propina cambia lo que hay que entregar: montos rápidos y cambio se recalculan
+  renderMontosRapidos();
+  calcularCambio();
 }
 
 // =============================================
@@ -568,7 +610,10 @@ function confirmarPago() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       metodo: _selectedMethod,
-      monto: Math.min(monto, _orderData.saldo_pendiente),
+      // Efectivo: lo que ENTREGÓ el cliente; el server aplica a la cuenta sólo el saldo y
+      // calcula el cambio (recibido − saldo − propina). Recortado al saldo, el server
+      // nunca se enteraba del efectivo y guardaba cambio $0. Otros métodos: no hay cambio.
+      monto: _selectedMethod === 'efectivo' ? monto : Math.min(monto, _orderData.saldo_pendiente),
       referencia: referencia,
       propina: _propina,
     })
@@ -594,7 +639,8 @@ function confirmarPago() {
       } else if (data.orden_pagada) {
         // Show success overlay
         document.getElementById('successMsg').textContent =
-          `Orden #${ORDEN_NUM} pagada — $${data.total_pagado.toFixed(2)}`;
+          `Orden #${ORDEN_NUM} pagada — $${data.total_pagado.toFixed(2)}` +
+          (data.cambio > 0 ? ` · Cambio: $${data.cambio.toFixed(2)}` : '');
         document.getElementById('successOverlay').style.display = 'flex';
         setTimeout(() => {
           window.location.href = '{{ url_for("meseros.view_meseros") }}';
@@ -662,8 +708,11 @@ function initPantallaCobro() {
     btn.addEventListener('click', function () { selectMethod(btn.dataset.method, btn); });
   });
 
-  document.querySelectorAll('[data-monto]').forEach(function (btn) {
-    btn.addEventListener('click', function () { setMonto(parseFloat(btn.dataset.monto)); });
+  // Delegado: los botones de monto se generan después de cargar la orden
+  const montosRapidos = document.getElementById('montosRapidos');
+  if (montosRapidos) montosRapidos.addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-monto]');
+    if (btn) setMonto(parseFloat(btn.dataset.monto));
   });
 
   const exacto = document.getElementById('btnMontoExacto');

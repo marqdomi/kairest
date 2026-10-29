@@ -161,14 +161,39 @@ por su cuenta) + revisar `resp.ok` en `marcarItemListo` y revertir la palomita s
 
 ---
 
-## Prioridad sugerida
+## Prioridad sugerida — estado (v6.8)
 
-| # | Qué | Esfuerzo | Por qué primero |
-|---|---|---|---|
-| ~~1~~ | ~~Bug CSRF del KDS (§8)~~ ✅ | — | Corregido con `tests/test_csrf_turno.py` |
-| 2 | Logo del cliente hardcodeado en el ticket (§1) | 10 min | Fuga de white-label al segundo cliente |
-| ~~3~~ | ~~Página de error para CSRF/405 (§7)~~ ✅ | — | Corregido junto con el §8 |
-| 4 | Un solo logo + un solo nombre + una versión (§1) | 1–2 h + decisión de diseño | Lo que más se nota en la demo |
-| 5 | Acentos y orden del paso 3 del wizard (§2) | 20 min | Primera impresión |
-| 6 | Toasts sobre los botones del carrito, CTAs duplicados (§4) | 30 min | Fricción diaria del mesero |
-| 7 | Tipografía y peso de imágenes (§7) | 1 h | Consistencia entre equipos y carga en gama baja |
+| # | Qué | Estado |
+|---|---|---|
+| 1 | Bug CSRF del KDS (§8) | ✅ `tests/test_csrf_turno.py` |
+| 2 | Logo del cliente hardcodeado en el modal de cobro (§1) | ✅ logo del negocio o ninguno; folio en vez de id |
+| 3 | Página de error para CSRF/405 (§7) | ✅ |
+| 4 | Un solo logo + un solo nombre + una versión (§1) | ✅ K de kainet en rojo KaiRest; mascota retirada; `KaiRest v{VERSION}` |
+| 5 | Acentos y orden del paso 3 del wizard (§2) | ✅ + bienvenida, paso 5 en 2×2, avisos a lo ancho |
+| 6 | Toasts sobre los botones del carrito, CTAs duplicados (§4) | ✅ + íconos, montos rápidos, hora repetida, orden de estaciones |
+| 7 | Tipografía y peso de imágenes (§7) | ✅ Inter vendorizada (35 KB); ~3 MB de imágenes fuera |
+
+### Lo que se implementó en v6.8 (además de la tabla)
+- **Ícono único de KaiRest**: la K de cuatro piezas de kainet (`kainet-k.svg`) en el rojo
+  de KaiRest. Reemplaza a la mascota y a la K en círculo en wizard, login, topbar,
+  sidebar, favicon, PWA (incluye variante *maskable*) y el `.ico` del instalador de Windows
+- **Login con la marca del negocio** (`brand_name` + su logo si lo subió); KaiRest queda
+  en la firma de abajo
+- **Manifest de la PWA** decía "Casa Leones POS": ahora "KaiRest"
+- **Cobro**: el cambio en pantalla ignoraba la propina (el server sí la descontaba) y la
+  pantalla mandaba `min(monto, saldo)`, así que el server nunca veía el efectivo y
+  guardaba cambio $0. Ahora pantalla y server coinciden y el aviso final dice el cambio
+- **Tarjetas KPI** de 252 → 180 px (gap duplicado v6+v7 y mini-gráficas que nada dibuja)
+- **Botón cerrar de los avisos** con estilo
+
+### Bugs de `main` encontrados al verificar
+- **Tocar una mesa no hacía nada** (desde `cf0d1aa`, modal "¿cuántas personas?"): el
+  script corría antes de `bootstrap.bundle` → `bootstrap is not defined`
+- **Órdenes activas de la dueña sin jQuery**: `meseros.js` tronaba con `$ is not defined`
+  (sin filtros, avisos en vivo ni modal de cobro en esa vista)
+
+### Pendiente
+- Dos plantillas se llaman "Barbacoa y Carnitas" en el paso 3 (la genérica y la de Casa
+  Leones que llegó en `741afc9`): decidir si la del cliente se oculta del wizard o se renombra
+- La dueña sigue viendo dos encabezados distintos (admin vs operaciones) en el mismo flujo
+- KDS en tablet vertical: es una tira horizontal por diseño (cola por antigüedad); no se tocó

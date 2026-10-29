@@ -1,5 +1,5 @@
 /**
- * Service Worker — Casa Leones POS (Fase 4 - Item 22)
+ * Service Worker — KaiRest (Fase 4 - Item 22)
  *
  * Estrategia: Network-first con cache fallback.
  * - Cachea assets estáticos (CSS, JS, imágenes)
@@ -7,12 +7,14 @@
  * - Push notifications scaffolding
  */
 
-const CACHE_NAME = 'casaleones-v4';
+const CACHE_NAME = 'kairest-v5';
 const STATIC_ASSETS = [
   '/static/css/styles.css',
   '/static/js/meseros.js',
 
-  '/static/img/logoCasaLeones.svg',
+  '/static/img/kairest-logo.svg',
+  '/static/vendor/fonts/inter-latin-400.woff2',
+  '/static/vendor/fonts/inter-latin-600.woff2',
   '/static/manifest.json',
   '/static/vendor/bootstrap.min.css',
   '/static/vendor/bootstrap.bundle.min.js',
@@ -107,8 +109,8 @@ self.addEventListener('push', event => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: '/static/img/icon-192.svg',
-      badge: '/static/img/icon-192.svg',
+      icon: '/static/img/icon-192.png',
+      badge: '/static/img/icon-192.png',
       vibrate: [200, 100, 200],
       data: data.url || '/',
     })

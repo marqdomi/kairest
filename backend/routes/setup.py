@@ -257,7 +257,7 @@ def paso3():
                 custom_estaciones=custom_estaciones or None,
                 origen_map=origen_map,
             )
-            flash(f'Menu cargado: {created} productos agregados.', 'success')
+            flash(f'Menú cargado: {created} productos agregados.', 'success')
 
         return redirect(url_for('setup.paso4'))
 
@@ -359,7 +359,7 @@ def paso5():
                 rol = rol_raw
 
             if Usuario.query.filter_by(email=email).first():
-                flash(f'El email {email} ya existe, se omitió.', 'warning')
+                flash(f'El correo {email} ya existe, se omitió.', 'warning')
                 continue
 
             user = Usuario(nombre=nombre, email=email, rol=rol, estacion_id=estacion_id)

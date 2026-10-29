@@ -4,7 +4,7 @@
 ═══════════════════════════════════════════════════════ #}
 {% extends 'layouts/_layout_operations.html' %}
 {% set active_op_tab = 'meseros' %}
-{% set tiene_fab = true %}{# reserva espacio extra abajo para los botones flotantes #}
+{% set tiene_fab = ordenes_mesero|length > 0 %}{# reserva espacio extra abajo para los botones flotantes #}
 {% block page_title %}Mis Órdenes{% endblock %}
 
 {% block ops_content %}
@@ -67,7 +67,7 @@
   {# ═══════════ Empty State ═══════════ #}
   <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:55vh;gap:16px;text-align:center;">
     <div style="width:80px;height:80px;border-radius:var(--cl-radius-xl);background:var(--cl-overlay);border:1px solid var(--cl-border-color);display:flex;align-items:center;justify-content:center;">
-      <i data-lucide="coffee" style="width:36px;height:36px;color:var(--cl-text-tertiary);"></i>
+      <i data-lucide="clipboard-list" style="width:36px;height:36px;color:var(--cl-text-tertiary);"></i>
     </div>
     <div>
       <h3 style="font-size:18px;font-weight:700;margin-bottom:6px;">Sin órdenes activas</h3>
@@ -248,10 +248,7 @@
 
         {# Meta row #}
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--cl-overlay);font-size:12px;color:var(--cl-text-tertiary);">
-          <div style="display:flex;align-items:center;gap:4px;">
-            <i data-lucide="clock" style="width:11px;height:11px;"></i>
-            {{ orden.tiempo_registro|hora_local }}
-          </div>
+          {# La hora ya va arriba a la derecha de la tarjeta; aquí se repetía #}
           <span>{{ orden.detalles|length }} ítem{{ 's' if orden.detalles|length != 1 else '' }}</span>
           <span style="font-family:var(--cl-font-mono);color:var(--cl-success-text);font-weight:700;" id="orden-total-{{ orden.id }}">
             ${{ '%.2f'|format(orden.total if orden.total is not none else 0) }}
@@ -271,7 +268,7 @@
           data-orden-id="{{ orden.id }}" data-pago-url="{{ url_for('meseros.pago_view', orden_id=orden.id) }}"
           {% if not all_entregados %}disabled{% endif %}
           title="{% if not all_entregados %}Espera a que todos los ítems sean entregados{% else %}Cobrar orden{% endif %}">
-          <i data-lucide="credit-card" style="width:12px;height:12px;"></i> Cobrar
+          <i data-lucide="wallet" style="width:12px;height:12px;"></i> Cobrar
         </button>
       </div>
     </div>
@@ -361,6 +358,8 @@
   </div>
 
   {# ═══════════ FABs ═══════════ #}
+  {# Sin órdenes, el estado vacío ya ofrece Nueva Orden / Para Llevar: el FAB los duplicaba #}
+  {% if ordenes_mesero %}
   <div class="cl-fab-container cl-fab-container--sobre-tabs">
     <a href="{{ url_for('meseros.crear_orden_para_llevar') }}" data-post-link class="cl-fab--secondary" id="fabParaLlevar">
       <i data-lucide="package" style="width:15px;height:15px;"></i>
@@ -371,6 +370,7 @@
       <span>Nueva Orden</span>
     </a>
   </div>
+  {% endif %}
 
   {# ═══════════ Cobro Modal ═══════════ #}
   <div class="modal fade" id="modalCobro" tabindex="-1" aria-labelledby="modalCobroLabel" aria-hidden="true">
@@ -378,7 +378,7 @@
       <div class="modal-content" style="background:var(--cl-surface-2);border:1px solid var(--cl-border-color);border-radius:var(--cl-radius-xl);overflow:hidden;">
         <div class="modal-header" style="background:linear-gradient(135deg,var(--cl-red-500),var(--cl-red-700));border:none;padding:16px 20px;">
           <h5 class="modal-title" id="modalCobroLabel" style="color:#fff;font-weight:700;display:flex;align-items:center;gap:8px;">
-            <i data-lucide="credit-card" style="width:17px;height:17px;"></i>
+            <i data-lucide="wallet" style="width:17px;height:17px;"></i>
             Detalle de Cobro
           </h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>

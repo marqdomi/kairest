@@ -64,7 +64,7 @@ class TestSetupWizard:
         with app.app_context():
             response = client.get('/setup/paso/1')
             assert response.status_code == 200
-            assert 'Tu Negocio' in response.data.decode()
+            assert 'Tu negocio' in response.data.decode()
 
     def test_paso1_creates_sucursal(self, client, app, db):
         with app.app_context():
@@ -131,7 +131,7 @@ class TestSetupWizard:
             db.session.commit()
             response = client.get('/setup/paso/3')
             assert response.status_code == 200
-            assert 'Tu Menu' in response.data.decode()
+            assert 'Tu menú' in response.data.decode()
 
     def test_paso3_default_menu(self, client, app, db):
         with app.app_context():
@@ -218,7 +218,7 @@ class TestSetupWizard:
             db.session.commit()
             response = client.get('/setup/paso/5')
             assert response.status_code == 200
-            assert 'Tu Equipo' in response.data.decode()
+            assert 'Tu equipo' in response.data.decode()
 
     def test_completar_marks_onboarding_done(self, client, app, db):
         with app.app_context():

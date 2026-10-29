@@ -250,7 +250,10 @@ button.cl-mesa-tile--available {
 
 <script nonce="{{ csp_nonce }}">
 // ── Abrir mesa: preguntar cuántas personas ──
-(function () {
+// En DOMContentLoaded: este bloque vive dentro del contenido y bootstrap.bundle se carga
+// al final de base.html. Corriendo de inmediato tronaba con "bootstrap is not defined"
+// y tocar una mesa no hacía nada (no se podía abrir una orden en mesa).
+document.addEventListener('DOMContentLoaded', function () {
   var modalEl = document.getElementById('modalPersonas');
   if (!modalEl) return;
   var modal = new bootstrap.Modal(modalEl);
@@ -287,7 +290,7 @@ button.cl-mesa-tile--available {
     inputOtro.value = btn.dataset.personas;
     btn.closest('form').submit();
   });
-})();
+});
 
 function filterZone(zone, btn) {
   // Update active button

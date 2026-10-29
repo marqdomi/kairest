@@ -78,6 +78,13 @@ $(document).ready(function() {
         return document.getElementById('orden-card-' + ordenId) !== null;
     }
 
+    // Número visible de la orden: el folio del día que trae la tarjeta, no el id interno
+    // (los eventos de Socket.IO sólo mandan el id; el cliente oye "orden 3", no "#47")
+    function numOrden(ordenId) {
+        var card = document.getElementById('orden-card-' + ordenId);
+        return (card && card.dataset.ordenNum) || ('#' + ordenId);
+    }
+
     // =============================================
     // Card flash + auto-scroll helpers
     // =============================================
@@ -169,7 +176,7 @@ $(document).ready(function() {
             // Solo notificar si la orden es mía — sin este guard, a cada mesero
             // le llegaría el toast de las órdenes de todos sus compañeros.
             if (esMiOrden(data.orden_id)) {
-                showToast(`Orden #${data.orden_id} enviada a cocina.`, 'info');
+                showToast(`Orden ${numOrden(data.orden_id)} enviada a cocina.`, 'info');
             }
             // Reset auto-refresh countdown on activity
             refreshCountdown = AUTO_REFRESH_SECS;
@@ -180,7 +187,7 @@ $(document).ready(function() {
             document.dispatchEvent(new CustomEvent('kds:actividad'));
             if (!esMiOrden(data.orden_id)) return;
             playNotif();
-            showToast(`¡${data.producto_nombre} de orden #${data.orden_id} listo!`, 'success');
+            showToast(`¡${data.producto_nombre} de orden ${numOrden(data.orden_id)} listo!`, 'success');
             var row = $('#product-item-' + data.item_id);
             if (row.length) {
                 // Update badge in card layout
@@ -229,7 +236,7 @@ $(document).ready(function() {
             refreshCountdown = AUTO_REFRESH_SECS;
             if (!esMiOrden(data.orden_id)) return;
             playNotif();
-            showToast(`¡Orden #${data.orden_id} lista en cocina! Entrega los productos.`, 'success');
+            showToast(`¡Orden ${numOrden(data.orden_id)} lista en cocina! Entrega los productos.`, 'success');
             // Card glow + scroll to draw attention
             glowCardReady(data.orden_id);
             scrollToCard(data.orden_id);
@@ -249,7 +256,7 @@ $(document).ready(function() {
             if (!esMiOrden(data.orden_id)) return;
             if (data.estado_orden === 'completada') {
                 playNotif();
-                showToast(`Orden #${data.orden_id} lista para cobro.`, 'confetti');
+                showToast(`Orden ${numOrden(data.orden_id)} lista para cobro.`, 'confetti');
                 verificarEstadoParaCobro(data.orden_id);
                 glowCardReady(data.orden_id);
                 scrollToCard(data.orden_id);
@@ -547,12 +554,19 @@ $(document).ready(function() {
             if (!res.ok) throw new Error('Error cargando datos');
             const data = await res.json();
 
+            // Logo del negocio (wizard / Personalización); sin logo propio, ninguno. Aquí
+            // estaba el de Casa Leones fijo: cualquier otro negocio lo veía en su cobro.
+            const escH = window.__escapeHtml || function (v) { return String(v == null ? '' : v); };
+            const negocio = data.negocio || {};
+            const logoNegocio = negocio.logo_url
+                ? `<div style="text-align:center;margin-bottom:16px;">
+                    <img src="${escH(negocio.logo_url)}" alt="${escH(negocio.nombre || '')}" style="max-height:36px;opacity:0.8;">
+                   </div>`
+                : '';
             let html = `
-                <div style="text-align:center;margin-bottom:16px;">
-                    <img src="/static/img/logoCasaLeones.svg" alt="Logo" style="max-height:36px;opacity:0.8;">
-                </div>
+                ${logoNegocio}
                 <div style="font-size:16px;font-weight:700;color:var(--cl-text-primary);letter-spacing:-0.02em;">
-                    Orden #${data.orden_id}${data.mesa_numero ? ' — Mesa ' + data.mesa_numero : ' — Para Llevar'}
+                    Orden #${escH(data.orden_numero || data.orden_id)}${data.mesa_numero ? ' — Mesa ' + data.mesa_numero : ' — Para Llevar'}
                 </div>
                 <div style="height:1px;background:var(--cl-border-color);margin:14px 0;"></div>
 

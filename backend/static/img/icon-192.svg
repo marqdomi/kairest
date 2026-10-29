@@ -1,4 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" fill="none">
-  <circle cx="96" cy="96" r="88" fill="#C41E3A"/>
-  <path d="M64 48 L64 144 L80 144 L80 108 L120 144 L140 144 L96 100 L136 48 L116 48 L80 92 L80 48 Z" fill="#FFFFFF"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<!-- Ícono de KaiRest: la K de cuatro piezas de kainet (misma geometría que
+     kainet-final/design/logo/kainet-k.svg) en el rojo de KaiRest. Es el único logo
+     del producto: app/PWA, favicon, wizard, login y sidebar. -->
+
+  <defs>
+    <linearGradient id="kr-fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#C41E3A"/><stop offset="1" stop-color="#8E1526"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#kr-fondo)"/>
+  <g transform="translate(107 122) scale(0.62)">
+    <path fill="#FFFFFF" d="M12 5H88Q100 5 106 18L134 100Q138 115 128 126L14 250Q0 262 0 245V17Q0 5 12 5Z"/>
+    <path fill="#FFFFFF" d="M130 198V412Q130 425 117 425H14Q0 425 0 411V335Q0 325 8 316L118 196Q130 186 130 198Z"/>
+    <path fill="#F5C9A0" d="M162 150L300 12Q310 3 324 3H468Q478 3 470 12L330 165Q312 188 280 188H215Q190 188 162 160Q158 155 162 150Z"/>
+    <path fill="#FFFFFF" fill-opacity=".82" d="M160 205Q160 196 172 198L290 262Q305 270 316 282L462 420Q470 428 458 428H340Q322 428 310 416L185 300Q162 278 160 250Z"/>
+  </g>
 </svg>

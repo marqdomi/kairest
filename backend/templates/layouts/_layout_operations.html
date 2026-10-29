@@ -23,9 +23,7 @@ Usage:
   <div class="cl-topbar__left">
     <a href="/" class="cl-topbar__brand-link"
       style="display:flex;align-items:center;gap:8px;text-decoration:none;margin-right:16px;">
-      <div
-        style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--cl-red-500),var(--cl-red-700));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <img src="{{ url_for('static', filename='img/kainetResto.png') }}" alt="" style="width:28px;height:28px;border-radius:6px;object-fit:contain;"></div>
+      <img src="{{ brand_logo }}" alt="" style="width:28px;height:28px;border-radius:7px;object-fit:contain;flex-shrink:0;">
       <span style="font-size:13px;font-weight:700;color:var(--cl-text-primary);white-space:nowrap;">{{ brand_name |
         default('KaiRest') }}</span>
     </a>
