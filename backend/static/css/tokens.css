@@ -753,17 +753,29 @@ small,
   textarea {
     min-height: 66px;
   }
+}
+
+/* Objetivos táctiles en celular Y en cualquier pantalla de dedo (`pointer: coarse`):
+   una tablet de 768–1024px se usa igual con el dedo y antes se quedaba con los 32px
+   de escritorio. Con mouse no cambia nada. */
+@media (max-width: 767.98px), (pointer: coarse) {
 
   /* Objetivos táctiles: 44px es el mínimo cómodo para el pulgar. Se aplica a los
-     controles que salían por debajo (chips de filtro, propina, botones de icono). */
-  .cl-filter-pill,
-  .cl-pill,
-  .cl-chip--accion,
-  .propina-btn,
-  .cl-icon-btn,
-  .cl-btn--sm,
-  .cl-topbar__hamburger,
-  .cl-user-pill__logout {
+     controles que salían por debajo (chips de filtro, propina, botones de icono).
+     Prefijo `html`: v7-components.css carga después y fija `.cl-btn--sm` en 32px, así
+     que sin él "Modificar" y "Cobrar" de las tarjetas del mesero se quedaban en 32. */
+  html .cl-filter-pill,
+  html .cl-pill,
+  html .cl-period-pill,
+  html .cl-chip--accion,
+  html .propina-btn,
+  html .cl-icon-btn,
+  html .cl-btn--sm,
+  html .cl-btn--v7-primary,
+  html .cl-btn--v7-outline,
+  html .cl-btn--v7-gold,
+  html .cl-topbar__hamburger,
+  html .cl-user-pill__logout {
     min-height: 44px;
   }
 
@@ -780,6 +792,9 @@ small,
   .cl-user-pill__logout {
     padding: 0;
   }
+}
+
+@media (max-width: 767.98px) {
 
   /* Piso de 12px para la letra chica: a 9-11px no se lee de reojo en la calle.
      (El KDS queda fuera: vive en tablet y ya se midió legible.) */

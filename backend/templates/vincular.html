@@ -27,11 +27,12 @@
     <label class="cl-form-label" for="codigo">Código de 6 dígitos</label>
     <input type="text" class="cl-form-input" name="codigo" id="codigo" inputmode="numeric"
       pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required autofocus
-      style="font-size:28px;letter-spacing:.4em;text-align:center;font-family:var(--cl-font-mono);">
+      style="font-size:28px;letter-spacing:.4em;text-align:center;font-family:var(--cl-font-mono);padding-left:12px;">
   </div>
 
   <div class="cl-auth__input-group">
     <label class="cl-form-label" for="nombre">Nombre de este aparato</label>
+    <i data-lucide="smartphone" class="icon-sm cl-auth__input-icon"></i>
     <input type="text" class="cl-form-input" name="nombre" id="nombre" maxlength="60"
       value="{{ nombre }}" placeholder="Tablet comal, Celular de Pepe…" required>
   </div>

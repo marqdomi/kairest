@@ -131,27 +131,27 @@
           {% endif %}
           {# Status badge #}
           {% if orden.estado == 'pendiente' %}
-          <span class="cl-status cl-status--pending" style="font-size:10px;padding:2px 8px;">
+          <span class="cl-status cl-status--pending" style="font-size:12px;padding:2px 8px;">
             <i data-lucide="clock" style="width:10px;height:10px;"></i> Pendiente
           </span>
           {% elif orden.estado in ['enviado','en_preparacion'] %}
-          <span class="cl-status cl-status--kitchen" style="font-size:10px;padding:2px 8px;">
+          <span class="cl-status cl-status--kitchen" style="font-size:12px;padding:2px 8px;">
             <i data-lucide="chef-hat" style="width:10px;height:10px;"></i> En cocina
           </span>
           {% elif orden.estado == 'lista_para_entregar' %}
-          <span class="cl-status cl-status--ready" style="font-size:10px;padding:2px 8px;">
+          <span class="cl-status cl-status--ready" style="font-size:12px;padding:2px 8px;">
             <i data-lucide="check-circle" style="width:10px;height:10px;"></i> Lista
           </span>
           {% elif orden.estado == 'completada' %}
-          <span class="cl-status cl-status--done" style="font-size:10px;padding:2px 8px;">
+          <span class="cl-status cl-status--done" style="font-size:12px;padding:2px 8px;">
             <i data-lucide="check-circle" style="width:10px;height:10px;"></i> Completada
           </span>
           {% elif urgency == 'urgent' %}
-          <span class="cl-status cl-status--urgent" style="font-size:10px;padding:2px 8px;">
+          <span class="cl-status cl-status--urgent" style="font-size:12px;padding:2px 8px;">
             <i data-lucide="alert-triangle" style="width:10px;height:10px;"></i> Retrasada
           </span>
           {% else %}
-          <span class="cl-status cl-status--kitchen" style="font-size:10px;padding:2px 8px;">
+          <span class="cl-status cl-status--kitchen" style="font-size:12px;padding:2px 8px;">
             {{ orden.estado|capitalize }}
           </span>
           {% endif %}

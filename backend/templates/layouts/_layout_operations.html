@@ -29,21 +29,21 @@ Usage:
     </a>
 
     {# Tab navigation #}
-    <div style="display:flex;gap:2px;" class="d-none d-md-flex">
-      <a href="{{ url_for('meseros.view_meseros') }}"
-        class="cl-topbar-tab{% if active_op_tab is defined and active_op_tab == 'meseros' %} active{% endif %}"
+    <div class="cl-topbar-tabs d-none d-md-flex">
+      <a href="{{ url_for('meseros.view_meseros') }}" title="Mis Órdenes" aria-label="Mis Órdenes"
+        class="cl-topbar-tab cl-topbar-tab--fija{% if active_op_tab is defined and active_op_tab == 'meseros' %} active{% endif %}"
         {% if active_op_tab is defined and active_op_tab=='meseros' %}aria-current="page"{% endif %}>
         <i data-lucide="clipboard-list" class="icon-sm"></i>
         <span>Mis Órdenes</span>
       </a>
-      <a href="{{ url_for('meseros.mapa_mesas') }}"
-        class="cl-topbar-tab{% if active_op_tab is defined and active_op_tab == 'mapa' %} active{% endif %}"
+      <a href="{{ url_for('meseros.mapa_mesas') }}" title="Mapa de Mesas" aria-label="Mapa de Mesas"
+        class="cl-topbar-tab cl-topbar-tab--fija{% if active_op_tab is defined and active_op_tab == 'mapa' %} active{% endif %}"
         {% if active_op_tab is defined and active_op_tab=='mapa' %}aria-current="page"{% endif %}>
         <i data-lucide="map" class="icon-sm"></i>
         <span>Mapa de Mesas</span>
       </a>
-      <a href="{{ url_for('meseros.historial_dia') }}"
-        class="cl-topbar-tab{% if active_op_tab is defined and active_op_tab == 'historial' %} active{% endif %}"
+      <a href="{{ url_for('meseros.historial_dia') }}" title="Historial" aria-label="Historial"
+        class="cl-topbar-tab cl-topbar-tab--fija{% if active_op_tab is defined and active_op_tab == 'historial' %} active{% endif %}"
         {% if active_op_tab is defined and active_op_tab=='historial' %}aria-current="page"{% endif %}>
         <i data-lucide="history" class="icon-sm"></i>
         <span>Historial</span>
@@ -80,7 +80,7 @@ Usage:
         style="background:var(--cl-overlay);border:1px solid var(--cl-border-color);border-radius:100px;padding:5px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;">
         <span class="cl-user-avatar" style="width:26px;height:26px;font-size:10px;">{{ current_user.nombre[0]|upper
           }}</span>
-        <span style="font-size:12.5px;font-weight:600;color:var(--cl-text-primary);" class="d-none d-md-inline">{{
+        <span style="font-size:12.5px;font-weight:600;color:var(--cl-text-primary);" class="d-none d-xl-inline">{{
           current_user.nombre }}</span>
       </button>
       <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuBtn"

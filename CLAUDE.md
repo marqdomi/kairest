@@ -1093,3 +1093,22 @@ Barrido de botones/selectores en celular (375), tablet (768) y escritorio.
   a lo ancho; propina con el mismo patrón, todo a 44px. El 0% inicial nacía sin marcar
 - Toolbar de tablas: chips de filtro 38px (igual que el buscador); reportes: "Filtrar"
   sin `--sm` para igualar los 40px de los campos de fecha
+
+## Revisión final celular + tablet (v6.9)
+Barrido automático (desborde, fuera de pantalla, objetivos táctiles, letra, filas
+disparejas) en 360×640 y 768×1024 sobre mesero, KDS, admin y pantallas de entrada.
+- **La regla táctil de 44px no aplicaba**: vive en `tokens.css` y `v7-components.css`
+  carga después con `.cl-btn--sm { min-height: 32px }`. Prefijo `html` (mismo truco que
+  el piso de letra). Ahora cubre también `.cl-btn--v7-*` y `.cl-period-pill`, y aplica
+  con `(pointer: coarse)` — una tablet se usa con el dedo aunque mida ≥768px
+- **Tablet vertical**: la barra de operaciones no cabía (pestañas encimadas con el menú,
+  la última estación fuera de pantalla). Entre 768–1199px las pestañas fijas quedan como
+  icono (con `aria-label`), la marca sólo logo, el usuario sólo inicial; la fila se
+  desliza si hay muchas estaciones
+- **Admin en celular**: la miga de pan empujaba la campana fuera. Bajo 480px sólo queda
+  la página actual, recortada con elipsis
+- **KDS**: círculo de "listo" se ve de 20px pero se toca en 44 (`::after`); controles del
+  encabezado a 44px sin partir el texto; "1 orden pendiente" (plural); estadísticas del
+  pie se deslizan en celular; reloj oculto bajo 480px; "Socket.IO conectado" → "En línea"
+- Badges de estado del admin (`ordenes_activas`) de 10 → 12px como en la vista del mesero
+- Vincular aparato: el campo de nombre tenía la sangría del icono sin icono
