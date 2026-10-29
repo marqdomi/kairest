@@ -10,13 +10,13 @@
     <div class="cl-form-group">
       <label class="cl-form-label" for="nombre">Tu nombre</label>
       <input type="text" class="cl-form-input" name="nombre" id="nombre"
-             value="{{ nombre }}" placeholder="Juan Pérez" maxlength="100" required autofocus>
+             value="{{ nombre or '' }}" placeholder="Juan Pérez" maxlength="100" required autofocus>
     </div>
 
     <div class="cl-form-group">
       <label class="cl-form-label" for="usuario">Usuario para entrar</label>
       <input type="text" class="cl-form-input" name="usuario" id="usuario"
-             value="{{ usuario }}" placeholder="maria" maxlength="40"
+             value="{{ usuario or '' }}" placeholder="maria" maxlength="40"
              autocapitalize="none" autocorrect="off" spellcheck="false">
       <small style="font-size:var(--cl-text-xs);color:var(--cl-text-secondary)">
         Corto y sin espacios. Con él entras; el correo es para recuperar el acceso.
@@ -26,7 +26,7 @@
     <div class="cl-form-group">
       <label class="cl-form-label" for="email">Correo electrónico</label>
       <input type="email" class="cl-form-input" name="email" id="email"
-             value="{{ email }}" placeholder="tu@correo.com" required>
+             value="{{ email or '' }}" placeholder="tu@correo.com" required>
     </div>
 
     <div class="cl-form-group">

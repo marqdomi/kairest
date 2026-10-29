@@ -20,9 +20,15 @@ class TestPlantillaBarbacoa:
         from backend.services.seeder import get_template_list
         with app.app_context():
             tpls = get_template_list()
-        assert tpls[0]['key'] == 'barbacoa'
+        # La de Casa Leones va primero (preseleccionada en el wizard) y con nombre propio:
+        # antes había dos tarjetas "Barbacoa y Carnitas" y sólo una traía Bebidas del mesero
+        assert tpls[0]['key'] == 'casaleones'
+        assert tpls[0]['nombre'] == 'Casa Leones'
         assert tpls[0]['productos_count'] == 58
         assert tpls[0]['estaciones'] == ['Taquero', 'Comal', 'Bebidas']
+        assert tpls[0]['la_sirve_mesero'] == ['Bebidas']
+        nombres = [t['nombre'] for t in tpls]
+        assert len(nombres) == len(set(nombres))
 
     def test_ningun_producto_queda_sin_estacion(self, app, db):
         from backend.models.models import Producto
