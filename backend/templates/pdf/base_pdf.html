@@ -148,12 +148,9 @@
       padding-top: 8px;
     }
 
-      {
-      % block extra_css %
-    }
-
-      {
-      % endblock %
+    .footer .kainet {
+      color: #C4704A;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -168,8 +165,9 @@
   {% block content %}{% endblock %}
 
   <div class="footer">
-    Generado automáticamente por {{ brand_name | default('KaiRest') }} POS — {{ now.strftime('%Y-%m-%d %H:%M') if now
-    else '' }}
+    {# brand_name es el negocio, no el sistema: el reporte es del negocio, generado con KaiRest #}
+    Generado con KaiRest — {{ now.strftime('%Y-%m-%d %H:%M') if now else '' }}
+    · hecho por <span class="kainet">kainet.</span> · kainet.mx
   </div>
 </body>
 

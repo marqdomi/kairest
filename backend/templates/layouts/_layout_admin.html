@@ -212,6 +212,8 @@ Children: list of (label, endpoint) for sub-nav #}
         </button>
       </form>
     </div>
+    {% from 'components/_kainet.html' import firma_kainet %}
+    <div class="cl-sidebar__firma">{{ firma_kainet() }}</div>
   </div>
   {% endif %}
 

@@ -362,6 +362,26 @@
     }
   }
 
+  // ── Aviso en pantalla (el KDS no carga meseros.js; alert() bloquearía la cocina) ──
+  function avisarKds(mensaje) {
+    var cont = document.getElementById('toast-container');
+    if (!cont) return;
+    var t = document.createElement('div');
+    t.className = 'cl-toast cl-toast--error';
+    t.setAttribute('role', 'alert');
+    t.textContent = mensaje;
+    cont.appendChild(t);
+    setTimeout(function() { t.remove(); }, 6000);
+  }
+
+  // Mensaje del server si respondió JSON; si no (p. ej. la página de sesión vencida), uno genérico
+  async function errorDeRespuesta(resp, generico) {
+    var body = await resp.json().catch(function() { return {}; });
+    if (body.error) return body.mensaje ? body.error + '. ' + body.mensaje : body.error;
+    if (resp.status === 400) return 'La sesión expiró. Recarga la pantalla.';
+    return generico;
+  }
+
   // ── Mark individual item as done ──
   window.marcarItemListo = async function(checkEl, ordenId, detalleId) {
     if (checkEl.classList.contains('cl-kds-check--done')) return;
@@ -369,7 +389,16 @@
     checkEl.innerHTML = '<i data-lucide="loader" style="width:12px;height:12px;color:#fff;animation:spin 1s linear infinite;"></i>';
     if (window.lucide) lucide.createIcons();
     try {
-      await fetch(MARK_BASE + ordenId + '/' + detalleId, { method: 'POST' });
+      var resp = await fetch(MARK_BASE + ordenId + '/' + detalleId, { method: 'POST' });
+      // Sin esta revisión la palomita se quedaba aunque el server rechazara (sesión
+      // vencida, orden cancelada): el cocinero creía haberlo marcado y no se guardaba
+      if (!resp.ok) {
+        checkEl.classList.remove('cl-kds-check--done');
+        checkEl.innerHTML = '';
+        avisarKds(await errorDeRespuesta(resp, 'No se pudo marcar el item.'));
+        refreshOrders();  // la orden pudo cerrarse o cancelarse: traer el estado real
+        return;
+      }
       // Queda como "deshacer" durante la ventana de undo (el server la valida)
       checkEl.innerHTML = '<i data-lucide="undo-2" style="width:12px;height:12px;color:#fff;"></i>';
       checkEl.setAttribute('data-action', 'desmarcar-item');
@@ -392,13 +421,11 @@
     if (window.lucide) lucide.createIcons();
     try {
       var resp = await fetch(UNMARK_BASE + ordenId + '/' + detalleId, { method: 'POST' });
-      var body = await resp.json().catch(function() { return {}; });
       if (!resp.ok) {
         // Fuera de ventana u otro rechazo — restaurar el check y avisar
         undoEl.innerHTML = '<i data-lucide="check" style="width:12px;height:12px;color:#fff;"></i>';
         if (window.lucide) lucide.createIcons();
-        if (typeof showToast === 'function') showToast(body.error || 'No se pudo deshacer.', 'warning');
-        else alert(body.error || 'No se pudo deshacer.');
+        avisarKds(await errorDeRespuesta(resp, 'No se pudo deshacer.'));
         return;
       }
       // El evento nueva_orden_cocina del server refresca el fragmento completo
@@ -423,7 +450,14 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orden_id: ordenId, detalle_ids: detalleIds })
       });
-      if (!resp.ok) throw new Error('Batch failed: ' + resp.status);
+      if (!resp.ok) {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="check-circle" style="width:18px;height:18px;"></i> LISTO';
+        if (window.lucide) lucide.createIcons();
+        avisarKds(await errorDeRespuesta(resp, 'No se pudo marcar la orden.'));
+        refreshOrders();
+        return;
+      }
       var card = document.getElementById('kds-orden-' + ordenId);
       if (card) {
         card.querySelectorAll('.cl-kds-item').forEach(function(item) {

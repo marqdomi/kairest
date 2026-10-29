@@ -12,6 +12,7 @@ Extends: base.html — no navbar, centered card with progress
   .cl-setup {
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: var(--cl-space-4);
@@ -140,6 +141,11 @@ Extends: base.html — no navbar, centered card with progress
     margin-bottom: var(--cl-space-1);
   }
 
+  /* El degradado es oscuro en ambos temas: el nombre del producto va claro */
+  .cl-setup__firma {
+    color: rgba(255, 255, 255, .62);
+  }
+
   /* ── Logo ── */
   .cl-setup__logo {
     display: block;
@@ -214,6 +220,12 @@ Extends: base.html — no navbar, centered card with progress
     {% endwith %}
 
     {% block setup_content %}{% endblock %}
+  </div>
+  {% from 'components/_kainet.html' import firma_kainet %}
+  <div class="cl-producto-firma cl-setup__firma">
+    <span class="cl-producto-firma__nombre">KaiRest</span>
+    <span aria-hidden="true">·</span>
+    {{ firma_kainet('cl-kainet--sobre-oscuro') }}
   </div>
 </div>
 {% endblock body_layout %}

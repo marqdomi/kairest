@@ -893,3 +893,40 @@ del preview hace HEAD / 3 veces por segundo).
 - `scripts/prueba_concurrencia_pg.py` — prueba manual contra PostgreSQL (SQLite no la
   reproduce), con control negativo verificado para ambos arreglos
 - Tests: 3 de origen Socket.IO en `test_demo_cliente.py`. Suite total 159 passed.
+
+## Firma KAINET + evaluación visual (v6.8)
+Evaluación completa de la GUI (wizard → login → admin → mesero → KDS → cobro) en
+`docs/EVALUACION_VISUAL.md`, con prioridades. Hallazgo principal: identidad partida —
+tres logos (mascota `kainetResto.png` 1.5 MB, K roja `kairest-logo.svg`, y el logo del
+cliente `logoCasaLeones.svg` hardcodeado en el ticket de `meseros.js`), dos nombres
+(KaiRest/KaiResto) y tres versiones.
+
+### Firma "hecho por kainet." (marca respaldada)
+- `templates/components/_kainet.html` → `firma_kainet(clase='')`. Logo **inline**, no
+  `<img>` ni liga externa: el sistema opera offline y el CSP es 'self'. Las piezas oscuras
+  usan `currentColor`: hereda el color del texto, sirve en claro/oscuro sin dos archivos.
+  Sobre fondos siempre oscuros (degradado del wizard) → clase `cl-kainet--sobre-oscuro`
+- Va en wizard, login, error.html (vía `_layout_auth`), pie del sidebar admin y pie de PDF.
+  **No** en mesero ni KDS: ahí la marca es la del negocio
+- Logos fuente copiados de `kainet-final/design/logo/` a `static/img/kainet/`
+- No se repintó la app con la paleta KAINET (terracota/salvia): el rojo ya está auditado
+  para contraste y es funcional en operación
+
+### Corregido de paso
+- Columna en blanco de 240px entre 769–991px (iPad vertical): `v7-sidebar.css` quitaba el
+  margen del contenido bajo 768 pero `tokens.css` escondía el sidebar bajo 992. Ambos en 992
+- Pie del PDF usaba `brand_name` (el negocio) como nombre del sistema
+- Login con "© 2025" fijo (`now` no existe en ese contexto); bloque `extra_css` del PDF
+  roto por un formateador (`{ % block %}`)
+
+### KDS marcaba "listo" aunque el server lo rechazara (§8 de la evaluación)
+El token CSRF caducaba a los 60 min (default de Flask-WTF) y el KDS sólo refresca
+fragmentos por fetch: a la hora de abierto, cada "listo" regresaba 400 — y
+`marcarItemListo` no revisaba `resp.ok`, así que la palomita se quedaba sin guardarse.
+- `config.py`: `WTF_CSRF_TIME_LIMIT = None` — el token sigue atado a la sesión y se valida
+  igual (sin token o de otra sesión → 400); sólo se quita el reloj
+- KDS: marcar, desmarcar y LISTO revisan `resp.ok`; si falla revierten y avisan con
+  `avisarKds()` (toast; antes caía a `alert()`, que bloquea la tablet) y refrescan la orden
+- Páginas de error en español también para `CSRFError` ("La sesión expiró") y 405
+- Tests: `tests/test_csrf_turno.py` (7, CSRF encendido, reloj adelantado 8 h, control
+  negativo verificado quitando la línea del config). Suite total 166 passed.

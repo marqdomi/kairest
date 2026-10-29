@@ -79,20 +79,33 @@ def create_app():
     _ERRORES = {
         403: ('Sin acceso', 'Esta pantalla es de otro rol o de otra estación.', 'lock'),
         404: ('No encontrado', 'La página que buscas no existe o ya se cerró.', 'search-x'),
+        405: ('Acción no válida', 'Esa liga no se abre así. Regresa a tu pantalla.', 'ban'),
         429: ('Demasiados intentos', 'Espera un minuto y vuelve a intentarlo.', 'timer'),
         500: ('Algo salió mal', 'Ocurrió un error inesperado. Intenta de nuevo.', 'triangle-alert'),
     }
 
-    def _pagina_error(e):
+    def _responder_error(codigo, titulo, mensaje, icono):
         from flask import request, jsonify, render_template
-        codigo = getattr(e, 'code', 500) or 500
-        titulo, mensaje, icono = _ERRORES.get(codigo, _ERRORES[500])
         if request.path.startswith(('/api/', '/socket.io')) or request.accept_mimetypes.best == 'application/json':
             return jsonify({'error': titulo, 'mensaje': mensaje}), codigo
         return render_template('error.html', titulo=titulo, mensaje=mensaje, icono=icono), codigo
 
+    def _pagina_error(e):
+        codigo = getattr(e, 'code', 500) or 500
+        return _responder_error(codigo, *_ERRORES.get(codigo, _ERRORES[500]))
+
     for _codigo in _ERRORES:
         app.register_error_handler(_codigo, _pagina_error)
+
+    # CSRF rechazado: casi siempre es una sesión que expiró (reinicio del server, tablet
+    # que se quedó con una pestaña vieja). Sin esto salía "Bad Request — The CSRF
+    # session token is missing." de Werkzeug, en inglés y sin salida.
+    from flask_wtf.csrf import CSRFError
+
+    @app.errorhandler(CSRFError)
+    def _csrf_vencido(e):
+        return _responder_error(400, 'La sesión expiró',
+                                'Recarga la página o vuelve a iniciar sesión.', 'refresh-cw')
 
     # Development settings
     if app.config.get('DEBUG') or os.getenv('FLASK_ENV') == 'development':
