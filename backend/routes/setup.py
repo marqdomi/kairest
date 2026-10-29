@@ -10,7 +10,7 @@ from backend.extensions import db
 from backend.models.models import ConfiguracionSistema, Sucursal, Usuario, Mesa, Categoria, Estacion, Producto
 from backend.services.seeder import seed_from_template, get_template_list, seed_mesas
 from backend.services.password_policy import validar_password
-from backend.services.sanitizer import sanitizar_texto, sanitizar_email
+from backend.services.sanitizer import sanitizar_texto
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +106,10 @@ def paso2():
 
     if request.method == 'POST':
         nombre = sanitizar_texto(request.form.get('nombre', ''), 100)
-        email = sanitizar_email(request.form.get('email', '')) or request.form.get('email', '').strip()
+        # Antes: `sanitizar_email(x) or x` — si el correo era inválido se guardaba el
+        # texto tal cual ("no-es-correo") y la recuperación de acceso no llegaba a nadie
+        from backend.services.validacion import leer_correo
+        email, error_correo = leer_correo(request.form.get('email', ''))
         password = request.form.get('password', '')
         password2 = request.form.get('password2', '')
         from backend.services.acceso import normalizar_username, sugerir_username
@@ -117,8 +120,10 @@ def paso2():
         errors = []
         if not nombre:
             errors.append('Ingresa tu nombre.')
-        if not email:
-            errors.append('Ingresa tu email.')
+        if error_correo:
+            errors.append(error_correo)
+        elif not email:
+            errors.append('Ingresa tu correo.')
         if not password:
             errors.append('Ingresa una contraseña.')
         if password != password2:
@@ -181,6 +186,22 @@ def paso3():
             # Ensure stations exist
             estaciones_form = request.form.getlist('prod_estacion[]')
 
+            # Precios antes de crear nada: un "-20" o un "abc" (que caía a $0) quedaban
+            # en el menú y se cobraban así
+            from backend.services.validacion import leer_monto
+            errores_precio = []
+            for i, nombre_raw in enumerate(nombres):
+                nombre_prod = sanitizar_texto(nombre_raw, 150)
+                if not nombre_prod:
+                    continue
+                if leer_monto(precios[i] if i < len(precios) else '') is None:
+                    errores_precio.append(
+                        f'"{nombre_prod}": el precio debe ser un número de 0 en adelante.')
+            if errores_precio:
+                for err in errores_precio:
+                    flash(err, 'danger')
+                return redirect(url_for('setup.paso3'))
+
             # Build station map — create new stations on-the-fly
             estaciones_map = {e.nombre.lower(): e for e in Estacion.query.all()}
             for est_raw in estaciones_form:
@@ -205,10 +226,7 @@ def paso3():
                 nombre = sanitizar_texto(nombre, 150)
                 if not nombre:
                     continue
-                try:
-                    precio = float(precios[i]) if i < len(precios) else 0
-                except (ValueError, IndexError):
-                    precio = 0
+                precio = leer_monto(precios[i])  # ya validado arriba
 
                 cat_nombre = categorias_form[i] if i < len(categorias_form) else 'General'
                 est_nombre = estaciones_form[i] if i < len(estaciones_form) else ''

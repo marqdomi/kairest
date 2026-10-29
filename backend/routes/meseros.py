@@ -268,6 +268,10 @@ def seleccionar_mesa():
                 num_personas = int(request.form.get('num_personas') or 0) or None
             except (ValueError, TypeError):
                 num_personas = None
+            # Es opcional: algo fuera de rango (−4, 0, 5000) se toma como "no se dijo"
+            # en vez de guardarse y pintarse en el mapa de mesas
+            if num_personas is not None and not 1 <= num_personas <= 99:
+                num_personas = None
 
             # Si el mesero ya dejó un borrador vacío en esta mesa, se reutiliza en vez
             # de amontonar cuentas fantasma cada vez que entra y se regresa.
@@ -429,7 +433,12 @@ def agregar_productos_a_orden(orden_id):
             prod = db.session.get(Producto, p_data['id'])
             if not prod:
                 continue
-            cantidad = int(p_data['cantidad'])
+            from backend.routes.orders import CANTIDAD_MAXIMA
+            from backend.services.validacion import leer_entero
+            cantidad = leer_entero(p_data.get('cantidad', 1), 1, CANTIDAD_MAXIMA)
+            if cantidad is None:
+                flash(f'Cantidad inválida para {prod.nombre}: de 1 a {CANTIDAD_MAXIMA}.', 'danger')
+                continue
             notas = sanitizar_texto(p_data.get('notas') or '', 300)
 
             # Validación de stock (Sprint 2 — 3.2)

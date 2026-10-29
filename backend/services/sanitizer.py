@@ -1,14 +1,22 @@
 """Fase 5 — Sprint 1 (4.7): Sanitización de inputs de texto."""
+import html
 import re
 import bleach
 
 
 def sanitizar_texto(text: str, max_length: int = 500) -> str:
-    """Limpia HTML tags, trim whitespace, limita longitud."""
+    """Quita etiquetas HTML y devuelve TEXTO PLANO (sin entidades), recortado.
+
+    bleach.clean devuelve HTML escapado: "Tacos & Más" salía "Tacos &amp; Más" y,
+    como Jinja vuelve a escapar al pintar, en pantalla se leía "&amp;" (nombre del
+    negocio, productos, clientes…). Se des-escapa la entrada primero —para que una
+    etiqueta disfrazada como "&lt;img onerror…&gt;" también se quite— y la salida
+    después: lo que se guarda es texto, y escapar es trabajo de quien lo pinta.
+    """
     if not text:
         return ''
-    cleaned = bleach.clean(text, tags=[], attributes={}, strip=True)
-    return cleaned.strip()[:max_length]
+    cleaned = bleach.clean(html.unescape(text), tags=[], attributes={}, strip=True)
+    return html.unescape(cleaned).strip()[:max_length]
 
 
 def sanitizar_rfc(rfc: str) -> str:

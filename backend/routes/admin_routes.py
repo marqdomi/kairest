@@ -4,7 +4,7 @@ from flask import (Blueprint, render_template, request, redirect, url_for, flash
                    current_app, g, session, Response)
 from backend.utils import login_required, filtrar_por_sucursal
 from backend.extensions import db
-from backend.services.sanitizer import sanitizar_texto, sanitizar_email
+from backend.services.sanitizer import sanitizar_texto
 from backend.models.models import Sale, SaleItem, Producto, Mesa, CorteCaja, Usuario, Categoria, Estacion, Pago, Orden, Ingrediente, OrdenDetalle, OrdenEstado
 from backend.services.password_policy import validar_password
 from sqlalchemy.orm import joinedload
@@ -315,7 +315,8 @@ def _aplicar_formulario_usuario(u, form, nuevo):
     from backend.services import acceso
     errores = []
     nombre = sanitizar_texto(form.get('nombre', ''), 100)
-    email = (sanitizar_email(form.get('email', '')) or form.get('email', '').strip()) or None
+    from backend.services.validacion import leer_correo
+    email, error_correo = leer_correo(form.get('email', ''))
     username = acceso.normalizar_username(form.get('usuario', '')) or acceso.sugerir_username(
         nombre, excluir_id=u.id)
     rol_raw = form.get('rol', 'mesero')
@@ -324,6 +325,8 @@ def _aplicar_formulario_usuario(u, form, nuevo):
 
     if not nombre:
         errores.append('Escribe el nombre.')
+    if error_correo:
+        errores.append(error_correo)
     otro = Usuario.query.filter_by(username=username).first()
     if otro and otro.id != u.id:
         errores.append(f'El usuario "{username}" ya existe.')
@@ -474,7 +477,7 @@ def lista_productos():
     ).order_by(Producto.nombre).all()
     return render_template('admin/productos.html', productos=productos)
 
-def _leer_form_producto():
+def _leer_form_producto(excluir_id=None):
     """Valida el formulario de producto. Devuelve (datos, error).
 
     Un precio negativo restaría del total de la cuenta y descuadraría el corte,
@@ -486,12 +489,24 @@ def _leer_form_producto():
     if not nombre.strip():
         return None, 'El nombre del producto es obligatorio.'
 
-    try:
-        precio = Decimal(str(request.form.get('precio', '')).strip())
-    except (InvalidOperation, ValueError, TypeError):
+    # Mismo menú, dos renglones iguales: el mesero no sabe cuál tocar y los reportes
+    # parten las ventas del producto en dos
+    repetido = Producto.query.filter(db.func.lower(Producto.nombre) == nombre.lower())
+    if excluir_id:
+        repetido = repetido.filter(Producto.id != excluir_id)
+    if repetido.first():
+        return None, f'Ya existe un producto llamado "{nombre}".'
+
+    from backend.services.validacion import leer_monto, MONTO_MAXIMO
+    precio_raw = request.form.get('precio', '')
+    precio = leer_monto(precio_raw, minimo=Decimal('-1e12'), maximo=Decimal('1e12'))
+    if precio is None:
         return None, 'El precio debe ser un número.'
     if precio < 0:
         return None, 'El precio no puede ser negativo.'
+    # La columna es Numeric(10, 2): arriba de esto PostgreSQL truena con un 500
+    if precio > MONTO_MAXIMO:
+        return None, 'Ese precio es demasiado alto. Revisa que no sobren ceros.'
 
     try:
         categoria_id = int(request.form['categoria_id'])
@@ -544,7 +559,7 @@ def producto_nuevo():
 def producto_editar(id):
     p = db.get_or_404(Producto, id)
     if request.method == 'POST':
-        datos, error = _leer_form_producto()
+        datos, error = _leer_form_producto(excluir_id=p.id)
         if error:
             flash(error, 'danger')
             return _render_producto_form(p)
@@ -871,8 +886,18 @@ def corte_caja():
     resumen['monto_por_verificar'] = float(monto_por_verificar or 0)
 
     if request.method == 'POST':
-        efectivo_contado = request.form.get('efectivo_contado', type=float) or 0.0
-        notas = request.form.get('notas', '')
+        # `type=float` convertía "1,160.00" (con coma, como se escribe aquí), un campo
+        # vacío o un texto en $0 sin avisar: el corte se guardaba con un faltante igual
+        # a toda la venta en efectivo. Ahora se lee tolerante o se rechaza.
+        from backend.services.validacion import leer_monto
+        efectivo_raw = request.form.get('efectivo_contado', '')
+        efectivo_contado = leer_monto(efectivo_raw)
+        if efectivo_contado is None:
+            flash('Escribe el efectivo que contaste en la caja (por ejemplo 1,160.50). '
+                  'Si no hay nada, escribe 0.', 'danger')
+            return redirect(url_for('admin.corte_caja'))
+        efectivo_contado = float(efectivo_contado)
+        notas = sanitizar_texto(request.form.get('notas', ''), 500)
         # El arqueo se compara contra el efectivo que realmente debería estar en caja
         # (venta + propinas en efectivo), si no la diferencia sale sobrada siempre.
         diferencia = efectivo_contado - float(efectivo_en_caja)
@@ -1011,18 +1036,37 @@ def personalizacion():
         return redirect(url_for('admin.dashboard'))
 
     if request.method == 'POST':
-        sucursal.nombre = sanitizar_texto(request.form.get('nombre', '').strip(), 100)
+        import re as _re
+        from backend.services.sanitizer import sanitizar_telefono, sanitizar_rfc
+        errores = []
+        # Antes se guardaba todo "como viniera": un nombre vacío dejaba al negocio sin
+        # nombre (login, tickets y PDF en blanco) y un RFC inválido se guardaba igual
+        nombre = sanitizar_texto(request.form.get('nombre', '').strip(), 100)
+        if nombre:
+            sucursal.nombre = nombre
+        else:
+            errores.append('El nombre del negocio no puede quedar vacío.')
         sucursal.slogan = sanitizar_texto(request.form.get('slogan', '').strip(), 200) or None
-        sucursal.color_primario = request.form.get('color_primario', '#C41E3A').strip()
-        sucursal.rfc = request.form.get('rfc', '').strip() or None
+        color = request.form.get('color_primario', '').strip()
+        if _re.fullmatch(r'#[0-9a-fA-F]{6}', color):
+            sucursal.color_primario = color
+        rfc_raw = request.form.get('rfc', '').strip()
+        if rfc_raw:
+            rfc = sanitizar_rfc(rfc_raw)
+            from backend.services.rfc_validator import validar_rfc
+            ok_rfc = bool(rfc) and validar_rfc(rfc)[0]
+            if ok_rfc:
+                sucursal.rfc = rfc
+            else:
+                errores.append(f'El RFC "{rfc_raw[:20]}" no es válido; no se guardó.')
+        else:
+            sucursal.rfc = None
         sucursal.direccion = sanitizar_texto(request.form.get('direccion', '').strip(), 300) or None
-        sucursal.telefono = request.form.get('telefono', '').strip() or None
+        sucursal.telefono = sanitizar_telefono(request.form.get('telefono', '')) or None
 
         # Handle logo upload (mismo helper que usa el wizard de instalación)
         from backend.services.negocio import guardar_logo
         _guardado, error_logo = guardar_logo(sucursal, request.files.get('logo'))
-        if error_logo:
-            flash(error_logo, 'warning')
 
         # Métodos de pago que acepta el negocio (al menos efectivo)
         from backend.models.models import ConfiguracionSistema
@@ -1038,9 +1082,16 @@ def personalizacion():
         errores_banco = guardar_datos_bancarios(request.form)
 
         db.session.commit()
-        for err in errores_banco:
+        errores += errores_banco
+        if error_logo:
+            errores.append(error_logo)
+        for err in errores:
             flash(err, 'danger')
-        if not errores_banco:
+        # Sin errores y sólo sin errores: antes decía "guardada exitosamente" aunque el
+        # RFC o la CLABE se hubieran descartado en silencio
+        if errores:
+            flash('Lo demás sí se guardó.', 'info')
+        else:
             flash('Personalización guardada exitosamente.', 'success')
         return redirect(url_for('admin.personalizacion'))
 

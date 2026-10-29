@@ -48,6 +48,27 @@ def nueva_reservacion():
         mesa_id = request.form.get('mesa_id') or None
         cliente_id = request.form.get('cliente_id') or None
 
+        # Antes se aceptaba reservar en el pasado, para 0 o −5 personas, sin nombre o
+        # en una mesa que no existe (mesa_id=999 quedaba colgando)
+        from backend.services.validacion import leer_entero
+        errores = []
+        nombre_contacto = sanitizar_texto(request.form.get('nombre_contacto', ''), 100)
+        if not nombre_contacto:
+            errores.append('Escribe a nombre de quién es la reservación.')
+        if fecha_hora < ahora_local().replace(tzinfo=None) - timedelta(minutes=5):
+            errores.append('La fecha y hora ya pasaron.')
+        num_personas = leer_entero(request.form.get('num_personas', 2), 1, 200)
+        if num_personas is None:
+            errores.append('El número de personas debe ser de 1 en adelante.')
+        if mesa_id and (leer_entero(mesa_id, 1, 10**9) is None or not db.session.get(Mesa, int(mesa_id))):
+            errores.append('La mesa elegida no existe.')
+        if cliente_id and (leer_entero(cliente_id, 1, 10**9) is None or not db.session.get(Cliente, int(cliente_id))):
+            errores.append('El cliente elegido no existe.')
+        if errores:
+            for err in errores:
+                flash(err, 'danger')
+            return redirect(url_for('reservaciones.nueva_reservacion'))
+
         # Overlap detection: check for existing non-cancelled reservations on same mesa
         if mesa_id:
             ventana = timedelta(hours=RESERVACION_DURACION_HORAS)
@@ -64,10 +85,10 @@ def nueva_reservacion():
         r = Reservacion(
             mesa_id=int(mesa_id) if mesa_id else None,
             cliente_id=int(cliente_id) if cliente_id else None,
-            nombre_contacto=sanitizar_texto(request.form['nombre_contacto'], 100),
+            nombre_contacto=nombre_contacto,
             telefono=sanitizar_telefono(request.form.get('telefono', '')),
             fecha_hora=fecha_hora,
-            num_personas=int(request.form.get('num_personas', 2)),
+            num_personas=num_personas,
             estado='confirmada',
             notas=sanitizar_texto(request.form.get('notas', ''), 500),
             creada_por=session.get('user_id'),

@@ -1022,3 +1022,15 @@ Implementadas las prioridades de `docs/EVALUACION_VISUAL.md`. Guardas en
 - Test de ticket que asumía máquina en UTC (`datetime.now()` → `datetime.now(timezone.utc)`)
 
 Suite: 347 passed.
+
+## Prueba como usuario real — Admin (v6.8)
+Recorrido completo con datos equivocados a propósito; detalle en `docs/PRUEBA_USUARIO_ADMIN.md`,
+guardas en `tests/test_prueba_usuario_admin.py` (43, control negativo: 40 fallan sin el fix).
+- `sanitizar_texto` devuelve texto plano: antes guardaba entidades ("&amp;") y se veían
+- `backend/services/validacion.py`: `leer_monto` ("1,160.50", "$200"), `leer_entero`,
+  `leer_correo`. **Regla: nada de `float()`/`int()`/`Decimal()` directo sobre el form** —
+  caían a 0 en silencio o tronaban con 500
+- API de orden: cantidad 1..999 (`CANTIDAD_MAXIMA` en orders.py); antes aceptaba negativos
+- `verificar_pago`: 409 si la cuenta ya está pagada (contaba el dinero dos veces)
+- Corte: efectivo contado obligatorio y bien leído; personalización, inventario,
+  reservaciones, clientes y sucursales validan en el server
