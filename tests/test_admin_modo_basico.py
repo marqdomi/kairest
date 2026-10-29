@@ -232,7 +232,7 @@ class TestZonaHorariaVisible:
         El ticket estampa la hora de impresión: el contenedor corre en UTC, así
         que `datetime.now()` imprimía 6 h adelantado.
         """
-        from datetime import datetime
+        from datetime import datetime, timezone
         from backend.services.printer import generar_texto_ticket
         from backend.services.tiempo import ahora_local
 
@@ -248,7 +248,9 @@ class TestZonaHorariaVisible:
         # Hasta la hora: el minuto puede correr entre generar y comparar.
         assert fecha.startswith(ahora_local().strftime('%Y-%m-%d %H'))
         if ahora_local().utcoffset().total_seconds() != 0:
-            assert not fecha.startswith(datetime.now().strftime('%Y-%m-%d %H')), \
+            # UTC explícito: `datetime.now()` sólo es UTC dentro del contenedor; en una
+            # laptop en hora de México coincide con la local y el test fallaba sin bug
+            assert not fecha.startswith(datetime.now(timezone.utc).strftime('%Y-%m-%d %H')), \
                 'el ticket sigue imprimiendo la hora UTC del contenedor'
 
 
