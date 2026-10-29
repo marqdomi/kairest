@@ -1,6 +1,7 @@
 # config.py
 import os
 import secrets
+from datetime import timedelta
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -68,7 +69,11 @@ class Config:
 
     # Flask-Session (server-side sessions via Redis)
     SESSION_TYPE = 'redis'
-    SESSION_PERMANENT = False
+    # Permanente = la cookie lleva fecha y sobrevive al cierre del navegador. La vigencia
+    # real (por rol, renovada con el uso) la controla services/sesion.py; esto es el tope.
+    SESSION_PERMANENT = True
+    PERMANENT_SESSION_LIFETIME = timedelta(days=30)
+    REMEMBER_COOKIE_DURATION = timedelta(days=30)
     SESSION_KEY_PREFIX = 'casaleones:session:'
 
     # Flask-Caching (Redis backend)

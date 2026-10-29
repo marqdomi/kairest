@@ -53,3 +53,19 @@ fi
 
 mkdir -p backups
 docker compose up -d --build
+
+# ── Migraciones ──
+# create_all (al arrancar la app) crea tablas nuevas pero no altera las existentes.
+# Base sin historial Alembic → se marca c009 (de ahí en adelante las migraciones son
+# idempotentes) y upgrade aplica el resto. Ver el comentario en update.sh.
+for _ in $(seq 1 60); do
+  docker compose exec -T web python -c "import urllib.request; urllib.request.urlopen('http://localhost:5005/health')" \
+    >/dev/null 2>&1 && break
+  sleep 5
+done
+TIENE_ALEMBIC=$(docker compose exec -T db psql -U casaleones -d casaleones -tAc \
+  "SELECT to_regclass('alembic_version') IS NOT NULL" | tr -d '[:space:]')
+if [ "$TIENE_ALEMBIC" != "t" ]; then
+  docker compose exec -T web flask db stamp c009
+fi
+docker compose exec -T web flask db upgrade

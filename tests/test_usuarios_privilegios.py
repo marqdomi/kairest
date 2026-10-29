@@ -104,7 +104,7 @@ class TestUnAdminNoEscalaPrivilegios:
 
         como_gerente.post('/admin/usuarios/nuevo', data={
             'nombre': 'Nuevo Mesero', 'email': 'nuevo@test.com',
-            'rol': 'mesero', 'password': 'Test1234!',
+            'rol': 'mesero', 'pin': '4826',  # personal entra con PIN
         })
         creado = Usuario.query.filter_by(email='nuevo@test.com').first()
         assert creado is not None and creado.rol == 'mesero'

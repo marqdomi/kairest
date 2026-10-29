@@ -1,8 +1,6 @@
 import logging
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
-from flask_login import login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from backend.models.models import Usuario
 
 logger = logging.getLogger(__name__)
 
@@ -14,14 +12,19 @@ _DUMMY_HASH = generate_password_hash('dummy_constant_time_password')
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    from backend.services import acceso
+    from backend.services.sesion import iniciar_sesion, destino
+
     if request.method == 'POST':
-        email = request.form.get('email', '').strip()
+        # El campo se llama `email` por compatibilidad (formularios y tests viejos),
+        # pero acepta usuario corto o correo.
+        identificador = (request.form.get('usuario') or request.form.get('email') or '').strip()
         password = request.form.get('password', '')
 
-        usuario = Usuario.query.filter_by(email=email).first()
+        usuario = acceso.buscar_para_login(identificador)
 
         # Siempre ejecuta check_password para evitar timing attacks
-        if usuario:
+        if usuario and usuario.password_hash:
             valid = usuario.check_password(password)
         else:
             # Consume el mismo tiempo que un check real
@@ -29,33 +32,31 @@ def login():
             valid = False
 
         if valid:
-            login_user(usuario)
-            session['user_id'] = usuario.id
-            session['rol'] = usuario.rol
+            iniciar_sesion(usuario, metodo='contrasena')
             logger.info('Login exitoso: usuario_id=%s rol=%s', usuario.id, usuario.rol)
-            # Auditoría
             from backend.services.audit import registrar_auditoria
             registrar_auditoria('login', 'Usuario', usuario.id,
-                                f'Login exitoso: {usuario.email}', usuario.id)
-            flash('Inicio de sesión exitoso', 'success')
+                                f'Login con contraseña: {usuario.identificador}', usuario.id)
+            from backend.extensions import db
+            db.session.commit()
+            return redirect(destino(usuario))
+        # Mensaje genérico — no revela si el usuario existe o no
+        logger.warning('Login fallido: ip=%s', request.remote_addr)
+        flash('Usuario o contraseña incorrectos', 'danger')
+        return render_template('login.html', identificador=identificador)
 
-            # Store estacion_id in session for cocina users
-            if usuario.estacion_id:
-                session['estacion_id'] = usuario.estacion_id
-
-            if usuario.rol in ('superadmin', 'admin'):
-                return redirect(url_for('admin.dashboard'))
-            elif usuario.rol == 'mesero':
-                return redirect(url_for('meseros.view_meseros'))
-            elif usuario.rol == 'cocina' or usuario.es_cocina:
-                return redirect(url_for('cocina.index'))
-            return redirect(url_for('auth.login'))
-        else:
-            # Mensaje genérico — no revela si el email existe o no
-            logger.warning('Login fallido: ip=%s', request.remote_addr)
-            flash('Credenciales inválidas', 'danger')
-
-    return render_template('login.html')
+    # En un aparato autorizado el personal entra tocando su nombre + PIN. La dueña
+    # (o quien no tenga PIN) usa "Entrar con contraseña" → ?modo=contrasena
+    dispositivo = acceso.dispositivo_actual()
+    if dispositivo and request.args.get('modo') != 'contrasena':
+        from backend.models.models import ConfiguracionSistema
+        return render_template(
+            'login_pin.html',
+            dispositivo=dispositivo,
+            personal=acceso.personal_con_pin(dispositivo),
+            nombre_negocio=ConfiguracionSistema.get('nombre_negocio', ''),
+        )
+    return render_template('login.html', identificador='', dispositivo=dispositivo)
 
 
 @auth_bp.route('/logout', methods=['POST'])
@@ -67,8 +68,8 @@ def logout():
         registrar_auditoria('logout', 'Usuario', user_id, 'Cierre de sesión', user_id)
         from backend.extensions import db
         db.session.commit()
-    logout_user()  # Clean Flask-Login state + remember cookie
-    session.clear()
+    from backend.services.sesion import cerrar_sesion
+    cerrar_sesion()
     logger.info('Logout: usuario_id=%s', user_id)
     flash('Sesión cerrada', 'info')
     return redirect(url_for('auth.login'))

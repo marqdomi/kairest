@@ -1,6 +1,6 @@
 # Plan — Acceso rápido (usuario + PIN) y sesiones que no se caen
 
-Aprobado 2026-10-29. Decisiones de Marco:
+Implementado 2026-10-29 (las 6 fases; ver CLAUDE.md "Acceso rápido"). Decisiones de Marco:
 - PIN **sólo en aparatos autorizados** (código de enlace de 6 dígitos)
 - Sesión del mesero **16 h** (fin de turno); cocina 30 días; dueña 7 días
 - La dueña entra **sólo con usuario + contraseña**

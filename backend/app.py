@@ -63,15 +63,11 @@ def create_app():
     def index():
         # Con sesión abierta, cada rol cae en su pantalla (el ícono de la PWA y el
         # botón de las páginas de error apuntan aquí); sin sesión, al login.
-        from flask import redirect, url_for
+        from flask import redirect, url_for, session
         from flask_login import current_user
-        if current_user.is_authenticated:
-            if current_user.rol in ('superadmin', 'admin'):
-                return redirect(url_for('admin.dashboard'))
-            if current_user.rol == 'mesero':
-                return redirect(url_for('meseros.view_meseros'))
-            if current_user.rol == 'cocina' or current_user.es_cocina:
-                return redirect(url_for('cocina.index'))
+        if current_user.is_authenticated and 'user_id' in session:
+            from backend.services.sesion import destino
+            return redirect(destino(current_user))
         return redirect(url_for('auth.login'))
 
     # Páginas de error en español: sin esto un mesero que abre una estación ajena
@@ -178,6 +174,19 @@ def create_app():
     def _set_sucursal_activa():
         from flask import session as flask_session
         g.sucursal_id = flask_session.get('sucursal_id')  # None = "Todas"
+
+    # ---- Vigencia de la sesión por rol (services/sesion.py) ----
+    @app.before_request
+    def _vigencia_sesion():
+        from flask import session as flask_session, flash
+        from backend.services import sesion
+        if 'user_id' not in flask_session or flask_request.endpoint == 'static':
+            return
+        if sesion.vencida():
+            sesion.cerrar_sesion()
+            flash('Tu sesión venció por inactividad. Vuelve a entrar.', 'info')
+            return
+        sesion.renovar()
 
     # Inject nonce into all templates
     @app.context_processor
@@ -339,6 +348,8 @@ def create_app():
     app.register_blueprint(pagos_bp)
     # Onboarding
     app.register_blueprint(setup_bp)
+    from backend.routes.acceso import acceso_bp, clave_dispositivo
+    app.register_blueprint(acceso_bp)
 
     # Comandos de consola (recuperar acceso sin poder entrar al sistema)
     from backend.cli import registrar_comandos
@@ -352,6 +363,8 @@ def create_app():
     # Rate limiting — rutas sensibles (Fase 4 - Item 24)
     limiter.limit("10 per minute")(auth_bp)
     limiter.limit("30 per minute")(delivery_bp)
+    # PIN y vinculación: por dispositivo, no por IP (el bloqueo real es por persona)
+    limiter.limit("30 per minute", key_func=clave_dispositivo)(acceso_bp)
 
     # Health check (Fase 4 - Item 25 + Sprint 2 pool stats)
     @app.route('/health')

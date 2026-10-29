@@ -1,0 +1,96 @@
+{% extends 'layouts/_layout_admin.html' %}
+{% block page_title %}Dispositivos{% endblock %}
+
+{% block admin_breadcrumb %}
+<div class="cl-breadcrumb">
+  <span>Configuración</span>
+  <i data-lucide="chevron-right" style="width:13px;height:13px;"></i>
+  <span class="cl-breadcrumb__current">Dispositivos</span>
+</div>
+{% endblock %}
+
+{% block admin_content %}
+<div class="cl-page-hdr">
+  <div>
+    <h1>Dispositivos</h1>
+    <p>Aparatos donde el personal entra con su PIN. En cualquier otro sólo se entra con contraseña.</p>
+  </div>
+</div>
+
+{# ── Vincular un aparato nuevo ── #}
+<div class="cl-card mb-4" style="padding:20px;">
+  <h2 style="font-size:16px;font-weight:700;margin:0 0 6px;">Vincular una tablet o celular</h2>
+  {% if codigo %}
+  <p style="color:var(--cl-text-secondary);font-size:var(--cl-text-sm);margin:0 0 12px;">
+    En el aparato nuevo abre el sistema, toca <strong>"Vincular este aparato"</strong> y escribe:
+  </p>
+  <div style="font-family:var(--cl-font-mono);font-size:40px;font-weight:800;letter-spacing:.25em;color:var(--cl-text-primary);">
+    {{ codigo[:3] }} {{ codigo[3:] }}
+  </div>
+  <p style="color:var(--cl-text-tertiary);font-size:12.5px;margin:6px 0 0;">
+    Vale 10 minutos y sirve una sola vez. Anótalo ahora: no se vuelve a mostrar.
+  </p>
+  {% else %}
+  <p style="color:var(--cl-text-secondary);font-size:var(--cl-text-sm);margin:0 0 12px;">
+    Genera un código de 6 dígitos y escríbelo en el aparato
+    nuevo{% if segundos %} (hay uno activo, vence en {{ (segundos // 60) + 1 }} min){% endif %}.
+  </p>
+  <form method="POST" action="{{ url_for('acceso.generar_codigo') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="cl-btn--v7-primary"><i data-lucide="key-round" class="icon-sm"></i> Generar código</button>
+  </form>
+  {% endif %}
+
+  {% if not actual_id %}
+  <hr style="border-color:var(--cl-border-color);margin:18px 0;">
+  <form method="POST" action="{{ url_for('acceso.autorizar_este') }}" class="d-flex gap-2 flex-wrap align-items-end">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div style="flex:1;min-width:200px;">
+      <label class="cl-form-label" for="nombreEste">¿O es este aparato?</label>
+      <input type="text" class="cl-form-input" id="nombreEste" name="nombre" maxlength="60"
+             placeholder="Tablet de la barra" required>
+    </div>
+    <button type="submit" class="cl-btn--v7-outline">Autorizar este</button>
+  </form>
+  {% endif %}
+</div>
+
+{# ── Lista ── #}
+<div class="cl-card">
+  {% if dispositivos %}
+  <div class="table-responsive">
+    <table class="cl-table cl-tabla-cards" style="margin-bottom:0;">
+      <thead>
+        <tr><th>Aparato</th><th>Vinculado</th><th>Último acceso</th><th>Estado</th><th class="text-end">Acción</th></tr>
+      </thead>
+      <tbody>
+        {% for d in dispositivos %}
+        <tr>
+          <td data-label="Aparato" style="font-weight:600;">
+            {{ d.nombre }}{% if d.id == actual_id %} <span class="cl-badge cl-badge--gray" style="font-size:11px;">este</span>{% endif %}
+          </td>
+          <td data-label="Vinculado" style="color:var(--cl-text-secondary);">{{ d.creado|fechahora_local if d.creado else '—' }}</td>
+          <td data-label="Último acceso" style="color:var(--cl-text-secondary);">{{ d.ultimo_uso|fechahora_local if d.ultimo_uso else 'Nunca' }}</td>
+          <td data-label="Estado">
+            {% if d.activo %}<span class="cl-badge cl-badge--green">Activo</span>
+            {% else %}<span class="cl-badge cl-badge--gray">Desautorizado</span>{% endif %}
+          </td>
+          <td class="text-end cl-td-acciones">
+            {% if d.activo %}
+            <form method="POST" action="{{ url_for('acceso.desautorizar', id=d.id) }}"
+                  data-confirmar="¿Quitarle el acceso con PIN a &quot;{{ d.nombre }}&quot;?">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="cl-btn--v7-outline cl-btn--sm">Desautorizar</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="padding:20px;margin:0;color:var(--cl-text-secondary);">Todavía no hay aparatos vinculados.</p>
+  {% endif %}
+</div>
+{% endblock %}

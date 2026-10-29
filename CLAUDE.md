@@ -931,6 +931,54 @@ fragmentos por fetch: a la hora de abierto, cada "listo" regresaba 400 — y
 - Tests: `tests/test_csrf_turno.py` (7, CSRF encendido, reloj adelantado 8 h, control
   negativo verificado quitando la línea del config). Suite total 166 passed.
 
+## Acceso rápido: usuario + PIN y sesiones que no se caen (v6.8)
+Plan y decisiones en `docs/PLAN_ACCESO_PIN.md`. En un puesto lo que importa es entrar en
+2 segundos y no volver a entrar a media jornada.
+
+### Sesiones
+- La cookie **no tenía fecha** (`SESSION_PERMANENT=False`): moría al cerrar el navegador,
+  y los celulares de gama baja matan la app en segundo plano. Ahora es permanente (tope
+  30 días) y la vigencia real es **por rol y sin uso**: cocina 30 d, mesero 16 h, admin 7 d
+  (`services/sesion.py`, `before_request` `_vigencia_sesion`; se renueva con cada uso,
+  escribiendo a Redis como mucho una vez por minuto)
+- `iniciar_sesion(usuario, metodo)` — **único** punto de entrada. Toda la autorización lee
+  `session['user_id'|'rol'|'estacion_id']` (~40 usos): el login por PIN y el de contraseña
+  deben poblar exactamente lo mismo
+- Redis con `appendonly` + volumen en los 3 compose: un reinicio o actualización ya no saca
+  a todos
+
+### Usuario y PIN
+- `Usuario.username` (único) + `email` opcional + `pin_hash`/`pin_fallidos`/
+  `pin_bloqueado_hasta` + tabla `dispositivos_autorizados` (migración **c014**, llena el
+  username de los existentes con su primer nombre)
+- Login de contraseña acepta **usuario o correo** (`acceso.buscar_para_login`); el campo
+  del form sigue llamándose `email` por compatibilidad
+- **PIN de 4 dígitos sólo para mesero/cocina y sólo en aparatos autorizados**. Rechaza los
+  obvios (repetidos, secuencias, 1234…). 5 fallos → esa persona bloqueada 5 min (por
+  persona, no por IP: con Docker Desktop todas las tablets llegan con la misma IP)
+- Pantalla "¿Quién eres?" (`login_pin.html`): `/login` la muestra si el navegador trae la
+  cookie `kr_dispositivo` válida; tocar nombre → teclado → entra al 4º dígito. La dueña usa
+  `?modo=contrasena`. 2 columnas en celular
+- Vincular aparato: la dueña genera un **código de 6 dígitos** (10 min, un uso, 5 intentos)
+  en Admin → Dispositivos, o "Autorizar este". En BD sólo vive el sha256 del token
+- Blueprint `acceso` con su propio rate limit **por dispositivo** (30/min)
+- Wizard: paso 2 pide usuario; paso 5 pide **nombre + rol + PIN** (sin correo ni
+  contraseña) y por defecto autoriza el aparato donde se configura. Admin → Usuarios:
+  PIN para personal, contraseña para admins, botón Desbloquear. CLI `flask reset-pin`
+- Autorizar descuento acepta usuario o correo del admin
+
+### Corregido de paso
+- **Modo básico escondía Usuarios y Personalización** (la CLABE): todo el grupo
+  Configuración era "avanzado". Ahora los items con `'basico': true` se ven en básico
+- **`update.sh`/`.ps1` hacían `stamp head`** en bases sin historial Alembic: con una
+  migración nueva la daba por aplicada **sin crear sus columnas** (create_all no altera
+  tablas) y la app tronaba. Ahora marcan `c009` (de ahí en adelante todas son idempotentes)
+  y `upgrade` aplica el resto. `deploy/gcp/startup.sh` también migra en cada arranque
+- Validado contra PostgreSQL real: base vieja sin historial → stamp c009 → upgrade
+  c010..c014 sin errores, usernames llenados
+- Tests: `tests/test_acceso_pin.py` (31, controles negativos verificados: sin sesión
+  permanente y sin bloqueo fallan). Suite total 197 passed.
+
 ## Mejoras visuales de la evaluación (v6.8)
 Implementadas las prioridades de `docs/EVALUACION_VISUAL.md`. Guardas en
 `tests/test_identidad_visual.py` (7, con control negativo).

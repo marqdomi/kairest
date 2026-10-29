@@ -109,6 +109,10 @@ def paso2():
         email = sanitizar_email(request.form.get('email', '')) or request.form.get('email', '').strip()
         password = request.form.get('password', '')
         password2 = request.form.get('password2', '')
+        from backend.services.acceso import normalizar_username, sugerir_username
+        admin_previo = Usuario.query.filter_by(rol='superadmin').first()
+        usuario = normalizar_username(request.form.get('usuario', '')) or sugerir_username(
+            nombre, excluir_id=admin_previo.id if admin_previo else None)
 
         errors = []
         if not nombre:
@@ -119,6 +123,9 @@ def paso2():
             errors.append('Ingresa una contraseña.')
         if password != password2:
             errors.append('Las contraseñas no coinciden.')
+        otro = Usuario.query.filter_by(username=usuario).first()
+        if otro and (not admin_previo or otro.id != admin_previo.id):
+            errors.append(f'El usuario "{usuario}" ya existe. Elige otro.')
 
         if not errors:
             pw_valida, pw_errores = validar_password(password, nombre=nombre, email=email)
@@ -128,16 +135,17 @@ def paso2():
         if errors:
             for err in errors:
                 flash(err, 'danger')
-            return render_template('setup/paso2.html', paso=2, nombre=nombre, email=email)
+            return render_template('setup/paso2.html', paso=2, nombre=nombre, email=email, usuario=usuario)
 
         # Check if a superadmin already exists (re-running wizard)
-        admin = Usuario.query.filter_by(rol='superadmin').first()
+        admin = admin_previo
         if admin:
             admin.nombre = nombre
             admin.email = email
+            admin.username = usuario
             admin.set_password(password)
         else:
-            admin = Usuario(nombre=nombre, email=email, rol='superadmin')
+            admin = Usuario(nombre=nombre, email=email, username=usuario, rol='superadmin')
             admin.set_password(password)
             sucursal_id = session.get('setup_sucursal_id')
             if sucursal_id:
@@ -148,7 +156,7 @@ def paso2():
         session['setup_admin_id'] = admin.id
         return redirect(url_for('setup.paso3'))
 
-    return render_template('setup/paso2.html', paso=2, nombre='', email='')
+    return render_template('setup/paso2.html', paso=2, nombre='', email='', usuario='')
 
 
 # ── Paso 3: Tu Menú ──
@@ -311,9 +319,9 @@ def paso5():
         return redirect(url_for('setup.paso1'))
 
     if request.method == 'POST':
+        from backend.services import acceso
         nombres = request.form.getlist('user_nombre[]')
-        emails = request.form.getlist('user_email[]')
-        passwords = request.form.getlist('user_password[]')
+        pines = request.form.getlist('user_pin[]')
         roles = request.form.getlist('user_rol[]')
 
         created = 0
@@ -326,17 +334,11 @@ def paso5():
             nombre = sanitizar_texto(nombre, 100)
             if not nombre:
                 continue
-            email = sanitizar_email(emails[i]) if i < len(emails) else ''
-            if not email:
-                continue
-            password = passwords[i] if i < len(passwords) else ''
-            if not password:
-                continue
-
-            # Validate password strength (same policy as superadmin)
-            pw_valida, pw_errores = validar_password(password, nombre=nombre, email=email)
-            if not pw_valida:
-                flash(f'Contraseña de {nombre} no cumple política: {"; ".join(pw_errores)}', 'danger')
+            # El personal entra con usuario + PIN: sin correo ni contraseña que inventar
+            pin = (pines[i] if i < len(pines) else '').strip()
+            pin_ok, pin_error = acceso.validar_pin(pin)
+            if not pin_ok:
+                flash(f'PIN de {nombre}: {pin_error} No se creó; agrégalo después en Usuarios.', 'danger')
                 continue
 
             rol_raw = roles[i] if i < len(roles) else 'mesero'
@@ -356,30 +358,35 @@ def paso5():
                 estacion_id = estacion.id
                 rol = 'cocina'
             else:
-                rol = rol_raw
+                rol = 'mesero'  # admin se da de alta en el panel (con contraseña)
 
-            if Usuario.query.filter_by(email=email).first():
-                flash(f'El correo {email} ya existe, se omitió.', 'warning')
-                continue
-
-            user = Usuario(nombre=nombre, email=email, rol=rol, estacion_id=estacion_id)
-            user.set_password(password)
+            user = Usuario(nombre=nombre, username=acceso.sugerir_username(nombre),
+                           rol=rol, estacion_id=estacion_id)
+            user.set_pin(pin)
             if sucursal_id:
                 user.sucursal_id = sucursal_id
             db.session.add(user)
+            db.session.flush()  # que el siguiente sugerir_username vea este
             created += 1
 
         db.session.commit()
         if created:
-            flash(f'{created} usuarios creados.', 'success')
+            flash(f'{created} personas dadas de alta con su PIN.', 'success')
 
         # Complete onboarding
         ConfiguracionSistema.set('onboarding_completado', 'true')
         ConfiguracionSistema.set('modo_sistema', 'basico')
+        respuesta = redirect(url_for('auth.login'))
+        if request.form.get('autorizar_este') == '1':
+            # El wizard suele hacerse en la tablet del puesto: que quede lista para PIN
+            admin = Usuario.query.filter_by(rol='superadmin').first()
+            _, token = acceso.autorizar('Aparato del puesto', usuario_id=admin.id if admin else None,
+                                        sucursal_id=sucursal_id)
+            acceso.poner_cookie(respuesta, token)
         db.session.commit()
         logger.info('Onboarding completado desde paso 5.')
-        flash('¡Configuración completada! Inicia sesión para comenzar.', 'success')
-        return redirect(url_for('auth.login'))
+        flash('¡Configuración completada! Ya pueden entrar.', 'success')
+        return respuesta
 
     estaciones = Estacion.query.order_by(Estacion.nombre).all()
     return render_template('setup/paso5.html', paso=5, estaciones=estaciones)

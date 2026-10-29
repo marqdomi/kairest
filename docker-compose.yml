@@ -46,6 +46,10 @@ services:
 
   redis:
     image: "redis:alpine"
+    # Persistente: las sesiones del personal sobreviven reinicios y actualizaciones
+    command: redis-server --appendonly yes
+    volumes:
+      - redisdata:/data
 
   backup:
     image: postgres:16-alpine
@@ -72,3 +76,4 @@ services:
 
 volumes:
   pgdata:
+  redisdata:

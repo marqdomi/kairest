@@ -1,0 +1,47 @@
+{% extends 'layouts/_layout_auth.html' %}
+{% block page_title %}Vincular este aparato{% endblock %}
+
+{% block auth_content %}
+<div class="cl-auth__brand">
+  <i data-lucide="smartphone" style="width:40px;height:40px;color:var(--cl-brand-text);"></i>
+  <h1 class="cl-auth__title">Vincular este aparato</h1>
+  <p class="cl-auth__subtitle">
+    Pide a la dueña un código en <strong>Admin → Dispositivos</strong>. Con él, el personal
+    podrá entrar aquí con su PIN.
+  </p>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% for category, message in messages %}
+<div class="cl-toast cl-toast--{{ 'error' if category in ('danger','error') else category }}" role="alert"
+  style="position:relative;margin-bottom:var(--cl-space-3)">
+  <span>{{ message }}</span>
+</div>
+{% endfor %}
+{% endwith %}
+
+<form method="POST" action="{{ url_for('acceso.vincular') }}" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="cl-auth__input-group">
+    <label class="cl-form-label" for="codigo">Código de 6 dígitos</label>
+    <input type="text" class="cl-form-input" name="codigo" id="codigo" inputmode="numeric"
+      pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required autofocus
+      style="font-size:28px;letter-spacing:.4em;text-align:center;font-family:var(--cl-font-mono);">
+  </div>
+
+  <div class="cl-auth__input-group">
+    <label class="cl-form-label" for="nombre">Nombre de este aparato</label>
+    <input type="text" class="cl-form-input" name="nombre" id="nombre" maxlength="60"
+      value="{{ nombre }}" placeholder="Tablet comal, Celular de Pepe…" required>
+  </div>
+
+  <button type="submit" class="cl-btn cl-btn--primary cl-auth__submit">
+    <i data-lucide="link" class="icon-sm"></i> Vincular
+  </button>
+</form>
+
+<p style="text-align:center;margin-top:var(--cl-space-4);font-size:var(--cl-text-sm);">
+  <a href="{{ url_for('auth.login') }}" style="color:var(--cl-text-secondary);">Volver</a>
+</p>
+{% endblock %}

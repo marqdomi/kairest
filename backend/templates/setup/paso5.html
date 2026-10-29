@@ -1,38 +1,55 @@
 {% extends 'setup/_layout_setup.html' %}
 
 {% block setup_content %}
+  <style>
+    /* Sin separación las filas se encimaban: no se sabía qué rol era de quién */
+    .cl-equipo-fila { padding-bottom: var(--cl-space-3); border-bottom: 1px dashed var(--cl-border-color); margin-bottom: var(--cl-space-3); }
+  </style>
   <h1 class="cl-setup__title">Tu equipo</h1>
-  <p class="cl-setup__subtitle">Agrega a las personas que usarán el sistema. Puedes omitir este paso.</p>
+  <p class="cl-setup__subtitle">Meseros y cocina entran tocando su nombre y con un PIN de 4 números. Puedes omitir este paso.</p>
 
   <form method="POST" action="{{ url_for('setup.paso5') }}" id="teamForm" novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     <div id="userRows">
-      <div class="cl-setup__row" style="flex-wrap:wrap">
-        <div class="cl-form-group" style="flex:1 1 200px">
+      <div class="cl-setup__row cl-equipo-fila" style="flex-wrap:wrap">
+        <div class="cl-form-group" style="flex:2;min-width:140px">
           <label class="cl-form-label">Nombre</label>
           <input type="text" class="cl-form-input" name="user_nombre[]" placeholder="María">
         </div>
-        <div class="cl-form-group" style="flex:1 1 200px">
-          <label class="cl-form-label">Correo</label>
-          <input type="email" class="cl-form-input" name="user_email[]" placeholder="maria@correo.com">
-        </div>
-        <div class="cl-form-group" style="flex:1 1 160px">
-          <label class="cl-form-label">Contraseña</label>
-          <input type="password" class="cl-form-input" name="user_password[]" placeholder="Mín. 8 caracteres">
-        </div>
-        <div class="cl-form-group" style="flex:1 1 160px">
+        <div class="cl-form-group" style="flex:2;min-width:140px">
           <label class="cl-form-label">Rol</label>
           <select class="cl-form-input" name="user_rol[]">
             <option value="mesero">Mesero</option>
             {% for est in estaciones %}
             <option value="cocina:{{ est.nombre }}">Cocina — {{ est.nombre }}</option>
             {% endfor %}
-            <option value="admin">Admin</option>
           </select>
+        </div>
+        <div class="cl-form-group" style="flex:1;min-width:150px">
+          <label class="cl-form-label">PIN (4 números)</label>
+          <div style="display:flex;gap:6px;">
+            <input type="text" class="cl-form-input" name="user_pin[]" inputmode="numeric" maxlength="4"
+                   pattern="[0-9]{4}" placeholder="0000" autocomplete="off"
+                   style="font-family:var(--cl-font-mono);letter-spacing:.2em;">
+            <button type="button" class="cl-btn cl-btn--outline btn-generar-pin" title="Generar PIN"
+                    aria-label="Generar PIN" style="flex:none;padding:0 10px;">
+              <i data-lucide="dices" style="width:16px;height:16px;"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
+    <p style="font-size:var(--cl-text-xs);color:var(--cl-text-secondary);margin:var(--cl-space-2) 0 0;">
+      Anota el PIN de cada quien y dáselo en persona. Para entrar tocan su nombre y teclean
+      su PIN. Otros administradores se agregan después en Usuarios, con contraseña.
+    </p>
+
+    <label style="display:flex;gap:8px;align-items:flex-start;margin-top:var(--cl-space-4);font-size:var(--cl-text-sm);cursor:pointer;">
+      <input type="checkbox" name="autorizar_este" value="1" checked style="margin-top:3px;width:18px;height:18px;">
+      <span><strong>Este aparato se queda en el puesto</strong> — el personal entrará aquí con su PIN.
+        Desmárcalo si es tu celular o tu computadora.</span>
+    </label>
 
     <button type="button" class="cl-btn cl-btn--outline" id="addUserBtn"
             style="width:100%;margin-top:var(--cl-space-2)">
@@ -80,6 +97,22 @@
     row.appendChild(removeBtn);
     container.appendChild(row);
     if (window.lucide) lucide.createIcons();
+  });
+
+  // Generar PIN (evita los obvios: 0000, 1234…)
+  function pinAleatorio() {
+    var obvios = ['1234','4321','1212','2580','0852','1122','6969','1004','2000','1010'];
+    var seq = '0123456789', inv = '9876543210';
+    while (true) {
+      var a = new Uint32Array(1); window.crypto.getRandomValues(a);
+      var p = String(a[0] % 10000).padStart(4, '0');
+      if (new Set(p).size > 1 && obvios.indexOf(p) < 0 && seq.indexOf(p) < 0 && inv.indexOf(p) < 0) return p;
+    }
+  }
+  document.getElementById('userRows').addEventListener('click', function (e) {
+    var b = e.target.closest('.btn-generar-pin');
+    if (!b) return;
+    b.parentElement.querySelector('input[name="user_pin[]"]').value = pinAleatorio();
   });
 
   // Skip step — submit hidden form

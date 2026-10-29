@@ -88,13 +88,14 @@ cmd /c "$compose up -d $buildFlag" | Select-Object -Last 5
 # -- Apply schema migrations --
 # create_all() del arranque solo crea tablas nuevas, nunca altera existentes.
 # Alembic aplica los cambios de schema pendientes. En una base creada por
-# create_all sin historial alembic, se marca el head actual primero (el schema
-# ya coincide) para que futuros upgrades apliquen solo lo nuevo.
+# create_all sin historial alembic, se marca c009 (NO head: head daba por aplicada
+# la migración más nueva sin crear sus columnas). De c009 en adelante las
+# migraciones son idempotentes, así que upgrade aplica el resto sin chocar.
 Write-Host "  Aplicando migraciones de base de datos..." -ForegroundColor Cyan
 Start-Sleep -Seconds 5  # dar tiempo a que los contenedores esten exec-ready
 $tieneAlembic = (cmd /c "$compose exec -T db psql -U casaleones -d casaleones -tAc ""SELECT to_regclass('alembic_version') IS NOT NULL"" 2>nul") -join ""
 if ($tieneAlembic.Trim() -ne "t") {
-    cmd /c "$compose exec -T web flask db stamp head 2>nul" | Out-Null
+    cmd /c "$compose exec -T web flask db stamp c009 2>nul" | Out-Null
     if ($LASTEXITCODE -eq 0) {
         Write-Host "  Base marcada en head (primera vez con Alembic)" -ForegroundColor Green
     } else {

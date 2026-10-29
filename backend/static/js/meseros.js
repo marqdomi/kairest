@@ -813,8 +813,8 @@ $(document).ready(function() {
                 <i data-lucide="shield-check" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Autorización (Admin/Superadmin)
             </div>
             <div style="margin-bottom:10px;">
-                <label style="display:block;font-size:12px;color:var(--cl-text-tertiary);margin-bottom:4px;font-weight:500;">Email autorizador</label>
-                <input type="email" id="desc_auth_email" class="cl-input" placeholder="admin@casaleones.com">
+                <label style="display:block;font-size:12px;color:var(--cl-text-tertiary);margin-bottom:4px;font-weight:500;">Usuario de quien autoriza</label>
+                <input type="text" id="desc_auth_email" class="cl-input" placeholder="maria" autocapitalize="none" autocorrect="off">
             </div>
             <div style="margin-bottom:14px;">
                 <label style="display:block;font-size:12px;color:var(--cl-text-tertiary);margin-bottom:4px;font-weight:500;">Contraseña</label>

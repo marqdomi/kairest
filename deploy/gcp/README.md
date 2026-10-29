@@ -56,9 +56,10 @@ Luego `https://casaleones.kainet.mx` → wizard (plantilla *Barbacoa y Carnitas*
 
 | Tarea | Comando (dentro de la VM, en `/opt/kairest/deploy/gcp`) |
 |---|---|
-| Actualizar | `sudo git -C /opt/kairest pull && sudo docker compose up -d --build` |
+| Actualizar | `sudo git -C /opt/kairest pull && sudo bash /opt/kairest/deploy/gcp/startup.sh` (reconstruye y aplica migraciones) |
 | Ver logs | `sudo docker compose logs -f web` |
-| Olvidó contraseña | `sudo docker compose exec web flask reset-password correo@ejemplo.com` |
+| Olvidó contraseña (dueña) | `sudo docker compose exec web flask reset-password maria` |
+| Olvidó su PIN (personal) | `sudo docker compose exec web flask reset-pin pepe` — o desde Admin → Usuarios |
 | Respaldos | `deploy/gcp/backups/*.dump` (cada hora, 7 días). Para bajarlos: `gcloud compute scp` |
 
 Ojo: los respaldos viven en el mismo disco de la VM. Si se borra la VM, se van con ella.

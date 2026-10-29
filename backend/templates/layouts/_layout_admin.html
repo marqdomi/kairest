@@ -89,8 +89,9 @@ Children: list of (label, endpoint) for sub-nav #}
 'group': 'Configuración',
 'key': 'configuracion',
 'items': [
-{'icon': 'user-cog', 'label': 'Usuarios', 'endpoint': 'admin.lista_usuarios'},
-{'icon': 'palette', 'label': 'Personalización', 'endpoint': 'admin.personalizacion'},
+{'icon': 'user-cog', 'label': 'Usuarios', 'endpoint': 'admin.lista_usuarios', 'basico': true},
+{'icon': 'tablet-smartphone', 'label': 'Dispositivos', 'endpoint': 'acceso.lista_dispositivos', 'basico': true},
+{'icon': 'palette', 'label': 'Personalización', 'endpoint': 'admin.personalizacion', 'basico': true},
 {'icon': 'building', 'label': 'Sucursales', 'endpoint': 'sucursales.lista_sucursales'},
 {'icon': 'truck', 'label': 'Delivery', 'endpoint': 'delivery.admin_delivery'},
 {'icon': 'shield', 'label': 'Auditoría', 'endpoint': 'auditoria.lista_auditoria'}
@@ -121,12 +122,16 @@ Children: list of (label, endpoint) for sub-nav #}
   <nav class="cl-sidebar__nav" id="sidebarNav">
     {% for group in sidebar_nav %}
     {# ── Modo básico: ocultar módulos avanzados ── #}
-    {% if modo_sistema == 'avanzado' or group.key in modulos_basicos %}
+    {# En básico, de un grupo avanzado sólo se ven los items marcados 'basico': sin esto
+       la dueña no tenía cómo llegar a Usuarios ni a Personalización (CLABE). #}
+    {% set grupo_completo = modo_sistema == 'avanzado' or group.key in modulos_basicos %}
+    {% set items_visibles = group['items'] if grupo_completo else group['items']|selectattr('basico', 'defined')|list %}
+    {% if items_visibles %}
     {% if group.group %}
     <div class="cl-sidebar__group-label">{{ group.group }}</div>
     {% endif %}
 
-    {% for item in group['items'] %}
+    {% for item in items_visibles %}
     {% set is_active = request.endpoint == item.endpoint %}
     {% set has_children = item.children is defined and item.children %}
     {% set child_active = false %}

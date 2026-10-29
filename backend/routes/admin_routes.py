@@ -306,95 +306,128 @@ def lista_usuarios():
     usuarios = Usuario.query.order_by(Usuario.rol, Usuario.nombre).all()
     return render_template('admin/usuarios.html', usuarios=usuarios)
 
+def _aplicar_formulario_usuario(u, form, nuevo):
+    """Valida y aplica el formulario de usuario. Devuelve la lista de errores.
+
+    Meseros y cocina entran con usuario + PIN (en aparatos autorizados); admin y
+    superadmin con usuario + contraseña. El correo es opcional para todos.
+    """
+    from backend.services import acceso
+    errores = []
+    nombre = sanitizar_texto(form.get('nombre', ''), 100)
+    email = (sanitizar_email(form.get('email', '')) or form.get('email', '').strip()) or None
+    username = acceso.normalizar_username(form.get('usuario', '')) or acceso.sugerir_username(
+        nombre, excluir_id=u.id)
+    rol_raw = form.get('rol', 'mesero')
+    pin = form.get('pin', '').strip()
+    password = form.get('password', '').strip()
+
+    if not nombre:
+        errores.append('Escribe el nombre.')
+    otro = Usuario.query.filter_by(username=username).first()
+    if otro and otro.id != u.id:
+        errores.append(f'El usuario "{username}" ya existe.')
+    if email:
+        otro = Usuario.query.filter(db.func.lower(Usuario.email) == email.lower()).first()
+        if otro and otro.id != u.id:
+            errores.append('Ese correo ya lo tiene otra persona.')
+
+    rol, estacion_id, error_rol = _resolver_rol_y_estacion(rol_raw)
+    if error_rol:
+        errores.append(error_rol)
+        return errores
+    # Un admin no puede tocar una cuenta de superadmin (ni cambiarle la contraseña,
+    # que era secuestro directo) ni promover a nadie a ese rol.
+    veto = _veto_sobre_superadmin(rol_objetivo=rol, usuario=None if nuevo else u)
+    if veto:
+        errores.append(veto)
+        return errores
+    # Dejar el sistema sin superadmin lo vuelve inadministrable.
+    if not nuevo and u.rol == 'superadmin' and rol != 'superadmin' and \
+            not _queda_algun_superadmin(excluyendo_id=u.id):
+        errores.append('Es el único superadmin: primero nombra a otro.')
+        return errores
+    usa_pin = rol in ('mesero', 'cocina')
+
+    if usa_pin:
+        if pin:
+            ok, msg = acceso.validar_pin(pin)
+            if not ok:
+                errores.append(msg)
+        elif nuevo or not u.pin_hash:
+            errores.append('Ponle un PIN de 4 números (con él entra).')
+    else:
+        if password:
+            ok, msgs = validar_password(password, nombre=nombre, email=email or '')
+            if not ok:
+                errores.extend(msgs)
+        elif nuevo or not u.password_hash:
+            errores.append('Los administradores entran con contraseña: escribe una.')
+
+    if errores:
+        return errores
+
+    u.nombre, u.email, u.username, u.rol, u.estacion_id = nombre, email, username, rol, estacion_id
+    if usa_pin and pin:
+        u.set_pin(pin)
+    if not usa_pin and password:
+        u.set_password(password)
+    return []
+
+
 @admin_bp.route('/usuarios/nuevo', methods=['GET', 'POST'])
 @login_required(roles=['admin', 'superadmin'])
 def usuario_nuevo():
-    if request.method == 'POST':
-        nombre = sanitizar_texto(request.form['nombre'], 100)
-        email = sanitizar_email(request.form['email']) or request.form['email'].strip()
-        rol_raw = request.form['rol']
-        password = request.form['password']
-        if Usuario.query.filter_by(email=email).first():
-            flash('Email ya existe', 'danger')
-            return redirect(url_for('admin.usuario_nuevo'))
-        # Validar política de contraseñas
-        pw_valida, pw_errores = validar_password(password, nombre=nombre, email=email)
-        if not pw_valida:
-            for err in pw_errores:
-                flash(err, 'danger')
-            return redirect(url_for('admin.usuario_nuevo'))
-        rol, estacion_id, error_rol = _resolver_rol_y_estacion(rol_raw)
-        if error_rol:
-            flash(error_rol, 'danger')
-            return redirect(url_for('admin.usuario_nuevo'))
-        veto = _veto_sobre_superadmin(rol_objetivo=rol)
-        if veto:
-            flash(veto, 'danger')
-            return redirect(url_for('admin.usuario_nuevo'))
-        u = Usuario(nombre=nombre, email=email, rol=rol, estacion_id=estacion_id)
-        u.set_password(password)
-        db.session.add(u)
-        db.session.commit()
-        flash('Usuario creado', 'success')
-        return redirect(url_for('admin.lista_usuarios'))
     estaciones = Estacion.query.order_by(Estacion.nombre).all()
-    return render_template('admin/usuario_form.html', estaciones=estaciones)
+    if request.method == 'POST':
+        u = Usuario()
+        errores = _aplicar_formulario_usuario(u, request.form, nuevo=True)
+        if errores:
+            for err in errores:
+                flash(err, 'danger')
+            return render_template('admin/usuario_form.html', estaciones=estaciones, form=request.form)
+        db.session.add(u)
+        db.session.flush()
+        from backend.services.audit import registrar_auditoria
+        registrar_auditoria('crear', 'Usuario', u.id, f'Usuario creado: {u.identificador}, rol={u.rol}')
+        db.session.commit()
+        flash(f'{u.nombre} dado de alta. Entra como "{u.username}".', 'success')
+        return redirect(url_for('admin.lista_usuarios'))
+    return render_template('admin/usuario_form.html', estaciones=estaciones, form={})
 
 @admin_bp.route('/usuarios/<int:id>/editar', methods=['GET', 'POST'])
 @login_required(roles=['admin', 'superadmin'])
 def usuario_editar(id):
     u = db.get_or_404(Usuario, id)
+    estaciones = Estacion.query.order_by(Estacion.nombre).all()
     if request.method == 'POST':
-        rol_raw = request.form['rol']
-        rol_previsto = 'cocina' if rol_raw.startswith('cocina:') else rol_raw
-
-        # Un admin no puede tocar una cuenta de superadmin (ni cambiarle la
-        # contraseña, que era secuestro directo) ni promover a nadie a ese rol.
-        veto = _veto_sobre_superadmin(rol_objetivo=rol_previsto, usuario=u)
-        if veto:
-            flash(veto, 'danger')
-            return redirect(url_for('admin.lista_usuarios'))
-
-        # Dejar el sistema sin superadmin lo vuelve inadministrable.
-        if u.rol == 'superadmin' and rol_previsto != 'superadmin' and not \
-                _queda_algun_superadmin(excluyendo_id=u.id):
-            flash('Es el único superadmin: primero nombra a otro.', 'danger')
-            return redirect(url_for('admin.lista_usuarios'))
-
-        nuevo_email = sanitizar_email(request.form['email']) or request.form['email'].strip()
-        # Dos cuentas con el mismo correo dejan un login ambiguo.
-        if Usuario.query.filter(Usuario.email == nuevo_email, Usuario.id != u.id).first():
-            flash(f'El correo {nuevo_email} ya está en uso por otro usuario.', 'danger')
-            estaciones = Estacion.query.order_by(Estacion.nombre).all()
-            return render_template('admin/usuario_form.html', usuario=u, estaciones=estaciones)
-
-        u.nombre = sanitizar_texto(request.form['nombre'], 100)
-        u.email = nuevo_email
-        rol, estacion_id, error_rol = _resolver_rol_y_estacion(rol_raw)
-        if error_rol:
-            flash(error_rol, 'danger')
-            estaciones = Estacion.query.order_by(Estacion.nombre).all()
-            return render_template('admin/usuario_form.html', usuario=u, estaciones=estaciones)
-        u.rol = rol
-        u.estacion_id = estacion_id
-        # Optional password update
-        new_pw = request.form.get('password', '').strip()
-        if new_pw:
-            pw_valida, pw_errores = validar_password(new_pw, nombre=u.nombre, email=u.email)
-            if not pw_valida:
-                for err in pw_errores:
-                    flash(err, 'danger')
-                estaciones = Estacion.query.order_by(Estacion.nombre).all()
-                return render_template('admin/usuario_form.html', usuario=u, estaciones=estaciones)
-            u.set_password(new_pw)
+        errores = _aplicar_formulario_usuario(u, request.form, nuevo=False)
+        if errores:
+            db.session.rollback()
+            for err in errores:
+                flash(err, 'danger')
+            return render_template('admin/usuario_form.html', usuario=u, estaciones=estaciones, form=request.form)
+        cambios = [c for c, campo in (('PIN cambiado', 'pin'), ('contraseña cambiada', 'password'))
+                   if request.form.get(campo, '').strip()]
         from backend.services.audit import registrar_auditoria
         registrar_auditoria('editar', 'Usuario', u.id,
-                            f'Usuario editado: {u.email}, rol={u.rol}' + (', password cambiado' if new_pw else ''))
+                            f'Usuario editado: {u.identificador}, rol={u.rol}' + (f', {", ".join(cambios)}' if cambios else ''))
         db.session.commit()
         flash('Usuario actualizado', 'success')
         return redirect(url_for('admin.lista_usuarios'))
-    estaciones = Estacion.query.order_by(Estacion.nombre).all()
-    return render_template('admin/usuario_form.html', usuario=u, estaciones=estaciones)
+    return render_template('admin/usuario_form.html', usuario=u, estaciones=estaciones, form={})
+
+@admin_bp.route('/usuarios/<int:id>/desbloquear', methods=['POST'])
+@login_required(roles=['admin', 'superadmin'])
+def usuario_desbloquear(id):
+    u = db.get_or_404(Usuario, id)
+    u.pin_fallidos = 0
+    u.pin_bloqueado_hasta = None
+    from backend.services.audit import registrar_auditoria
+    registrar_auditoria('desbloquear', 'Usuario', u.id, f'PIN desbloqueado: {u.identificador}')
+    db.session.commit()
+    flash(f'{u.nombre} ya puede volver a entrar.', 'success')
+    return redirect(url_for('admin.lista_usuarios'))
 
 @admin_bp.route('/usuarios/<int:id>/eliminar', methods=['POST'])
 @login_required(roles=['admin', 'superadmin'])
@@ -424,7 +457,7 @@ def usuario_eliminar(id):
         flash(f'No se puede eliminar: tiene {ordenes_count} orden(es) activa(s).', 'danger')
         return redirect(url_for('admin.lista_usuarios'))
     from backend.services.audit import registrar_auditoria
-    registrar_auditoria('eliminar', 'Usuario', u.id, f'Usuario eliminado: {u.email} (rol={u.rol})')
+    registrar_auditoria('eliminar', 'Usuario', u.id, f'Usuario eliminado: {u.identificador} (rol={u.rol})')
     db.session.delete(u)
     db.session.commit()
     flash('Usuario eliminado', 'success')

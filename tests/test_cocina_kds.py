@@ -420,7 +420,7 @@ class TestAsignacionDeCocinerosAEstaciones:
         _entrar(client, db, 'super_test@test.com')
         client.post('/admin/usuarios/nuevo', data={
             'nombre': 'Coci', 'email': 'nuevo_coci@test.com',
-            'rol': 'cocina:Parrilla', 'password': 'Test1234!',
+            'rol': 'cocina:Parrilla', 'pin': '4826',  # personal entra con PIN
         })
 
         u = Usuario.query.filter_by(email='nuevo_coci@test.com').first()
@@ -435,7 +435,7 @@ class TestAsignacionDeCocinerosAEstaciones:
         _entrar(client, db, 'super_test@test.com')
         client.post('/admin/usuarios/nuevo', data={
             'nombre': 'Coci', 'email': 'nuevo_coci@test.com',
-            'rol': 'cocina:Parrilla', 'password': 'Test1234!',
+            'rol': 'cocina:Parrilla', 'pin': '4826',  # personal entra con PIN
         })
         u = Usuario.query.filter_by(email='nuevo_coci@test.com').first()
 
@@ -451,7 +451,7 @@ class TestAsignacionDeCocinerosAEstaciones:
         _entrar(client, db, 'super_test@test.com')
         client.post('/admin/usuarios/nuevo', data={
             'nombre': 'Coci', 'email': 'nuevo_coci@test.com',
-            'rol': 'cocina:Parrilla', 'password': 'Test1234!',
+            'rol': 'cocina:Parrilla', 'pin': '4826',  # personal entra con PIN
         })
         u = Usuario.query.filter_by(email='nuevo_coci@test.com').first()
 
@@ -472,7 +472,7 @@ class TestAsignacionDeCocinerosAEstaciones:
         _entrar(client, db, 'super_test@test.com')
         client.post('/admin/usuarios/nuevo', data={
             'nombre': 'Fantasma', 'email': 'fantasma@test.com',
-            'rol': 'cocina:Estacion Que No Existe', 'password': 'Test1234!',
+            'rol': 'cocina:Estacion Que No Existe', 'pin': '4826',
         })
         assert Usuario.query.filter_by(email='fantasma@test.com').first() is None, \
             'se creó un usuario de cocina que al entrar recibe 403'
@@ -485,7 +485,7 @@ class TestAsignacionDeCocinerosAEstaciones:
         _entrar(client, db, 'super_test@test.com')
         client.post('/admin/usuarios/nuevo', data={
             'nombre': 'Coci', 'email': 'nuevo_coci@test.com',
-            'rol': 'cocina:Parrilla', 'password': 'Test1234!',
+            'rol': 'cocina:Parrilla', 'pin': '4826',  # personal entra con PIN
         })
         u = Usuario.query.filter_by(email='nuevo_coci@test.com').first()
 
@@ -513,11 +513,10 @@ class TestAsignacionDeCocinerosAEstaciones:
 
         client.post('/setup/paso/5', data={
             'user_nombre[]': ['Coci Wizard'],
-            'user_email[]': ['coci_wizard@test.com'],
-            'user_password[]': ['Test1234!'],
+            'user_pin[]': ['4826'],  # el equipo entra con PIN, sin correo
             'user_rol[]': ['cocina:Parrilla'],
         })
-        u = Usuario.query.filter_by(email='coci_wizard@test.com').first()
+        u = Usuario.query.filter_by(nombre='Coci Wizard').first()
         assert u is not None, 'el paso 5 no dio de alta al equipo'
         assert u.rol == 'cocina'
         assert u.estacion_id == estaciones['parrilla'].id
@@ -528,11 +527,10 @@ class TestAsignacionDeCocinerosAEstaciones:
 
         client.post('/setup/paso/5', data={
             'user_nombre[]': ['Fantasma'],
-            'user_email[]': ['fantasma@test.com'],
-            'user_password[]': ['Test1234!'],
+            'user_pin[]': ['4826'],
             'user_rol[]': ['cocina:No Existe'],
         })
-        assert Usuario.query.filter_by(email='fantasma@test.com').first() is None
+        assert Usuario.query.filter_by(nombre='Fantasma').first() is None
 
 
 class TestContadorPorEstacion:
