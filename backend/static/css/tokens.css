@@ -50,6 +50,10 @@
   /* ─── Accent ─── */
   --cl-gold: #C29E59;
   --cl-gold-hover: #A48445;
+  /* Alias: las plantillas usan la escala numérica; sin definirlos el botón
+     Cobrar del carrito quedaba transparente con texto blanco (invisible). */
+  --cl-gold-500: var(--cl-gold);
+  --cl-gold-600: var(--cl-gold-hover);
   --cl-agave: #507C36;
   --cl-agave-hover: #3E6329;
 
@@ -1605,10 +1609,12 @@ small,
 
 .cl-ops-bottom-tab {
   display: flex;
+  flex: 1 1 0;
+  min-width: 0;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: var(--cl-space-1) var(--cl-space-3);
+  padding: var(--cl-space-1) 2px;
   border-radius: var(--cl-radius-md);
   font-size: 11px;
   font-weight: var(--cl-font-medium);
@@ -1617,12 +1623,26 @@ small,
   transition: color var(--cl-transition-fast);
 }
 
+.cl-ops-bottom-tab span:not(.cl-est-badge) {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .cl-ops-bottom-tab.active {
   color: var(--cl-red-500);
 }
 
 .cl-ops-bottom-tab:hover {
   color: var(--cl-text-primary);
+}
+
+/* Contenedor de página dentro de .cl-ops-main. En celular el <main> ya pone 16px
+   de lado: sumarle otros 24px dejaba las tarjetas a 295px de 375 y descentradas. */
+.cl-ops-page { padding: 20px 24px; }
+@media (max-width: 767.98px) {
+  .cl-ops-page { padding: 4px 0 0; }
 }
 
 /* Con la barra inferior visible (56px) el contenido queda debajo de ella: hay que

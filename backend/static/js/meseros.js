@@ -917,6 +917,11 @@ $(document).ready(function() {
     // Delegación botón cobrar
     // =============================================
     $(document).on('click', '.btn-cobrar-orden:not(:disabled)', function() {
+        // El cobro vive en la pantalla completa (métodos habilitados, CLABE,
+        // referencia obligatoria de transferencia). El modal queda sólo para ver
+        // el ticket de órdenes ya pagadas y para el panel admin.
+        var pagoUrl = $(this).data('pago-url');
+        if (pagoUrl) { window.location.href = pagoUrl; return; }
         var ordenId = $(this).data('orden-id');
         if (ordenId) mostrarCobro(ordenId);
     });

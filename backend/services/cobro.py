@@ -43,7 +43,7 @@ def cerrar_orden_pagada(orden, vendedor_id, cambio=Decimal('0'), propina_efectiv
         ))
 
     socketio.emit('orden_pagada_notificacion', {
-        'orden_id': orden.id, 'mensaje': f'Orden #{orden.id} pagada.',
+        'orden_id': orden.id, 'mensaje': f'Orden #{orden.numero} pagada.',
     })
 
     # Descontar inventario según receta estándar (savepoint: que un tropiezo aquí no

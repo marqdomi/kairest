@@ -11,9 +11,22 @@
       "port": 5005
     },
     {
+      "name": "flask-demo-cliente",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "DATABASE_URL=sqlite:///demo_cliente.db REDIS_URL= RATELIMIT_ENABLED=false ./.venv/bin/python -m backend.app"
+      ],
+      "port": 5005
+    },
+    {
       "name": "docker-full-stack",
       "runtimeExecutable": "docker",
-      "runtimeArgs": ["compose", "up", "--build"],
+      "runtimeArgs": [
+        "compose",
+        "up",
+        "--build"
+      ],
       "port": 5005
     }
   ]

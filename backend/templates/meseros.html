@@ -17,7 +17,7 @@
    + ordenes_mesero|selectattr('estado','equalto','lista_para_entregar')|list|length %}
 {% set pagadas_count = ordenes_pagadas|default([])|length %}
 
-<div style="padding:20px 24px;min-height:calc(100vh - 56px);">
+<div class="cl-ops-page" style="min-height:calc(100vh - 56px);">
 
   {# ═══════════ Page Header ═══════════ #}
   {# Los contadores viven dentro de los filtros: antes había además una fila de chips
@@ -268,7 +268,8 @@
         </a>
         <button type="button" class="cl-btn--v7-gold cl-btn--sm btn-cobrar-orden"
           style="flex:1;justify-content:center;{% if not all_entregados %}opacity:.4;cursor:not-allowed;{% endif %}"
-          data-orden-id="{{ orden.id }}" {% if not all_entregados %}disabled{% endif %}
+          data-orden-id="{{ orden.id }}" data-pago-url="{{ url_for('meseros.pago_view', orden_id=orden.id) }}"
+          {% if not all_entregados %}disabled{% endif %}
           title="{% if not all_entregados %}Espera a que todos los ítems sean entregados{% else %}Cobrar orden{% endif %}">
           <i data-lucide="credit-card" style="width:12px;height:12px;"></i> Cobrar
         </button>

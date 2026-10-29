@@ -94,7 +94,7 @@ def imprimir_comanda(orden):
         printer.set(align='center', bold=True, width=2, height=2)
         printer.text('COMANDA\n')
         printer.set(align='center', bold=False, width=1, height=1)
-        printer.text(f'Orden #{orden.id}\n')
+        printer.text(f'Orden #{orden.numero}\n')
 
         if orden.mesa:
             printer.set(align='center', bold=True, width=2, height=1)
@@ -164,7 +164,7 @@ def imprimir_ticket_cuenta(orden, nombre_negocio='Mi Restaurante'):
         printer.text(f'{nombre_negocio}\n')
         printer.set(align='center', bold=False, width=1, height=1)
         printer.text(f'{_separator()}\n')
-        printer.text(f'Orden #{orden.id}\n')
+        printer.text(f'Orden #{orden.numero}\n')
         if orden.mesa:
             printer.text(f'Mesa {orden.mesa.numero}\n')
         printer.text(f'Mesero: {orden.mesero.nombre if orden.mesero else "N/A"}\n')
@@ -316,7 +316,7 @@ def generar_texto_comanda(orden):
     now = datetime.now().strftime('%Y-%m-%d %H:%M')
 
     lines.append(_center('COMANDA'))
-    lines.append(_center(f'Orden #{orden.id}'))
+    lines.append(_center(f'Orden #{orden.numero}'))
     if orden.mesa:
         lines.append(_center(f'Mesa {orden.mesa.numero}'))
     lines.append(_separator())
@@ -344,7 +344,7 @@ def generar_texto_ticket(orden, nombre_negocio='Mi Restaurante'):
 
     lines.append(_center(nombre_negocio))
     lines.append(_separator())
-    lines.append(f'Orden #{orden.id}')
+    lines.append(f'Orden #{orden.numero}')
     if orden.mesa:
         lines.append(f'Mesa {orden.mesa.numero}')
     lines.append(f'Mesero: {orden.mesero.nombre if orden.mesero else "N/A"}')

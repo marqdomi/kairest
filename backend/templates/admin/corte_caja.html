@@ -29,16 +29,16 @@
 
 {# ── KPI Cards Row ── #}
 <div class="cl-kpi-grid mb-5">
-  {{ kpi_card('Total Ingresos', '$' ~ '%.2f'|format(resumen.total_ingresos),
+  {{ kpi_card('Total Ingresos', '$' ~ '{:,.2f}'.format(resumen.total_ingresos),
   icon='dollar-sign', color='green',
   subtitle='ventas del día') }}
   {{ kpi_card('Órdenes', resumen.num_ordenes|string,
   icon='receipt', color='blue',
   subtitle='órdenes cerradas') }}
-  {{ kpi_card('Ticket Promedio', '$' ~ '%.2f'|format(resumen.ticket_promedio),
+  {{ kpi_card('Ticket Promedio', '$' ~ '{:,.2f}'.format(resumen.ticket_promedio),
   icon='ticket', color='gold',
   subtitle='por orden') }}
-  {{ kpi_card('Propinas', '$' ~ '%.2f'|format(resumen.propinas_total),
+  {{ kpi_card('Propinas', '$' ~ '{:,.2f}'.format(resumen.propinas_total),
   icon='coins', color='red',
   subtitle='total del día') }}
 </div>
@@ -52,7 +52,7 @@
     </span>
   </div>
   <div class="cl-card__body">
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;">
+    <div class="cl-corte-metodos">
 
       {# Efectivo #}
       <div
@@ -64,15 +64,16 @@
             en caja</span>
         </div>
         <div style="font-family:var(--cl-font-mono);font-size:22px;font-weight:800;color:var(--cl-success-text);">
-          ${{ '%.2f'|format(resumen.efectivo_en_caja) }}
+          ${{ '{:,.2f}'.format(resumen.efectivo_en_caja) }}
         </div>
         <div style="font-size:11px;color:var(--cl-text-tertiary);margin-top:6px;line-height:1.5;">
-          ${{ '%.2f'|format(resumen.efectivo_esperado) }} de venta
-          {% if resumen.propina_efectivo %}+ ${{ '%.2f'|format(resumen.propina_efectivo) }} de propina{% endif %}
+          ${{ '{:,.2f}'.format(resumen.efectivo_esperado) }} de venta
+          {% if resumen.propina_efectivo %}+ ${{ '{:,.2f}'.format(resumen.propina_efectivo) }} de propina{% endif %}
         </div>
       </div>
 
       {# Tarjeta #}
+      {% if mostrar_tarjeta %}
       <div
         style="background:rgba(46,144,250,0.08);border:1px solid rgba(46,144,250,0.25);border-radius:12px;padding:16px;text-align:center;">
         <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px;">
@@ -81,9 +82,10 @@
             style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--cl-info-text);">Tarjeta</span>
         </div>
         <div style="font-family:var(--cl-font-mono);font-size:22px;font-weight:800;color:var(--cl-info-text);">
-          ${{ '%.2f'|format(resumen.tarjeta_total) }}
+          ${{ '{:,.2f}'.format(resumen.tarjeta_total) }}
         </div>
       </div>
+      {% endif %}
 
       {# Transferencia #}
       <div
@@ -94,7 +96,7 @@
             style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--cl-warning-text);">Transferencia</span>
         </div>
         <div style="font-family:var(--cl-font-mono);font-size:22px;font-weight:800;color:var(--cl-warning-text);">
-          ${{ '%.2f'|format(resumen.transferencia_total) }}
+          ${{ '{:,.2f}'.format(resumen.transferencia_total) }}
         </div>
         <div style="font-size:11px;color:var(--cl-text-tertiary);margin-top:6px;line-height:1.5;">
           confirmadas en el banco
@@ -108,7 +110,7 @@
       <span style="font-size:13px;color:var(--cl-text-secondary);flex:1;min-width:200px;">
         Hay <strong>{{ resumen.transferencias_por_verificar }}</strong>
         transferencia{{ 's' if resumen.transferencias_por_verificar != 1 else '' }}
-        por <strong>${{ '%.2f'|format(resumen.monto_por_verificar) }}</strong>
+        por <strong>${{ '{:,.2f}'.format(resumen.monto_por_verificar) }}</strong>
         sin confirmar. No están contadas en el total del día.
       </span>
       <a href="{{ url_for('pagos.lista_por_verificar') }}" class="cl-btn--v7-outline cl-btn--sm">
@@ -129,7 +131,7 @@
 
       <form method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;">
+        <div class="cl-corte-form">
           <div>
             <label for="efectivo_contado"
               style="display:block;font-size:12px;font-weight:600;color:var(--cl-text-secondary);margin-bottom:6px;">
@@ -203,15 +205,15 @@
           <tr>
             <td>{{ c.fecha }}</td>
             <td style="font-family:var(--cl-font-mono);color:var(--cl-success-text);font-weight:600;">${{
-              '%.2f'|format(c.total_ingresos) }}</td>
+              '{:,.2f}'.format(c.total_ingresos) }}</td>
             <td>{{ c.num_ordenes }}</td>
-            <td style="font-family:var(--cl-font-mono);">${{ '%.2f'|format(c.efectivo_esperado or 0) }}</td>
-            <td style="font-family:var(--cl-font-mono);">${{ '%.2f'|format(c.efectivo_contado or 0) }}</td>
+            <td style="font-family:var(--cl-font-mono);">${{ '{:,.2f}'.format(c.efectivo_esperado or 0) }}</td>
+            <td style="font-family:var(--cl-font-mono);">${{ '{:,.2f}'.format(c.efectivo_contado or 0) }}</td>
             <td style="font-family:var(--cl-font-mono);font-weight:700;color:{{ diff_color }};">
-              {% if diff > 0 %}+{% endif %}${{ '%.2f'|format(diff) }}
+              {% if diff > 0 %}+{% endif %}${{ '{:,.2f}'.format(diff) }}
             </td>
-            <td style="font-family:var(--cl-font-mono);">${{ '%.2f'|format(c.tarjeta_total or 0) }}</td>
-            <td style="font-family:var(--cl-font-mono);">${{ '%.2f'|format(c.transferencia_total or 0) }}</td>
+            <td style="font-family:var(--cl-font-mono);">${{ '{:,.2f}'.format(c.tarjeta_total or 0) }}</td>
+            <td style="font-family:var(--cl-font-mono);">${{ '{:,.2f}'.format(c.transferencia_total or 0) }}</td>
             <td>{{ c.usuario.nombre if c.usuario else 'N/A' }}</td>
           </tr>
           {% endfor %}
@@ -262,6 +264,12 @@
 
 <style>
   .cl-corte-campo:focus { border-color: var(--cl-border-focus); }
+  /* Métodos de pago: se acomodan solos (2 ó 3) y en celular no se salen de lado */
+  .cl-corte-metodos { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:14px; margin-bottom:24px; }
+  .cl-corte-form { display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end; }
+  @media (max-width: 600px) {
+    .cl-corte-form { grid-template-columns:1fr; }
+  }
 </style>
 
 <script nonce="{{ csp_nonce }}">

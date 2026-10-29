@@ -78,6 +78,10 @@ class Config:
     # Validación de stock al agregar productos
     INVENTARIO_VALIDAR_STOCK = os.getenv('INVENTARIO_VALIDAR_STOCK', 'false').lower() == 'true'
 
+    # Sólo para desarrollo local: la sonda de salud del preview hace HEAD / varias
+    # veces por segundo desde 127.0.0.1 y agota el límite global de 200/min.
+    RATELIMIT_ENABLED = os.getenv('RATELIMIT_ENABLED', 'true').lower() != 'false'
+
     # Sprint 3 — Impresión ESC/POS
     PRINTER_TYPE = os.getenv('PRINTER_TYPE', 'none')  # none, usb, network
     PRINTER_HOST = os.getenv('PRINTER_HOST', '192.168.1.100')

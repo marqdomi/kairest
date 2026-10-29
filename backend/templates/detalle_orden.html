@@ -11,6 +11,17 @@
 <div class="split-panel">
   {# ═══════════════════════ LEFT — Products Panel (60%) ═══════════════════════ #}
   <div class="split-panel__products">
+    {# En celular/tablet el carrito (que dice mesa y folio) está oculto mientras se
+       captura: sin esto el mesero no ve a qué cuenta le está agregando. #}
+    <div class="cl-orden-contexto d-lg-none">
+      <strong>Orden #{{ orden.numero }}</strong>
+      <span class="cl-orden-contexto__sep">·</span>
+      {% if orden.es_para_llevar %}
+        <span><i data-lucide="package" class="icon-xs"></i> Para llevar</span>
+      {% else %}
+        <span><i data-lucide="map-pin" class="icon-xs"></i> Mesa {{ orden.mesa.numero }}{% if orden.alias %} · {{ orden.alias }}{% endif %}</span>
+      {% endif %}
+    </div>
     {# Search bar #}
     <div style="margin-bottom: var(--cl-space-3);">
       <div class="position-relative">
@@ -150,7 +161,7 @@
         </div>
       </div>
       {% endif %}
-      <button type="button" class="cl-btn" id="btnCobrar" style="height: 48px; font-weight: var(--cl-font-semibold); background: var(--cl-gold-500); color: white; flex: 1;"
+      <button type="button" class="cl-btn cl-btn--gold" id="btnCobrar" style="height: 48px; font-weight: var(--cl-font-semibold); flex: 1;"
               data-href="{{ url_for('meseros.pago_view', orden_id=orden.id) }}">
         <i data-lucide="credit-card" class="icon-sm"></i> Cobrar
       </button>
@@ -336,7 +347,24 @@
   border-color: var(--cl-primary-400);
 }
 .cl-product-tile:active { transform: scale(0.97); }
+.cl-orden-contexto {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--cl-space-2);
+  font-size: var(--cl-text-sm);
+  color: var(--cl-text-secondary);
+}
+.cl-orden-contexto strong { color: var(--cl-text-primary); font-size: var(--cl-text-base); }
+.cl-orden-contexto__sep { color: var(--cl-text-tertiary); }
+.cl-orden-contexto i { width: 14px; height: 14px; vertical-align: -2px; }
 .cl-product-tile__cat {
+  /* La estrella de favorito va encima a la derecha: sin esta reserva la
+     categoría ("BARBACOA POR KILO") quedaba debajo de ella. */
+  padding-right: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 10px;
   font-weight: var(--cl-font-semibold);
   color: var(--cl-primary-400);
@@ -366,7 +394,7 @@
 .cl-product-tile__price {
   font-size: var(--cl-text-sm);
   font-weight: var(--cl-font-bold);
-  color: var(--cl-success-400, #32D583);
+  color: var(--cl-success-text);
 }
 
 /* Tile favorite star */
@@ -395,6 +423,7 @@
     justify-content: center;
   }
   .tile-fav-btn { top: 0; right: 0; }
+  .cl-product-tile__cat { padding-right: 34px; }
 }
 .tile-fav-btn.is-fav i { fill: var(--cl-gold-500, #D4A843); }
 
@@ -885,13 +914,20 @@ function abrirModalNotas(el) {
   new bootstrap.Modal(document.getElementById('modalNotas')).show();
 }
 
-// M2: Direct add — no modal, instant
+// M2: Direct add — no modal, instant.
+// Los toques van en fila: tres toques rápidos en paralelo competían en el
+// servidor por el mismo renglón y la cocina recibía la orden partida.
+let _colaAgregar = Promise.resolve();
 function agregarDirecto(el, cantidad, notas) {
+  _colaAgregar = _colaAgregar.then(() => _agregarDirecto(el, cantidad, notas));
+}
+
+function _agregarDirecto(el, cantidad, notas) {
   const ordenId = el.dataset.ordenId;
   const productoId = el.dataset.productoId;
   const nombre = el.dataset.nombre || 'Producto';
 
-  fetch(`/api/ordenes/${ordenId}/detalle`, {
+  return fetch(`/api/ordenes/${ordenId}/detalle`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ producto_id: Number(productoId), cantidad, notas })

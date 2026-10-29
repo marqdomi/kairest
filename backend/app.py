@@ -61,8 +61,38 @@ def create_app():
 
     @app.route('/')
     def index():
+        # Con sesión abierta, cada rol cae en su pantalla (el ícono de la PWA y el
+        # botón de las páginas de error apuntan aquí); sin sesión, al login.
         from flask import redirect, url_for
+        from flask_login import current_user
+        if current_user.is_authenticated:
+            if current_user.rol in ('superadmin', 'admin'):
+                return redirect(url_for('admin.dashboard'))
+            if current_user.rol == 'mesero':
+                return redirect(url_for('meseros.view_meseros'))
+            if current_user.rol == 'cocina' or current_user.es_cocina:
+                return redirect(url_for('cocina.index'))
         return redirect(url_for('auth.login'))
+
+    # Páginas de error en español: sin esto un mesero que abre una estación ajena
+    # o una liga vieja ve la página cruda de Werkzeug en inglés y sin salida.
+    _ERRORES = {
+        403: ('Sin acceso', 'Esta pantalla es de otro rol o de otra estación.', 'lock'),
+        404: ('No encontrado', 'La página que buscas no existe o ya se cerró.', 'search-x'),
+        429: ('Demasiados intentos', 'Espera un minuto y vuelve a intentarlo.', 'timer'),
+        500: ('Algo salió mal', 'Ocurrió un error inesperado. Intenta de nuevo.', 'triangle-alert'),
+    }
+
+    def _pagina_error(e):
+        from flask import request, jsonify, render_template
+        codigo = getattr(e, 'code', 500) or 500
+        titulo, mensaje, icono = _ERRORES.get(codigo, _ERRORES[500])
+        if request.path.startswith(('/api/', '/socket.io')) or request.accept_mimetypes.best == 'application/json':
+            return jsonify({'error': titulo, 'mensaje': mensaje}), codigo
+        return render_template('error.html', titulo=titulo, mensaje=mensaje, icono=icono), codigo
+
+    for _codigo in _ERRORES:
+        app.register_error_handler(_codigo, _pagina_error)
 
     # Development settings
     if app.config.get('DEBUG') or os.getenv('FLASK_ENV') == 'development':

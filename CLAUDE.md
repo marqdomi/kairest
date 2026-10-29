@@ -856,3 +856,24 @@ Borrada junto con sus imports huérfanos.
 - Tests: `tests/test_cli.py` (7, con control negativo verificado). Suite total 145 passed.
 - **No verificado**: la instalación en frío en Windows real (Docker Desktop → `install.ps1`
   → wizard) y la sintaxis de los `.ps1` — no hay PowerShell en el Mac de desarrollo.
+
+## Demo con el primer cliente — barbacoa (v6.7)
+Recorrido completo desde base en blanco con cada rol (wizard → mesero celular → KDS
+tablet × 3 estaciones → cobro efectivo y transferencia → verificación → corte). Guion,
+usuarios de prueba y hallazgos en `docs/DEMO_PRIMER_CLIENTE.md`; preview
+`flask-demo-cliente` (SQLite `demo_cliente.db`, `RATELIMIT_ENABLED=false` porque la sonda
+del preview hace HEAD / 3 veces por segundo).
+
+- Plantilla `barbacoa` (primera del wizard) generada de `menu_restaurante.csv`: 58
+  productos, estaciones Taquero / Comal / Bebidas. Productos se listan en orden de menú
+  (`Producto.id`), no alfabético
+- **Toques rápidos duplicaban renglones**: `agregarDirecto` va en cola de promesas y
+  `add_product_to_order` lockea la Orden (`with_for_update`) antes del merge
+- "Cobrar" de las tarjetas del mesero lleva a `pago_view` (el modal `mostrarCobro` queda
+  para ver ticket de pagadas y el panel admin). El modal ignoraba métodos habilitados y CLABE
+- `--cl-gold-500/600` eran tokens inexistentes → botón Cobrar del carrito invisible
+- Textos visibles (avisos Socket.IO, flash, impresora) usan `orden.numero`, no `orden.id`
+- `/` redirige por rol si hay sesión; páginas de error 403/404/429/500 en español
+  (`error.html`, JSON en `/api/`); `manifest.json` `start_url` = `/`
+- `services/tiempo.fecha_larga()` — fecha en español sin depender del locale
+- Tests: `tests/test_demo_cliente.py` (11). Suite total 156 passed.
