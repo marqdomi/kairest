@@ -37,7 +37,9 @@ def entrar_con_pin():
         return jsonify({'error': 'Este aparato no está autorizado para entrar con PIN.'}), 403
 
     data = request.get_json(silent=True) or {}
-    usuario = db.session.get(Usuario, int(data.get('usuario_id') or 0))
+    from backend.services.validacion import leer_entero
+    usuario_id = leer_entero(data.get('usuario_id'), 1, 2**31 - 1)  # texto → 500 antes
+    usuario = db.session.get(Usuario, usuario_id) if usuario_id else None
     if not usuario or not usuario.usa_pin or not usuario.pin_hash:
         return jsonify({'error': 'Usuario no disponible.'}), 404
 

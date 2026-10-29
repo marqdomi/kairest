@@ -157,7 +157,7 @@ class TestMesasCompartidas:
         from backend.models.models import Orden, OrdenEstado
         c1, c2 = Orden.query.filter_by(mesa_id=sample_mesa.id).order_by(Orden.id).all()
 
-        client.post(f'/meseros/ordenes/{c1.id}/cancelar')
+        client.post(f'/meseros/ordenes/{c1.id}/cancelar', data={'motivo_cancelacion': 'cliente_solicito'})
         db.session.refresh(c1)
         assert c1.estado == OrdenEstado.CANCELADA
         db.session.refresh(sample_mesa)

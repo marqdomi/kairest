@@ -571,6 +571,16 @@ def entregar_item(orden_id, detalle_id):
     return jsonify(success=True, message="Entregado.")
 
 
+
+# Los mismos valores que el <select> del modal de cancelación (detalle_orden.html)
+MOTIVOS_CANCELACION = {
+    'cliente_solicito': 'El cliente lo solicitó',
+    'error_orden': 'Error al capturar la orden',
+    'producto_agotado': 'Producto agotado',
+    'tiempo_espera': 'Exceso de tiempo de espera',
+    'otro': 'Otro',
+}
+
 @meseros_bp.route('/ordenes/<int:orden_id>/cancelar', methods=['POST'])
 @login_required(roles=['mesero', 'admin', 'superadmin'])
 @verificar_propiedad_orden
@@ -593,6 +603,18 @@ def cancelar_orden(orden_id):
         flash('No se puede cancelar.', 'warning')
         return redirect(url_for('meseros.view_meseros'))
 
+    # El modal pedía el motivo pero aquí no se leía: la auditoría sólo decía "cancelada"
+    # y la dueña no podía revisar por qué se cancelan cuentas (cancelar después de
+    # cobrar en efectivo es justo lo que conviene poder rastrear)
+    motivo = MOTIVOS_CANCELACION.get(request.form.get('motivo_cancelacion', ''))
+    if motivo == 'Otro':
+        detalle = sanitizar_texto(request.form.get('motivo_otro', ''), 200)
+        motivo = f'Otro: {detalle}' if detalle else None
+    if not motivo:
+        db.session.rollback()
+        flash('Elige el motivo de la cancelación (si es "Otro", escríbelo).', 'warning')
+        return redirect(url_for('meseros.detalle_orden', orden_id=orden_id))
+
     # Reverse inventory only if it was actually deducted. Inventory is deducted
     # exclusively when the order closes fully paid (saldo <= 0), so a partial
     # payment alone means nothing to reverse — checking for the salida_venta
@@ -608,7 +630,8 @@ def cancelar_orden(orden_id):
 
     orden.estado = OrdenEstado.CANCELADA
     from backend.services.audit import registrar_auditoria
-    registrar_auditoria('cancelar', 'Orden', orden_id, f'Orden #{orden_id} cancelada.')
+    registrar_auditoria('cancelar', 'Orden', orden_id,
+                        f'Orden #{orden.numero} cancelada. Motivo: {motivo}')
     db.session.commit()
     # Liberar mesa si no quedan órdenes activas (Sprint 2 — 3.3)
     actualizar_estado_mesa(orden.mesa_id)

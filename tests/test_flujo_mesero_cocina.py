@@ -244,7 +244,7 @@ class TestFlujoDeServicioCompleto:
         mesero.post(f"/cocina/parrilla/marcar/{orden.id}/{orden_enviada['taco'].id}")
 
         _entrar(mesero, db, 'mesero_test@test.com')
-        mesero.post(f'/meseros/ordenes/{orden.id}/cancelar', json={'motivo': 'se fue'})
+        mesero.post(f'/meseros/ordenes/{orden.id}/cancelar', data={'motivo_cancelacion': 'cliente_solicito'})
         db.session.refresh(orden)
         assert orden.estado == OrdenEstado.CANCELADA
 

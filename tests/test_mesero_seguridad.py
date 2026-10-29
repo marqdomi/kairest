@@ -46,7 +46,7 @@ def test_idor_blocked_on_cancelar_entregar_descuento(client, db, mesero_user, sa
     # Form POSTs (not XHR/JSON) get redirected with a flash message by the
     # ownership decorator, rather than a bare 403 — verify the redirect target
     # and that the order was NOT actually cancelled/modified.
-    r_cancel = client.post(f'/meseros/ordenes/{orden_id}/cancelar')
+    r_cancel = client.post(f'/meseros/ordenes/{orden_id}/cancelar', data={'motivo_cancelacion': 'cliente_solicito'})
     assert r_cancel.status_code == 302, f'cancelar_orden should redirect non-owner, got {r_cancel.status_code}'
     assert '/meseros/' in r_cancel.headers['Location']
 
@@ -69,7 +69,7 @@ def test_idor_blocked_on_cancelar_entregar_descuento(client, db, mesero_user, sa
     with client.session_transaction() as sess:
         sess.clear()
     login(client, mesero_user.email, 'Test1234!')
-    r_cancel_owner = client.post(f'/meseros/ordenes/{orden_id}/cancelar', follow_redirects=True)
+    r_cancel_owner = client.post(f'/meseros/ordenes/{orden_id}/cancelar', data={'motivo_cancelacion': 'cliente_solicito'}, follow_redirects=True)
     assert r_cancel_owner.status_code == 200
 
     from backend.models.models import OrdenEstado

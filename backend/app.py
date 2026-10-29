@@ -73,9 +73,11 @@ def create_app():
     # Páginas de error en español: sin esto un mesero que abre una estación ajena
     # o una liga vieja ve la página cruda de Werkzeug en inglés y sin salida.
     _ERRORES = {
+        400: ('Solicitud inválida', 'Algo de lo que se envió no está bien. Regresa e inténtalo de nuevo.', 'circle-alert'),
         403: ('Sin acceso', 'Esta pantalla es de otro rol o de otra estación.', 'lock'),
         404: ('No encontrado', 'La página que buscas no existe o ya se cerró.', 'search-x'),
         405: ('Acción no válida', 'Esa liga no se abre así. Regresa a tu pantalla.', 'ban'),
+        415: ('Solicitud inválida', 'Algo de lo que se envió no está bien. Regresa e inténtalo de nuevo.', 'circle-alert'),
         429: ('Demasiados intentos', 'Espera un minuto y vuelve a intentarlo.', 'timer'),
         500: ('Algo salió mal', 'Ocurrió un error inesperado. Intenta de nuevo.', 'triangle-alert'),
     }
@@ -130,6 +132,10 @@ def create_app():
         app.config['SESSION_REDIS'] = _redis.from_url(redis_url + '/1')
     else:
         app.config['SESSION_TYPE'] = 'filesystem'
+        # El backend de archivos borra sesiones al azar al pasar de 500 (default de
+        # cachelib). Con sesiones de 30 días y una por cada visita al login, en una demo
+        # larga sin Redis se llegaba al tope y la dueña quedaba fuera de golpe.
+        app.config.setdefault('SESSION_FILE_THRESHOLD', 20000)
     server_session.init_app(app)
 
     # Sentry (Fase 4 - Item 25)

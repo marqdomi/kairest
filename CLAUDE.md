@@ -1024,7 +1024,7 @@ Implementadas las prioridades de `docs/EVALUACION_VISUAL.md`. Guardas en
 Suite: 347 passed.
 
 ## Prueba como usuario real — Admin (v6.8)
-Recorrido completo con datos equivocados a propósito; detalle en `docs/PRUEBA_USUARIO_ADMIN.md`,
+Recorrido completo con datos equivocados a propósito; detalle en `docs/PRUEBA_USUARIO_REAL.md`,
 guardas en `tests/test_prueba_usuario_admin.py` (43, control negativo: 40 fallan sin el fix).
 - `sanitizar_texto` devuelve texto plano: antes guardaba entidades ("&amp;") y se veían
 - `backend/services/validacion.py`: `leer_monto` ("1,160.50", "$200"), `leer_entero`,
@@ -1034,3 +1034,7 @@ guardas en `tests/test_prueba_usuario_admin.py` (43, control negativo: 40 fallan
 - `verificar_pago`: 409 si la cuenta ya está pagada (contaba el dinero dos veces)
 - Corte: efectivo contado obligatorio y bien leído; personalización, inventario,
   reservaciones, clientes y sucursales validan en el server
+- Mesero/cocina (`tests/test_prueba_usuario_roles.py`): cancelar exige motivo y lo audita
+  (`MOTIVOS_CANCELACION` = mismos valores que el select del modal); KDS con `min-width:0` en
+  el bloque de texto (una nota larga sacaba el botón de listo); 400/415 en español;
+  `SESSION_FILE_THRESHOLD` 20000 sin Redis (a las 500 sesiones cachelib borraba al azar)

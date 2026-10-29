@@ -1,4 +1,4 @@
-# Prueba como usuario real — Admin (2026-10-29)
+# Prueba como usuario real — Admin, mesero y cocina (2026-10-29)
 
 Recorrido desde una base en blanco con datos equivocados a propósito en cada formulario:
 wizard → login → las 17 pantallas del modo básico → las 45 del avanzado → altas, bajas,
@@ -35,3 +35,31 @@ Helpers nuevos en `backend/services/validacion.py`: `leer_monto` (acepta "1,160.
 ## No es bug del producto
 - Los PDF tumbaron el servidor local (segfault): esta Mac no tiene `pango`. En Docker sí está.
 - Datos viejos con "&amp;" se corrigen solos al volver a guardarlos.
+
+---
+
+# Mesero (Pedro, celular) y cocina (Taquero, Comal, Bebidas en tablet)
+
+Guardas en `tests/test_prueba_usuario_roles.py` (6; sin el fix fallan los 6).
+
+## Lo que ya se defendía bien
+- PIN: equivocado, vacío, de un admin, de alguien que no existe; bloqueo tras 5 fallos
+  (y la dueña puede desbloquear poniendo un PIN nuevo)
+- Mesero: no puede ver, agregar ni cobrar órdenes de otro; no entra a ninguna pantalla
+  del admin; descuento exige autorización; no se reenvía a cocina; no se agrega a una
+  orden cancelada; no se entrega algo que cocina no terminó; notas con HTML se limpian
+  y se recortan a 300
+- Cocina: cada quien sólo ve su estación (403 en las demás); no marca items de otra
+  estación ni de órdenes canceladas; marcar dos veces no duplica; deshacer funciona;
+  no puede cobrar ni entrar al admin o a meseros
+- Flujo completo entre estaciones: cuando Taquero, Comal y Bebidas terminan lo suyo, la
+  orden pasa sola a "lista para entregar"
+
+## Corregido
+| Dónde | Qué pasaba |
+|---|---|
+| **Cancelar orden** | **El diálogo pedía el motivo pero el servidor lo ignoraba**: la auditoría sólo decía "cancelada". Ahora es obligatorio (si es "Otro", hay que escribirlo) y queda en la auditoría |
+| **KDS** | **Una nota larga sacaba de la tarjeta el botón de marcar listo** (el renglón crecía a 1,724 px) |
+| Entrar con PIN | `usuario_id` con texto → error 500 |
+| Peticiones mal formadas | 400/415 salían en inglés ("Bad Request") |
+| Sesiones sin Redis | Al pasar de 500 sesiones se borraban al azar: la dueña quedó fuera a media prueba. En Docker se usa Redis y no aplica, pero el preview de demo usa archivos |

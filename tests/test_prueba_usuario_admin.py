@@ -1,7 +1,7 @@
 """Prueba como usuario real, rol admin (v6.8): datos equivocados en cada formulario.
 
 Cada test corresponde a algo que en el recorrido se aceptaba en silencio, se guardaba
-mal o tronaba con un 500. Ver docs/PRUEBA_USUARIO_ADMIN.md.
+mal o tronaba con un 500. Ver docs/PRUEBA_USUARIO_REAL.md.
 """
 import io
 from datetime import timedelta

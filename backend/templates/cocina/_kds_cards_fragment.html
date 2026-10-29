@@ -63,7 +63,9 @@ Variables: ordenes_data (dict: Orden → [OrdenDetalle]), now_utc (datetime) #}
       <div class="cl-kds-item{% if item.estado == 'listo' %} cl-kds-item--done{% endif %}"
            id="kds-item-{{ item.id }}" data-detalle-id="{{ item.id }}">
         <div class="cl-kds-item__qty">×{{ item.cantidad }}</div>
-        <div style="flex:1;">
+        {# min-width:0: sin él un texto largo sin espacios estiraba el renglón y sacaba
+           de la tarjeta el botón de marcar listo #}
+        <div style="flex:1;min-width:0;">
           <div class="cl-kds-item__name">{{ item.producto.nombre }}</div>
           {% if item.notas %}
           <div class="cl-kds-item__note">
