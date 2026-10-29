@@ -475,11 +475,11 @@ def agregar_productos_a_orden(orden_id):
         # items sin preparar, tiene que volver: el KDS sólo muestra órdenes en
         # enviado/en_preparacion, así que sin esto el producto nuevo no le
         # llegaba a nadie y la cuenta se podía cobrar con comida sin hacer.
-        if orden.estado == OrdenEstado.LISTA_PARA_ENTREGAR and any(
-                d.estado == OrdenEstado.PENDIENTE for d in orden.detalles):
-            orden.estado = OrdenEstado.EN_PREPARACION
+        # (y lo que sirve el mesero queda listo sin pasar por cocina: services/servicio.py)
+        if orden_ya_enviada:
+            from backend.services.servicio import tras_cambiar_renglones
+            tras_cambiar_renglones(orden)
             db.session.commit()
-            logger.info('Orden %s regresa a en_preparacion: se agregaron productos', orden_id)
 
         # Con el primer producto deja de ser borrador: folio del día y mesa ocupada
         from backend.services.folio import asignar_folio
@@ -488,7 +488,8 @@ def agregar_productos_a_orden(orden_id):
         if orden.mesa_id:
             actualizar_estado_mesa(orden.mesa_id)
             db.session.commit()
-        if orden_ya_enviada and nuevos:
+        from backend.services.servicio import lo_sirve_mesero
+        if orden_ya_enviada and any(not lo_sirve_mesero(d.producto) for d in nuevos):
             socketio.emit('nueva_orden_cocina', {
                 'orden_id': orden.id,
                 'mensaje': f'Nuevos productos en orden #{orden.numero}.',
@@ -537,6 +538,10 @@ def enviar_orden_a_cocina(orden_id):
         flash(f'Orden ya enviada ({orden.estado}).', 'warning')
     else:
         orden.estado = OrdenEstado.ENVIADO
+        # Lo que sirve el mesero (bebidas a la mano) queda listo ya; si la orden era
+        # sólo eso, queda lista para entregar sin pasar por ninguna cocina
+        from backend.services.servicio import tras_cambiar_renglones
+        tras_cambiar_renglones(orden)
         db.session.commit()
         socketio.emit('nueva_orden_cocina', {'orden_id': orden.id, 'mensaje': f'Orden #{orden.numero} para cocina.'})
         # Auto-imprimir comanda si está configurado (Sprint 3 — 3.1)

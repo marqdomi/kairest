@@ -278,10 +278,24 @@ def paso3():
                         if 0 <= idx < len(custom_estaciones):
                             origen_map[orig_nombre] = custom_estaciones[idx]
 
+            # Casillas "la sirve el mesero" (índices sobre las estaciones capturadas).
+            # Sin la pantalla de estaciones (JS apagado) manda la plantilla.
+            sirve_mesero = None
+            if custom_estaciones:
+                sirve_mesero = []
+                for idx_raw in request.form.getlist('estacion_mesero[]'):
+                    try:
+                        idx = int(idx_raw)
+                    except (ValueError, TypeError):
+                        continue
+                    if 0 <= idx < len(custom_estaciones):
+                        sirve_mesero.append(custom_estaciones[idx])
+
             created = seed_from_template(
                 opcion,
                 custom_estaciones=custom_estaciones or None,
                 origen_map=origen_map,
+                sirve_mesero=sirve_mesero,
             )
             flash(f'Menú cargado: {created} productos agregados.', 'success')
 
@@ -292,8 +306,10 @@ def paso3():
     estaciones = [e.nombre for e in Estacion.query.order_by(Estacion.nombre).all()]
     templates = get_template_list()
     templates_estaciones = {t['key']: t['estaciones'] for t in templates}
+    templates_mesero = {t['key']: t.get('la_sirve_mesero', []) for t in templates}
     return render_template('setup/paso3.html', paso=3, categorias=categorias, estaciones=estaciones,
-                           templates=templates, templates_estaciones=templates_estaciones)
+                           templates=templates, templates_estaciones=templates_estaciones,
+                           templates_mesero=templates_mesero)
 
 
 # ── Paso 4: Mesas ──
@@ -406,7 +422,8 @@ def paso5():
         flash('¡Configuración completada! Ya pueden entrar.', 'success')
         return respuesta
 
-    estaciones = Estacion.query.order_by(Estacion.nombre).all()
+    # En el orden en que se definieron en el paso 3 (como en la barra del mesero)
+    estaciones = Estacion.query.filter(Estacion.la_sirve_mesero.is_(False)).order_by(Estacion.id).all()
     return render_template('setup/paso5.html', paso=5, estaciones=estaciones)
 
 

@@ -173,7 +173,9 @@ def verificar_orden_completa(orden_id):
     """
     detalles = OrdenDetalle.query.filter_by(orden_id=orden_id).all()
     try:
-        if detalles and all(d.estado == OrdenEstado.LISTO for d in detalles):
+        # Listo o ya entregado: si el mesero llevó los refrescos antes que la comida,
+        # contar sólo "listo" dejaba la orden en preparación y nunca avisaba
+        if detalles and all(d.estado in (OrdenEstado.LISTO, 'entregado') for d in detalles):
             orden = db.session.get(Orden, orden_id)
             # CANCELADA incluida: un KDS con pantalla stale que marca el último
             # item no debe resucitar una orden ya cancelada.

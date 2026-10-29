@@ -119,6 +119,9 @@ def imprimir_comanda(orden):
         # Agrupar por estación
         por_estacion = {}
         for d in orden.detalles:
+            # La comanda es para la cocina: lo que sirve el mesero no le toca a nadie ahí
+            if d.producto.estacion and d.producto.estacion.la_sirve_mesero:
+                continue
             estacion = d.producto.estacion.nombre if d.producto.estacion else 'General'
             if estacion not in por_estacion:
                 por_estacion[estacion] = []
@@ -349,6 +352,8 @@ def generar_texto_comanda(orden):
     lines.append(_separator())
 
     for d in orden.detalles:
+        if d.producto.estacion and d.producto.estacion.la_sirve_mesero:
+            continue  # lo sirve el mesero: no es trabajo de cocina
         lines.append(f'{d.cantidad}x {d.producto.nombre}')
         if d.notas:
             lines.append(f'   >> {d.notas}')

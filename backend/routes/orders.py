@@ -129,11 +129,12 @@ def add_product_to_order(orden_id):
 
     db.session.commit()
 
-    # Si la orden ya había salido de la cocina, tiene que volver: el KDS sólo
-    # muestra enviado/en_preparacion, así que sin esto el producto nuevo no le
-    # llegaba a ninguna estación y la cuenta se podía cobrar con comida sin hacer.
-    if orden.estado == OrdenEstado.LISTA_PARA_ENTREGAR:
-        orden.estado = OrdenEstado.EN_PREPARACION
+    # Orden ya enviada: lo que sirve el mesero queda listo al instante y la orden
+    # vuelve a cocina sólo si lo nuevo es de cocina (services/servicio.py). Antes
+    # cualquier producto nuevo la regresaba a preparación, también un refresco.
+    if orden.estado != OrdenEstado.PENDIENTE:
+        from backend.services.servicio import tras_cambiar_renglones
+        tras_cambiar_renglones(orden)
         db.session.commit()
 
     # Emit real-time update
@@ -149,7 +150,9 @@ def add_product_to_order(orden_id):
     })
 
     # If the order is already sent to kitchen, notify KDS about new items
-    if orden.estado not in ('pendiente',):
+    # (lo que sirve el mesero no le interesa a ninguna cocina)
+    from backend.services.servicio import lo_sirve_mesero
+    if orden.estado not in ('pendiente',) and not lo_sirve_mesero(producto):
         socketio.emit('nueva_orden_cocina', {
             'orden_id': orden.id,
             'mensaje': f'Nuevos productos en orden #{orden.numero}.',
@@ -229,13 +232,23 @@ def update_order_detail(orden_id, detalle_id):
 def delete_order_detail(orden_id, detalle_id):
     """Remove a product from the order."""
     detalle = OrdenDetalle.query.filter_by(id=detalle_id, orden_id=orden_id).first_or_404()
+    orden = db.session.get(Orden, orden_id)
+    # Una cuenta pagada o cancelada ya no se toca, y lo entregado ya se consumió:
+    # quitarlo bajaba el total de algo que el cliente sí se llevó
+    if orden.estado not in ESTADOS_MODIFICABLES:
+        return jsonify({'error': f'No se pueden quitar productos ({orden.estado}).'}), 409
+    if detalle.estado == 'entregado':
+        return jsonify({'error': 'Ese producto ya se entregó; no se puede quitar.'}), 409
     db.session.delete(detalle)
+    db.session.flush()
+    from backend.services.servicio import sincronizar_estado
+    db.session.refresh(orden)
+    sincronizar_estado(orden)
     db.session.commit()
     socketio.emit('order_detail_removed', {
         'orden_id': orden_id,
         'detalle_id': detalle_id,
     })
-    verificar_orden_completa(orden_id)
     return jsonify({'message': 'Producto eliminado de la orden.'}), 200
 
 

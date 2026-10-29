@@ -15,6 +15,17 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     {{ form_group('nombre', 'Nombre de la estación', value=estacion.nombre if estacion else '', required=true,
     icon='chef-hat', placeholder='Parrilla, Comal, Bebidas…') }}
+    <label style="display:flex;gap:10px;align-items:flex-start;margin-top:var(--cl-space-4);cursor:pointer;">
+      <input type="checkbox" name="la_sirve_mesero" value="1" style="margin-top:3px;width:18px;height:18px;"
+        {% if estacion and estacion.la_sirve_mesero %}checked{% endif %}>
+      <span>
+        <strong>La sirve el mesero</strong><br>
+        <span style="font-size:var(--cl-text-sm);color:var(--cl-text-secondary);">
+          Sin pantalla de cocina: sus productos (por ejemplo, las bebidas que están a la mano)
+          quedan listos al enviar la orden y el mesero los marca entregados desde su tarjeta.
+        </span>
+      </span>
+    </label>
     <div class="d-flex gap-2 mt-4">
       <button type="submit" class="cl-btn cl-btn--primary">
         <i data-lucide="save" class="icon-sm"></i> Guardar

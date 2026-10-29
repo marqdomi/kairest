@@ -54,7 +54,7 @@
       <div class="cl-form-group">
         <label class="cl-form-label" for="cantidadEstaciones">Estaciones de cocina</label>
         <input type="number" class="cl-form-input" id="cantidadEstaciones" min="1" style="max-width:120px">
-        <p class="cl-form-hint">Cuántas pantallas de cocina vas a operar (taquero, comal, bebidas…).</p>
+        <p class="cl-form-hint">Cuántas estaciones tiene tu menú (taquero, comal, bebidas…).</p>
       </div>
       <div id="stationNamesContainer"></div>
       {# La explicación va ANTES de los selects que explica (antes quedaba debajo) #}
@@ -206,6 +206,9 @@
 <script nonce="{{ csp_nonce }}">
 (function(){
   var TPL_ESTACIONES = {{ templates_estaciones | tojson }};
+  // Estaciones que en esa plantilla despacha el mesero (Casa Leones: Bebidas)
+  var TPL_MESERO = {{ templates_mesero | tojson }};
+  var tplActual = null;
 
   var radios = document.querySelectorAll('input[name="_tpl_radio"]');
   var hidden = document.getElementById('opcionMenu');
@@ -231,6 +234,7 @@
     namesContainer.innerHTML = '<p class="cl-form-label" style="margin-top:var(--cl-space-3)">Nombres de tus estaciones:</p>';
     var row = document.createElement('div');
     row.className = 'cl-setup__row';
+    var delMesero = (TPL_MESERO[tplActual] || []).map(function(n){ return n.toLowerCase(); });
     for (var i = 0; i < cantidad; i++) {
       var grp = document.createElement('div');
       grp.className = 'cl-form-group';
@@ -242,9 +246,25 @@
       inp.value = originales[i] || ('Estación ' + (i + 1));
       inp.addEventListener('input', syncMapLabels);
       grp.appendChild(inp);
+      // Una estación sin pantalla: sus productos los despacha el mesero (las
+      // bebidas a la mano en Casa Leones). Viene marcada si la plantilla lo dice.
+      var lbl = document.createElement('label');
+      lbl.className = 'cl-setup__mesero';
+      var chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.name = 'estacion_mesero[]';
+      chk.value = String(i);
+      chk.checked = delMesero.indexOf((originales[i] || '').toLowerCase()) !== -1;
+      lbl.appendChild(chk);
+      lbl.appendChild(document.createTextNode(' La sirve el mesero'));
+      grp.appendChild(lbl);
       row.appendChild(grp);
     }
     namesContainer.appendChild(row);
+    var ayuda = document.createElement('p');
+    ayuda.className = 'cl-form-hint';
+    ayuda.textContent = 'Marca "La sirve el mesero" si nadie atiende esa estación (por ejemplo, las bebidas que el mesero toma él mismo): no tendrá pantalla de cocina y sus productos quedan listos para que el mesero los lleve.';
+    namesContainer.appendChild(ayuda);
   }
 
   function renderMap(originales, cantidad) {
@@ -274,6 +294,7 @@
   }
 
   function renderStationsUI(tplKey) {
+    tplActual = tplKey;
     var originales = TPL_ESTACIONES[tplKey] || [];
     if (!originales.length) {
       stationsConfig.style.display = 'none';
