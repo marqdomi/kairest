@@ -1,6 +1,8 @@
 Flask==3.1.0
 Flask-Login
 Flask-SQLAlchemy
+# 2.1 cambió el driver de PostgreSQL por defecto a psycopg v3 (no instalado)
+SQLAlchemy>=2.0,<2.1
 Flask-SocketIO
 Flask-Cors
 # eventlet worker fue eliminado de gunicorn 26 — fijar el par compatible.

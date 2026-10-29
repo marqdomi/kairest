@@ -1,0 +1,6 @@
+# HTTPS automático (Let's Encrypt) para el dominio de DOMINIO en .env.
+# Caddy pasa X-Forwarded-Host/Proto: Socket.IO los usa para aceptar el mismo origen.
+{$DOMINIO} {
+	encode gzip
+	reverse_proxy web:5005
+}

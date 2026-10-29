@@ -20,7 +20,7 @@
 
 @media (max-width: 600px) {
     .cl-kpi-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
@@ -1204,10 +1204,6 @@ select.cl-input {
 }
 
 @media (max-width: 480px) {
-    .cl-kpi-grid {
-        grid-template-columns: 1fr;
-    }
-
     .cl-table-toolbar {
         flex-direction: column;
         align-items: stretch;
@@ -1256,4 +1252,123 @@ select.cl-input {
     font-size: 11px !important;
     color: var(--cl-text-tertiary) !important;
     padding: 4px 12px !important;
+}
+
+/* En celular se quedan 2 columnas compactas: a 1 columna cada KPI medía 250px
+   y la dueña tenía que bajar 2,000px para ver los 8 indicadores del día. */
+/* (al final del archivo para ganarle en la cascada a las reglas base de .cl-kpi-card) */
+@media (max-width: 600px) {
+    .cl-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .cl-kpi-card {
+        padding: 14px;
+    }
+
+    .cl-kpi-card__header {
+        margin-bottom: 8px;
+    }
+
+    .cl-kpi-card__icon {
+        width: 30px;
+        height: 30px;
+    }
+
+    .cl-kpi-card__value {
+        font-size: 20px;
+        margin-bottom: 4px;
+    }
+
+    .cl-kpi-card__title {
+        font-size: 11px;
+    }
+
+    .cl-kpi-card__sub {
+        font-size: 11.5px;
+        line-height: 1.3;
+    }
+
+    .cl-kpi-card .cl-sparkline {
+        display: none;
+    }
+
+    /* Los selectores de periodo se partían en dos renglones ("7 / días") */
+    .cl-period-pill {
+        white-space: nowrap;
+        padding: 5px 10px;
+    }
+
+    .cl-page-hdr__right {
+        flex-wrap: wrap;
+    }
+}
+
+/* ═══════════════════════════════════════════════════
+   Firma "hecho por kainet." (components/_kainet.html)
+   Las piezas oscuras del logo usan currentColor: la firma toma el color de
+   este enlace, así que sólo hay que darle el tono según el fondo.
+   ═══════════════════════════════════════════════════ */
+.cl-kainet {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;          /* área táctil razonable sin agrandar la firma */
+    font-size: 11px;
+    line-height: 1;
+    color: var(--cl-text-tertiary);
+    text-decoration: none;
+    border-radius: var(--cl-radius-sm);
+    transition: color var(--cl-transition-fast, 150ms);
+}
+
+.cl-kainet:hover,
+.cl-kainet:focus-visible {
+    color: var(--cl-text-primary);
+}
+
+.cl-kainet__logo {
+    height: 13px;
+    width: auto;
+    /* ancho explícito por la proporción del viewBox (1896×434): sin él, algunos
+       WebView viejos dejan el svg inline en 300px */
+    aspect-ratio: 1896 / 434;
+}
+
+/* Sobre fondos que son oscuros en cualquier tema (degradado del wizard) */
+.cl-kainet--sobre-oscuro {
+    color: rgba(255, 255, 255, .62);
+}
+
+.cl-kainet--sobre-oscuro:hover,
+.cl-kainet--sobre-oscuro:focus-visible {
+    color: #fff;
+}
+
+/* Línea de producto: "KaiRest · hecho por kainet." debajo de la tarjeta */
+.cl-producto-firma {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--cl-text-tertiary);
+    position: relative;
+    z-index: 1;
+}
+
+.cl-producto-firma .cl-kainet {
+    padding-inline: 0;          /* el espaciado lo da el gap del contenedor */
+    font-size: 12px;
+}
+
+.cl-producto-firma .cl-kainet__logo {
+    height: 14px;
+}
+
+.cl-producto-firma__nombre {
+    font-weight: 600;
+    letter-spacing: .01em;
 }

@@ -22,7 +22,7 @@
     <h1>Panel de Administración</h1>
     <p id="dashSubtitle" style="margin-top:4px;">
       <i data-lucide="calendar" style="width:12px;height:12px;vertical-align:middle;"></i>
-      {{ now().strftime('%A %d de %B, %Y') if now is defined else '' }}
+      {{ fecha_hoy|capitalize }}
     </p>
   </div>
   <div class="cl-page-hdr__right">

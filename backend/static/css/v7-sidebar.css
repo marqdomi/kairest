@@ -55,6 +55,21 @@
     display: none;
 }
 
+/* Firma "hecho por kainet." bajo el usuario; en colapsado no cabe */
+.cl-sidebar__firma {
+    display: flex;
+    justify-content: center;
+    margin-top: 2px;
+}
+
+.cl-sidebar__firma .cl-kainet {
+    padding: 6px 8px;
+}
+
+.cl-sidebar--collapsed .cl-sidebar__firma {
+    display: none;
+}
+
 .cl-sidebar--collapsed .cl-sidebar__footer {
     padding: 12px 8px;
 }
@@ -556,7 +571,11 @@
 }
 
 /* ─── RESPONSIVE (sidebar collapses on mobile) ─── */
-@media (max-width: 768px) {
+/* Mismo corte que tokens.css y que el hamburger (d-lg-none): bajo 992px el
+   sidebar ya es off-canvas. Con 768 aquí, de 769 a 991 (iPad vertical: 810,
+   820, 834) el sidebar se escondía pero el contenido guardaba sus 240px de
+   margen: una columna en blanco y el panel apretado. */
+@media (max-width: 991.98px) {
     .cl-sidebar {
         transform: translateX(-100%);
         transition: transform var(--cl-transition-base);
@@ -569,7 +588,9 @@
     .cl-main {
         margin-left: 0 !important;
     }
+}
 
+@media (max-width: 768px) {
     .cl-topbar {
         padding: 0 14px;
     }

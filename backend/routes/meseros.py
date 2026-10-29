@@ -373,12 +373,14 @@ def detalle_orden(orden_id):
     ])
 
     if orden.estado not in ESTADOS_MODIFICABLES:
-        flash(f'Orden #{orden.id} no puede modificarse ({orden.estado}).', 'warning')
+        flash(f'Orden #{orden.numero} no puede modificarse ({orden.estado}).', 'warning')
         return redirect(url_for('meseros.view_meseros'))
 
     productos = Producto.query.options(
         joinedload(Producto.categoria),
-    ).order_by(Producto.categoria_id, Producto.nombre).all()
+    # Orden del menú (el de la plantilla o el de alta), no alfabético: "1/2 kg"
+    # caía antes que "1/4" y "3/4" después de "1 kg".
+    ).order_by(Producto.categoria_id, Producto.id).all()
 
     productos_por_categoria = defaultdict(list)
     for p in productos:
@@ -480,7 +482,7 @@ def agregar_productos_a_orden(orden_id):
         if orden_ya_enviada and nuevos:
             socketio.emit('nueva_orden_cocina', {
                 'orden_id': orden.id,
-                'mensaje': f'Nuevos productos en orden #{orden.id}.',
+                'mensaje': f'Nuevos productos en orden #{orden.numero}.',
             })
         # Avisar warnings de stock bajo
         for w in stock_warnings:
@@ -527,7 +529,7 @@ def enviar_orden_a_cocina(orden_id):
     else:
         orden.estado = OrdenEstado.ENVIADO
         db.session.commit()
-        socketio.emit('nueva_orden_cocina', {'orden_id': orden.id, 'mensaje': f'Orden #{orden.id} para cocina.'})
+        socketio.emit('nueva_orden_cocina', {'orden_id': orden.id, 'mensaje': f'Orden #{orden.numero} para cocina.'})
         # Auto-imprimir comanda si está configurado (Sprint 3 — 3.1)
         from backend.services.printer import AUTO_PRINT_COMANDA, imprimir_comanda
         if AUTO_PRINT_COMANDA:
@@ -554,7 +556,7 @@ def entregar_item(orden_id, detalle_id):
             orden.estado = OrdenEstado.COMPLETADA
             socketio.emit('orden_actualizada_para_cobro', {
                 'orden_id': orden.id, 'estado_orden': 'completada',
-                'mensaje': f'Orden #{orden.id} lista para cobro.',
+                'mensaje': f'Orden #{orden.numero} lista para cobro.',
             })
     db.session.commit()
     return jsonify(success=True, message="Entregado.")
@@ -603,7 +605,7 @@ def cancelar_orden(orden_id):
     actualizar_estado_mesa(orden.mesa_id)
     db.session.commit()
     logger.info('Orden %s cancelada por usuario %s', orden_id, session.get('user_id'))
-    flash(f'Orden #{orden.id} cancelada.', 'info')
+    flash(f'Orden #{orden.numero} cancelada.', 'info')
     return redirect(url_for('meseros.view_meseros'))
 
 
@@ -820,7 +822,7 @@ def registrar_pago(orden_id):
         socketio.emit('transferencia_por_verificar', {
             'pago_id': pago.id, 'orden_id': orden.id,
             'monto': float(monto_aplicado), 'referencia': referencia,
-            'mensaje': f'Transferencia de ${float(monto_aplicado):.2f} por verificar (orden #{orden.id}).',
+            'mensaje': f'Transferencia de ${float(monto_aplicado):.2f} por verificar (orden #{orden.numero}).',
         })
 
     # Liberar mesa si orden pagada (Sprint 2 — 3.3)

@@ -40,7 +40,8 @@ def _period_range():
 @login_required(roles=['admin','superadmin'])
 def dashboard():
     """Admin dashboard landing page."""
-    return render_template('admin/dashboard.html')
+    from backend.services.tiempo import fecha_larga
+    return render_template('admin/dashboard.html', fecha_hoy=fecha_larga())
 
 @admin_bp.route('/crear_usuario', methods=['GET', 'POST'])
 @login_required(roles=['admin','superadmin'])
@@ -873,8 +874,13 @@ def corte_caja():
     if suc_id is not None:
         cortes_q = cortes_q.filter(CorteCaja.sucursal_id == suc_id)
     pagination = cortes_q.paginate(page=page, per_page=per_page, error_out=False)
+    from backend.services.pagos import metodos_pago_habilitados
+    # Sin terminal la tarjeta no se ofrece al cobrar; mostrar "$0.00" en el corte
+    # sólo estorba. Si hubo cobros con tarjeta (se apagó después) sí aparece.
+    mostrar_tarjeta = 'tarjeta' in metodos_pago_habilitados() or bool(resumen.get('tarjeta_total'))
     return render_template('admin/corte_caja.html', resumen=resumen,
-                           cortes=pagination.items, pagination=pagination)
+                           cortes=pagination.items, pagination=pagination,
+                           mostrar_tarjeta=mostrar_tarjeta)
 
 
 @admin_bp.route('/corte-caja/<int:corte_id>/imprimir', methods=['POST'])

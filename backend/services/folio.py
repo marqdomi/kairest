@@ -68,6 +68,13 @@ def asignar_folio(orden):
 
     fecha = hoy_local()
     contador = _contador(orden.sucursal_id, fecha)
+    # Releer ya con el contador bloqueado: dos toques simultáneos al primer producto
+    # llegan aquí con `orden.folio` vacío en memoria, y sin esto cada uno quemaba un
+    # número (probado en PostgreSQL: 8 toques → folios 1..4, la orden quedaba con el 4).
+    # El bloqueo serializa a quien asigna; el segundo ya ve el folio confirmado.
+    db.session.refresh(orden, attribute_names=['folio', 'folio_fecha'])
+    if orden.folio:
+        return orden.folio
     contador.ultimo += 1
     orden.folio = contador.ultimo
     orden.folio_fecha = fecha

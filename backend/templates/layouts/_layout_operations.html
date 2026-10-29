@@ -124,7 +124,7 @@ Usage:
     class="cl-ops-bottom-tab{% if active_op_tab is defined and active_op_tab == 'meseros' %} active{% endif %}" {% if
     active_op_tab is defined and active_op_tab=='meseros' %}aria-current="page" {% endif %}>
     <i data-lucide="clipboard-list" class="icon-sm"></i>
-    <span>Meseros</span>
+    <span>Órdenes</span>
   </a>
   <a href="{{ url_for('meseros.mapa_mesas') }}"
     class="cl-ops-bottom-tab{% if active_op_tab is defined and active_op_tab == 'mapa' %} active{% endif %}" {% if
@@ -138,8 +138,9 @@ Usage:
     <i data-lucide="history" class="icon-sm"></i>
     <span>Historial</span>
   </a>
-  {# Estaciones — mesero puede apoyar (ej. bebidas). En móvil, máx 2 para no saturar #}
-  {% for est in nav_estaciones[:2] %}
+  {# Estaciones — mesero puede apoyar (ej. bebidas). En móvil, máx 3: con 2 se
+     quedaba fuera la tercera por orden alfabético, que en una barbacoa es el Taquero #}
+  {% for est in nav_estaciones[:3] %}
   <a href="{{ url_for('cocina.station_view', slug=est.slug) }}" class="cl-ops-bottom-tab"
     title="Pendientes de {{ est.nombre }}" style="position:relative;">
     <i data-lucide="chef-hat" class="icon-sm"></i>

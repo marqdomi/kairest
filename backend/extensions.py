@@ -34,7 +34,24 @@ def _detect_async_mode():
     return 'threading'
 
 
-socketio = SocketIO(cors_allowed_origins=_cors_origins, async_mode=_detect_async_mode())
+def _origen_socket_permitido(origin, environ):
+    """Mismo origen siempre, más los de CORS_ORIGINS.
+
+    Con sólo la lista, una tablet que abre el sistema por la IP de la red
+    (http://192.168.x.x:5005) era rechazada con 400 en el handshake: la página cargaba
+    pero nunca llegaban los avisos en tiempo real. Lo mismo con el dominio en la nube.
+    La página que sirvió este mismo servidor no es un riesgo de cross-site.
+    """
+    if not origin:
+        return True  # cliente sin navegador (no manda Origin)
+    if origin in _cors_origins:
+        return True
+    host = environ.get('HTTP_X_FORWARDED_HOST', environ.get('HTTP_HOST', '')).split(',')[0].strip()
+    scheme = environ.get('HTTP_X_FORWARDED_PROTO', environ.get('wsgi.url_scheme', 'http')).split(',')[0].strip()
+    return bool(host) and origin == f'{scheme}://{host}'
+
+
+socketio = SocketIO(cors_allowed_origins=_origen_socket_permitido, async_mode=_detect_async_mode())
 
 csrf = CSRFProtect()
 

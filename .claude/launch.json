@@ -11,10 +11,32 @@
       "port": 5005
     },
     {
+      "name": "flask-demo-cliente",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "DATABASE_URL=sqlite:///demo_cliente.db REDIS_URL= RATELIMIT_ENABLED=false ./.venv/bin/python -m backend.app"
+      ],
+      "port": 5005
+    },
+    {
       "name": "docker-full-stack",
       "runtimeExecutable": "docker",
-      "runtimeArgs": ["compose", "up", "--build"],
+      "runtimeArgs": [
+        "compose",
+        "up",
+        "--build"
+      ],
       "port": 5005
+    },
+    {
+      "name": "flask-eval-blank",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "DATABASE_URL=sqlite:///$PWD/backend/instance/eval_blank.db REDIS_URL= RATELIMIT_ENABLED=false ./.venv/bin/python -c \"from backend.app import app, socketio; socketio.run(app, host='127.0.0.1', port=5015, use_reloader=False, allow_unsafe_werkzeug=True)\""
+      ],
+      "port": 5015
     }
   ]
 }

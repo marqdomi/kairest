@@ -2,7 +2,7 @@
   "name": "Casa Leones POS",
   "short_name": "CasaLeones",
   "description": "Sistema POS para restaurante Casa Leones",
-  "start_url": "/meseros",
+  "start_url": "/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#FAF3E0",

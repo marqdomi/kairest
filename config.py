@@ -34,6 +34,13 @@ class Config:
     else:
         SQLALCHEMY_ENGINE_OPTIONS = {}
 
+    # El token CSRF no caduca por tiempo, sólo con la sesión. El default de Flask-WTF
+    # (3600 s) rompía las pantallas que se quedan abiertas todo el turno: el KDS sólo
+    # refresca fragmentos, así que a la hora su token (el de la carga de la página) ya
+    # no valía y cada "listo" regresaba 400. El token sigue atado a la sesión y se
+    # valida igual; sólo se quita el reloj.
+    WTF_CSRF_TIME_LIMIT = None
+
     # Bump this whenever any static asset (CSS/JS) changes, to force browser reload
     VERSION = '5.5.0'
 
@@ -77,6 +84,10 @@ class Config:
 
     # Validación de stock al agregar productos
     INVENTARIO_VALIDAR_STOCK = os.getenv('INVENTARIO_VALIDAR_STOCK', 'false').lower() == 'true'
+
+    # Sólo para desarrollo local: la sonda de salud del preview hace HEAD / varias
+    # veces por segundo desde 127.0.0.1 y agota el límite global de 200/min.
+    RATELIMIT_ENABLED = os.getenv('RATELIMIT_ENABLED', 'true').lower() != 'false'
 
     # Sprint 3 — Impresión ESC/POS
     PRINTER_TYPE = os.getenv('PRINTER_TYPE', 'none')  # none, usb, network

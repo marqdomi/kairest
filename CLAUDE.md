@@ -856,3 +856,77 @@ Borrada junto con sus imports huérfanos.
 - Tests: `tests/test_cli.py` (7, con control negativo verificado). Suite total 145 passed.
 - **No verificado**: la instalación en frío en Windows real (Docker Desktop → `install.ps1`
   → wizard) y la sintaxis de los `.ps1` — no hay PowerShell en el Mac de desarrollo.
+
+## Demo con el primer cliente — barbacoa (v6.7)
+Recorrido completo desde base en blanco con cada rol (wizard → mesero celular → KDS
+tablet × 3 estaciones → cobro efectivo y transferencia → verificación → corte). Guion,
+usuarios de prueba y hallazgos en `docs/DEMO_PRIMER_CLIENTE.md`; preview
+`flask-demo-cliente` (SQLite `demo_cliente.db`, `RATELIMIT_ENABLED=false` porque la sonda
+del preview hace HEAD / 3 veces por segundo).
+
+- Plantilla `barbacoa` (primera del wizard) generada de `menu_restaurante.csv`: 58
+  productos, estaciones Taquero / Comal / Bebidas. Productos se listan en orden de menú
+  (`Producto.id`), no alfabético
+- **Toques rápidos duplicaban renglones**: `agregarDirecto` va en cola de promesas y
+  `add_product_to_order` lockea la Orden (`with_for_update`) antes del merge
+- "Cobrar" de las tarjetas del mesero lleva a `pago_view` (el modal `mostrarCobro` queda
+  para ver ticket de pagadas y el panel admin). El modal ignoraba métodos habilitados y CLABE
+- `--cl-gold-500/600` eran tokens inexistentes → botón Cobrar del carrito invisible
+- Textos visibles (avisos Socket.IO, flash, impresora) usan `orden.numero`, no `orden.id`
+- `/` redirige por rol si hay sesión; páginas de error 403/404/429/500 en español
+  (`error.html`, JSON en `/api/`); `manifest.json` `start_url` = `/`
+- `services/tiempo.fecha_larga()` — fecha en español sin depender del locale
+- Tests: `tests/test_demo_cliente.py` (11). Suite total 156 passed.
+
+### Validación con el stack real (Docker + PostgreSQL) — 3 bugs que SQLite/localhost ocultaban
+- **La imagen Docker no arrancaba**: `requirements.txt` sin versiones → una imagen nueva
+  jalaba SQLAlchemy 2.1 (driver psycopg v3 por defecto, no instalado). Los tests pasaban
+  porque el venv tenía 2.0. Ahora el `dockerfile` instala `backend/requirements.lock`
+  (versiones exactas del venv probado; gunicorn 23.0.0). El CMD por defecto usa el worker
+  eventlet y respeta `$PORT`
+- **Socket.IO rechazaba a las tablets** que entran por la IP de la red (400 "Not an
+  accepted origin"): sólo aceptaba `CORS_ORIGINS` (= localhost). `_origen_socket_permitido`
+  en `extensions.py` acepta el mismo origen (incluye X-Forwarded-Host/Proto) + la lista
+- **Folios quemados**: toques simultáneos al primer producto asignaban un folio por petición
+  (8 toques → la orden quedaba con el 4). `asignar_folio` relee la orden con el contador
+  bloqueado. Sin el lock de la orden además se **perdían cantidades** (8 toques → total 3)
+- `scripts/prueba_concurrencia_pg.py` — prueba manual contra PostgreSQL (SQLite no la
+  reproduce), con control negativo verificado para ambos arreglos
+- Tests: 3 de origen Socket.IO en `test_demo_cliente.py`. Suite total 159 passed.
+
+## Firma KAINET + evaluación visual (v6.8)
+Evaluación completa de la GUI (wizard → login → admin → mesero → KDS → cobro) en
+`docs/EVALUACION_VISUAL.md`, con prioridades. Hallazgo principal: identidad partida —
+tres logos (mascota `kainetResto.png` 1.5 MB, K roja `kairest-logo.svg`, y el logo del
+cliente `logoCasaLeones.svg` hardcodeado en el ticket de `meseros.js`), dos nombres
+(KaiRest/KaiResto) y tres versiones.
+
+### Firma "hecho por kainet." (marca respaldada)
+- `templates/components/_kainet.html` → `firma_kainet(clase='')`. Logo **inline**, no
+  `<img>` ni liga externa: el sistema opera offline y el CSP es 'self'. Las piezas oscuras
+  usan `currentColor`: hereda el color del texto, sirve en claro/oscuro sin dos archivos.
+  Sobre fondos siempre oscuros (degradado del wizard) → clase `cl-kainet--sobre-oscuro`
+- Va en wizard, login, error.html (vía `_layout_auth`), pie del sidebar admin y pie de PDF.
+  **No** en mesero ni KDS: ahí la marca es la del negocio
+- Logos fuente copiados de `kainet-final/design/logo/` a `static/img/kainet/`
+- No se repintó la app con la paleta KAINET (terracota/salvia): el rojo ya está auditado
+  para contraste y es funcional en operación
+
+### Corregido de paso
+- Columna en blanco de 240px entre 769–991px (iPad vertical): `v7-sidebar.css` quitaba el
+  margen del contenido bajo 768 pero `tokens.css` escondía el sidebar bajo 992. Ambos en 992
+- Pie del PDF usaba `brand_name` (el negocio) como nombre del sistema
+- Login con "© 2025" fijo (`now` no existe en ese contexto); bloque `extra_css` del PDF
+  roto por un formateador (`{ % block %}`)
+
+### KDS marcaba "listo" aunque el server lo rechazara (§8 de la evaluación)
+El token CSRF caducaba a los 60 min (default de Flask-WTF) y el KDS sólo refresca
+fragmentos por fetch: a la hora de abierto, cada "listo" regresaba 400 — y
+`marcarItemListo` no revisaba `resp.ok`, así que la palomita se quedaba sin guardarse.
+- `config.py`: `WTF_CSRF_TIME_LIMIT = None` — el token sigue atado a la sesión y se valida
+  igual (sin token o de otra sesión → 400); sólo se quita el reloj
+- KDS: marcar, desmarcar y LISTO revisan `resp.ok`; si falla revierten y avisan con
+  `avisarKds()` (toast; antes caía a `alert()`, que bloquea la tablet) y refrescan la orden
+- Páginas de error en español también para `CSRFError` ("La sesión expiró") y 405
+- Tests: `tests/test_csrf_turno.py` (7, CSRF encendido, reloj adelantado 8 h, control
+  negativo verificado quitando la línea del config). Suite total 166 passed.

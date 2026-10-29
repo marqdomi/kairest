@@ -112,7 +112,7 @@ def verificar_pago(pago_id):
     socketio.emit('pago_verificado', {
         'pago_id': pago.id, 'orden_id': orden.id,
         'orden_cerrada': cerrada,
-        'mensaje': f'Transferencia de la orden #{orden.id} confirmada.',
+        'mensaje': f'Transferencia de la orden #{orden.numero} confirmada.',
     })
     logger.info('Pago %s verificado por usuario %s (orden %s, cerrada=%s)',
                 pago.id, session.get('user_id'), orden.id, cerrada)

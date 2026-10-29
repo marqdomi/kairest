@@ -26,6 +26,7 @@ Usage:
   .cl-auth {
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 24px;
@@ -243,9 +244,15 @@ Usage:
 {% endblock %}
 
 {% block body_layout %}
+{% from 'components/_kainet.html' import firma_kainet %}
 <div class="cl-auth">
   <div class="cl-auth__card">
     {% block auth_content %}{% endblock %}
+  </div>
+  <div class="cl-producto-firma">
+    <span class="cl-producto-firma__nombre">KaiRest</span>
+    <span aria-hidden="true">·</span>
+    {{ firma_kainet() }}
   </div>
 </div>
 {% endblock body_layout %}

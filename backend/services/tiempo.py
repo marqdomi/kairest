@@ -38,6 +38,18 @@ def hoy_local():
     return ahora_local().date()
 
 
+_DIAS = ('lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo')
+_MESES = ('enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto',
+          'septiembre', 'octubre', 'noviembre', 'diciembre')
+
+
+def fecha_larga(d=None):
+    """'jueves 29 de octubre de 2026' — sin depender del locale del servidor
+    (en Docker es C/en_US y strftime('%A') daría 'Thursday')."""
+    d = d or hoy_local()
+    return f'{_DIAS[d.weekday()]} {d.day} de {_MESES[d.month - 1]} de {d.year}'
+
+
 def a_local(dt):
     """Convierte un datetime guardado (UTC, naive o aware) a la zona del negocio."""
     if dt is None:

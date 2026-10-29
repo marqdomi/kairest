@@ -31,3 +31,11 @@ cookies.txt
 *.csv
 node_modules/
 frontend/
+# Secretos y datos locales: sin esto la imagen copiaba .env (SECRET_KEY, contraseña
+# de la base) y las bases SQLite de desarrollo con sus usuarios
+.env
+**/.env
+**/*.db
+backend/instance/
+flask_session/
+deploy/**/backups/

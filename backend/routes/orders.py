@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, session, g, current_app
+from flask import Blueprint, request, jsonify, session, g, current_app, abort
 from backend.utils import (login_required, verificar_orden_completa, verificar_stock_disponible,
                            verificar_propiedad_orden, actualizar_estado_mesa)
 from backend.services.sanitizer import sanitizar_texto
@@ -73,7 +73,12 @@ def add_product_to_order(orden_id):
     cantidad = data.get('cantidad', 1)
     notas = sanitizar_texto(data.get('notas', '') or '', 300)
     producto = db.get_or_404(Producto, producto_id)
-    orden = db.get_or_404(Orden, orden_id)
+    # Lock de la orden: dos toques seguidos al mismo producto llegan como POSTs
+    # concurrentes y, sin serializar, ambos ven "no hay renglón" y crean dos
+    # (la cocina recibe "maciza ×2" y "maciza ×1" por separado).
+    orden = db.session.get(Orden, orden_id, with_for_update=True)
+    if orden is None:
+        abort(404)
 
     # Este es el carrito vivo del mesero (guarda cada producto al tocarlo), y no
     # validaba el estado: se le podían agregar productos a una cuenta ya pagada
@@ -139,7 +144,7 @@ def add_product_to_order(orden_id):
     if orden.estado not in ('pendiente',):
         socketio.emit('nueva_orden_cocina', {
             'orden_id': orden.id,
-            'mensaje': f'Nuevos productos en orden #{orden.id}.',
+            'mensaje': f'Nuevos productos en orden #{orden.numero}.',
         })
 
     # Con el primer producto la orden deja de ser borrador: recibe su folio del día
@@ -238,6 +243,6 @@ def notificar_cocina(orden_id):
         return jsonify({'error': 'No hay productos nuevos pendientes.'}), 400
     socketio.emit('nueva_orden_cocina', {
         'orden_id': orden.id,
-        'mensaje': f'Nuevos productos ({pendientes}) en orden #{orden.id}.',
+        'mensaje': f'Nuevos productos ({pendientes}) en orden #{orden.numero}.',
     })
     return jsonify({'message': f'Cocina notificada — {pendientes} producto(s) nuevo(s).'}), 200

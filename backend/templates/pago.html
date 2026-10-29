@@ -169,8 +169,8 @@
 {# ═══ Success overlay ═══ #}
 <div class="pago-success-overlay" id="successOverlay" style="display: none;">
   <div class="pago-success-content">
-    <div class="pago-success-check"><i data-lucide="check" style="width:48px;height:48px;"></i></div>
-    <h2 style="color: var(--cl-success-700); margin: var(--cl-space-3) 0 var(--cl-space-1);">¡Pago exitoso!</h2>
+    <div class="pago-success-check" id="successCheck"><i data-lucide="check" style="width:48px;height:48px;"></i></div>
+    <h2 style="color: var(--cl-success-700); margin: var(--cl-space-3) 0 var(--cl-space-1);" id="successTitle">¡Pago exitoso!</h2>
     <p style="color: var(--cl-text-secondary);" id="successMsg">Orden completada</p>
   </div>
 </div>
@@ -388,6 +388,7 @@
 
 <script nonce="{{ csp_nonce }}">
 const ORDEN_ID = {{ orden.id }};
+const ORDEN_NUM = {{ orden.numero }};
 let _orderData = {};
 const _METODOS = {{ metodos_pago | map(attribute='clave') | list | tojson }};
 const _REQUIEREN_VERIFICACION = {{ metodos_pago | selectattr('requiere_verificacion') | map(attribute='clave') | list | tojson }};
@@ -577,6 +578,14 @@ function confirmarPago() {
     if (data.success) {
       if (data.requiere_verificacion) {
         // La cuenta NO se cerró: el dinero todavía no se confirma en el banco.
+        // Una palomita verde con "¡Pago exitoso!" hacía creer que ya estaba cobrada.
+        const check = document.getElementById('successCheck');
+        check.style.background = 'var(--cl-warning-500)';
+        check.innerHTML = '<i data-lucide="clock" style="width:48px;height:48px;"></i>';
+        if (window.lucide) lucide.createIcons();
+        const titulo = document.getElementById('successTitle');
+        titulo.textContent = 'Transferencia por confirmar';
+        titulo.style.color = 'var(--cl-warning-text)';
         document.getElementById('successMsg').textContent = data.message;
         document.getElementById('successOverlay').style.display = 'flex';
         setTimeout(() => {
@@ -585,7 +594,7 @@ function confirmarPago() {
       } else if (data.orden_pagada) {
         // Show success overlay
         document.getElementById('successMsg').textContent =
-          `Orden #${ORDEN_ID} pagada — $${data.total_pagado.toFixed(2)}`;
+          `Orden #${ORDEN_NUM} pagada — $${data.total_pagado.toFixed(2)}`;
         document.getElementById('successOverlay').style.display = 'flex';
         setTimeout(() => {
           window.location.href = '{{ url_for("meseros.view_meseros") }}';
