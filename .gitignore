@@ -10,3 +10,4 @@ flask_session/
 .DS_Store
 cookies.txt
 pytest_results.txt
+deploy/gcp/backups/

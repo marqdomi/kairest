@@ -35,7 +35,9 @@ ENV FLASK_APP=backend.app \
 
 COPY . .
 
-RUN chown -R appuser:appuser /app
+# uploads/ (logo del negocio) no viene en el repo: sin crearla aquí, un volumen montado
+# ahí nace con dueño root y appuser no puede guardar el logo.
+RUN mkdir -p /app/backend/static/uploads/logos && chown -R appuser:appuser /app
 USER appuser
 
 EXPOSE 5005
