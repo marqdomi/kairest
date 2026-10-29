@@ -14,15 +14,17 @@ DATABASE_URL=sqlite:///demo_cliente.db REDIS_URL= RATELIMIT_ENABLED=false ./.ven
 
 ## Usuarios de prueba (sólo para la base de demo local)
 
-Contraseña de todos: `Leones2026demo`
+| Rol | Usuario | Entra con | Dispositivo sugerido |
+|---|---|---|---|
+| Dueña (superadmin) | `duena` | contraseña `Leones2026demo` | Celular |
+| Mesero | `pepe` | PIN `4826` | Celular |
+| Cocina — Taquero | `tito` | PIN `7391` | Tablet |
+| Cocina — Comal | `cata` | PIN `5937` | Tablet |
+| Cocina — Bebidas | `beto` | PIN `6148` | Tablet |
 
-| Rol | Correo | Dispositivo sugerido |
-|---|---|---|
-| Dueña (superadmin) | duena@casaleones.test | Celular |
-| Mesero | mesero@casaleones.test | Celular |
-| Cocina — Taquero | taquero@casaleones.test | Tablet |
-| Cocina — Comal | comal@casaleones.test | Tablet |
-| Cocina — Bebidas | bebidas@casaleones.test | Tablet |
+El PIN sólo funciona en aparatos autorizados: la dueña entra con contraseña →
+Admin → Dispositivos → "Autorizar este" (o "Generar código" y en el otro aparato
+"Vincular este aparato"). Las cuentas viejas siguen entrando también con su correo.
 
 ## Guion
 

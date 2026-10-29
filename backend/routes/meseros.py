@@ -598,7 +598,8 @@ def aplicar_descuento(orden_id):
     # Validar autorización
     auth_email = data.get('auth_email')
     auth_password = data.get('auth_password')
-    autorizador = Usuario.query.filter_by(email=auth_email).first()
+    from backend.services.acceso import buscar_para_login
+    autorizador = buscar_para_login(auth_email)  # usuario corto o correo
 
     if not autorizador or not autorizador.check_password(auth_password):
         return jsonify(success=False, message="Credenciales de autorización inválidas."), 403

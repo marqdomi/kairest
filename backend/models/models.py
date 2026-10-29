@@ -128,8 +128,15 @@ class Usuario(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     rol = db.Column(db.String(50), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    # Usuario corto para entrar ("pepe", "tito"). El correo queda sólo para quien lo
+    # necesita (la dueña, para recuperar acceso): al personal había que inventárselo.
+    username = db.Column(db.String(40), unique=True, nullable=True, index=True)
+    email = db.Column(db.String(120), unique=True, nullable=True)
     password_hash = db.Column(db.String(256))
+    # PIN de 4 dígitos (meseros y cocina) — sólo sirve en dispositivos autorizados
+    pin_hash = db.Column(db.String(256), nullable=True)
+    pin_fallidos = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    pin_bloqueado_hasta = db.Column(db.DateTime, nullable=True)
     sucursal_id = db.Column(db.Integer, db.ForeignKey('sucursales.id'), nullable=True)
     estacion_id = db.Column(db.Integer, db.ForeignKey('estacion.id'), nullable=True)
     estacion = db.relationship('Estacion', backref='usuarios', lazy=True)
@@ -156,10 +163,56 @@ class Usuario(UserMixin, db.Model):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
+        if not self.password_hash:
+            return False
         return check_password_hash(self.password_hash, password)
 
+    def set_pin(self, pin):
+        self.pin_hash = generate_password_hash(pin)
+        self.pin_fallidos = 0
+        self.pin_bloqueado_hasta = None
+
+    def check_pin(self, pin):
+        if not self.pin_hash:
+            return False
+        return check_password_hash(self.pin_hash, pin)
+
+    @property
+    def pin_bloqueado(self):
+        return bool(self.pin_bloqueado_hasta and
+                    self.pin_bloqueado_hasta > utc_now().replace(tzinfo=None))
+
+    @property
+    def usa_pin(self):
+        """Personal operativo: entra con PIN. Admin y dueña, con contraseña."""
+        return self.rol == 'mesero' or self.es_cocina
+
+    @property
+    def identificador(self):
+        """Lo que se muestra/audita como "quién": usuario, o correo de las cuentas viejas."""
+        return self.username or self.email or f'id {self.id}'
+
     def __repr__(self):
-        return f"<Usuario id={self.id} email={self.email}>"
+        return f"<Usuario id={self.id} username={self.username}>"
+
+
+class DispositivoAutorizado(db.Model):
+    """Tablet o celular donde la dueña permitió entrar con PIN.
+
+    Un PIN de 4 dígitos solo no aguanta estar en internet (10,000 combinaciones). Con
+    esto el PIN sólo funciona en aparatos vinculados con un código de la dueña, igual
+    que en los POS comerciales. El navegador guarda un token largo en cookie; aquí sólo
+    vive su hash (si se filtra la base, no sirve para suplantar un aparato).
+    """
+    __tablename__ = 'dispositivos_autorizados'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(60), nullable=False)
+    token_hash = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    sucursal_id = db.Column(db.Integer, db.ForeignKey('sucursales.id'), nullable=True)
+    autorizado_por = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=True)
+    creado = db.Column(db.DateTime, default=utc_now)
+    ultimo_uso = db.Column(db.DateTime, nullable=True)
+    activo = db.Column(db.Boolean, nullable=False, default=True, server_default=db.true())
 
 
 class Categoria(db.Model):

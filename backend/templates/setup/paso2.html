@@ -14,6 +14,16 @@
     </div>
 
     <div class="cl-form-group">
+      <label class="cl-form-label" for="usuario">Usuario para entrar</label>
+      <input type="text" class="cl-form-input" name="usuario" id="usuario"
+             value="{{ usuario }}" placeholder="maria" maxlength="40"
+             autocapitalize="none" autocorrect="off" spellcheck="false">
+      <small style="font-size:var(--cl-text-xs);color:var(--cl-text-secondary)">
+        Corto y sin espacios. Con él entras; el correo es para recuperar el acceso.
+      </small>
+    </div>
+
+    <div class="cl-form-group">
       <label class="cl-form-label" for="email">Email</label>
       <input type="email" class="cl-form-input" name="email" id="email"
              value="{{ email }}" placeholder="tu@correo.com" required>
@@ -39,4 +49,21 @@
       <button type="submit" class="cl-btn cl-btn--primary">Siguiente <i data-lucide="arrow-right" style="width:16px;height:16px;"></i></button>
     </div>
   </form>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script nonce="{{ csp_nonce }}">
+(function () {
+  // Sugerir el usuario con el primer nombre mientras no lo hayan tocado
+  var nombre = document.getElementById('nombre'), usuario = document.getElementById('usuario');
+  var tocado = !!usuario.value;
+  usuario.addEventListener('input', function () { tocado = true; });
+  nombre.addEventListener('input', function () {
+    if (tocado) return;
+    var primero = (nombre.value.trim().split(/\s+/)[0] || '');
+    usuario.value = primero.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9._-]/g, '');
+  });
+})();
+</script>
 {% endblock %}

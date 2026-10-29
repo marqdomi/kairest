@@ -252,77 +252,121 @@ def lista_usuarios():
     usuarios = Usuario.query.order_by(Usuario.rol, Usuario.nombre).all()
     return render_template('admin/usuarios.html', usuarios=usuarios)
 
+def _aplicar_formulario_usuario(u, form, nuevo):
+    """Valida y aplica el formulario de usuario. Devuelve la lista de errores.
+
+    Meseros y cocina entran con usuario + PIN (en aparatos autorizados); admin y
+    superadmin con usuario + contraseña. El correo es opcional para todos.
+    """
+    from backend.services import acceso
+    errores = []
+    nombre = sanitizar_texto(form.get('nombre', ''), 100)
+    email = (sanitizar_email(form.get('email', '')) or form.get('email', '').strip()) or None
+    username = acceso.normalizar_username(form.get('usuario', '')) or acceso.sugerir_username(
+        nombre, excluir_id=u.id)
+    rol_raw = form.get('rol', 'mesero')
+    pin = form.get('pin', '').strip()
+    password = form.get('password', '').strip()
+
+    if not nombre:
+        errores.append('Escribe el nombre.')
+    otro = Usuario.query.filter_by(username=username).first()
+    if otro and otro.id != u.id:
+        errores.append(f'El usuario "{username}" ya existe.')
+    if email:
+        otro = Usuario.query.filter(db.func.lower(Usuario.email) == email.lower()).first()
+        if otro and otro.id != u.id:
+            errores.append('Ese correo ya lo tiene otra persona.')
+
+    estacion_id = None
+    if rol_raw.startswith('cocina:'):
+        station_name = rol_raw.split(':', 1)[1].strip()
+        est = Estacion.query.filter(db.func.lower(Estacion.nombre) == station_name.lower()).first()
+        estacion_id = est.id if est else None
+        rol = 'cocina'
+    else:
+        rol = rol_raw
+    usa_pin = rol in ('mesero', 'cocina')
+
+    if usa_pin:
+        if pin:
+            ok, msg = acceso.validar_pin(pin)
+            if not ok:
+                errores.append(msg)
+        elif nuevo or not u.pin_hash:
+            errores.append('Ponle un PIN de 4 números (con él entra).')
+    else:
+        if password:
+            ok, msgs = validar_password(password, nombre=nombre, email=email or '')
+            if not ok:
+                errores.extend(msgs)
+        elif nuevo or not u.password_hash:
+            errores.append('Los administradores entran con contraseña: escribe una.')
+
+    if errores:
+        return errores
+
+    u.nombre, u.email, u.username, u.rol, u.estacion_id = nombre, email, username, rol, estacion_id
+    if usa_pin and pin:
+        u.set_pin(pin)
+    if not usa_pin and password:
+        u.set_password(password)
+    return []
+
+
 @admin_bp.route('/usuarios/nuevo', methods=['GET', 'POST'])
 @login_required(roles=['admin', 'superadmin'])
 def usuario_nuevo():
-    if request.method == 'POST':
-        nombre = sanitizar_texto(request.form['nombre'], 100)
-        email = sanitizar_email(request.form['email']) or request.form['email'].strip()
-        rol_raw = request.form['rol']
-        password = request.form['password']
-        if Usuario.query.filter_by(email=email).first():
-            flash('Email ya existe', 'danger')
-            return redirect(url_for('admin.usuario_nuevo'))
-        # Validar política de contraseñas
-        pw_valida, pw_errores = validar_password(password, nombre=nombre, email=email)
-        if not pw_valida:
-            for err in pw_errores:
-                flash(err, 'danger')
-            return redirect(url_for('admin.usuario_nuevo'))
-        # Parse cocina:station_name → rol='cocina' + estacion_id
-        estacion_id = None
-        if rol_raw.startswith('cocina:'):
-            station_name = rol_raw.split(':', 1)[1].strip()
-            est = Estacion.query.filter(db.func.lower(Estacion.nombre) == station_name.lower()).first()
-            if est:
-                estacion_id = est.id
-            rol = 'cocina'
-        else:
-            rol = rol_raw
-        u = Usuario(nombre=nombre, email=email, rol=rol, estacion_id=estacion_id)
-        u.set_password(password)
-        db.session.add(u)
-        db.session.commit()
-        flash('Usuario creado', 'success')
-        return redirect(url_for('admin.lista_usuarios'))
     estaciones = Estacion.query.order_by(Estacion.nombre).all()
-    return render_template('admin/usuario_form.html', estaciones=estaciones)
+    if request.method == 'POST':
+        u = Usuario()
+        errores = _aplicar_formulario_usuario(u, request.form, nuevo=True)
+        if errores:
+            for err in errores:
+                flash(err, 'danger')
+            return render_template('admin/usuario_form.html', estaciones=estaciones, form=request.form)
+        db.session.add(u)
+        db.session.flush()
+        from backend.services.audit import registrar_auditoria
+        registrar_auditoria('crear', 'Usuario', u.id, f'Usuario creado: {u.identificador}, rol={u.rol}')
+        db.session.commit()
+        flash(f'{u.nombre} dado de alta. Entra como "{u.username}".', 'success')
+        return redirect(url_for('admin.lista_usuarios'))
+    return render_template('admin/usuario_form.html', estaciones=estaciones, form={})
 
 @admin_bp.route('/usuarios/<int:id>/editar', methods=['GET', 'POST'])
 @login_required(roles=['admin', 'superadmin'])
 def usuario_editar(id):
     u = db.get_or_404(Usuario, id)
+    estaciones = Estacion.query.order_by(Estacion.nombre).all()
     if request.method == 'POST':
-        u.nombre = sanitizar_texto(request.form['nombre'], 100)
-        u.email = sanitizar_email(request.form['email']) or request.form['email'].strip()
-        rol_raw = request.form['rol']
-        # Parse cocina:station_name → rol='cocina' + estacion_id
-        if rol_raw.startswith('cocina:'):
-            station_name = rol_raw.split(':', 1)[1].strip()
-            est = Estacion.query.filter(db.func.lower(Estacion.nombre) == station_name.lower()).first()
-            u.rol = 'cocina'
-            u.estacion_id = est.id if est else None
-        else:
-            u.rol = rol_raw
-            u.estacion_id = None
-        # Optional password update
-        new_pw = request.form.get('password', '').strip()
-        if new_pw:
-            pw_valida, pw_errores = validar_password(new_pw, nombre=u.nombre, email=u.email)
-            if not pw_valida:
-                for err in pw_errores:
-                    flash(err, 'danger')
-                estaciones = Estacion.query.order_by(Estacion.nombre).all()
-                return render_template('admin/usuario_form.html', usuario=u, estaciones=estaciones)
-            u.set_password(new_pw)
+        errores = _aplicar_formulario_usuario(u, request.form, nuevo=False)
+        if errores:
+            db.session.rollback()
+            for err in errores:
+                flash(err, 'danger')
+            return render_template('admin/usuario_form.html', usuario=u, estaciones=estaciones, form=request.form)
+        cambios = [c for c, campo in (('PIN cambiado', 'pin'), ('contraseña cambiada', 'password'))
+                   if request.form.get(campo, '').strip()]
         from backend.services.audit import registrar_auditoria
         registrar_auditoria('editar', 'Usuario', u.id,
-                            f'Usuario editado: {u.email}, rol={u.rol}' + (', password cambiado' if new_pw else ''))
+                            f'Usuario editado: {u.identificador}, rol={u.rol}' + (f', {", ".join(cambios)}' if cambios else ''))
         db.session.commit()
         flash('Usuario actualizado', 'success')
         return redirect(url_for('admin.lista_usuarios'))
-    estaciones = Estacion.query.order_by(Estacion.nombre).all()
-    return render_template('admin/usuario_form.html', usuario=u, estaciones=estaciones)
+    return render_template('admin/usuario_form.html', usuario=u, estaciones=estaciones, form={})
+
+@admin_bp.route('/usuarios/<int:id>/desbloquear', methods=['POST'])
+@login_required(roles=['admin', 'superadmin'])
+def usuario_desbloquear(id):
+    u = db.get_or_404(Usuario, id)
+    u.pin_fallidos = 0
+    u.pin_bloqueado_hasta = None
+    from backend.services.audit import registrar_auditoria
+    registrar_auditoria('desbloquear', 'Usuario', u.id, f'PIN desbloqueado: {u.identificador}')
+    db.session.commit()
+    flash(f'{u.nombre} ya puede volver a entrar.', 'success')
+    return redirect(url_for('admin.lista_usuarios'))
 
 @admin_bp.route('/usuarios/<int:id>/eliminar', methods=['POST'])
 @login_required(roles=['admin', 'superadmin'])
@@ -340,7 +384,7 @@ def usuario_eliminar(id):
         flash(f'No se puede eliminar: tiene {ordenes_count} orden(es) activa(s).', 'danger')
         return redirect(url_for('admin.lista_usuarios'))
     from backend.services.audit import registrar_auditoria
-    registrar_auditoria('eliminar', 'Usuario', u.id, f'Usuario eliminado: {u.email} (rol={u.rol})')
+    registrar_auditoria('eliminar', 'Usuario', u.id, f'Usuario eliminado: {u.identificador} (rol={u.rol})')
     db.session.delete(u)
     db.session.commit()
     flash('Usuario eliminado', 'success')

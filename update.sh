@@ -67,16 +67,18 @@ $COMPOSE_CMD $COMPOSE_FILE up -d $BUILD_FLAG 2>&1 | tail -5
 
 # ── Apply schema migrations ──
 # create_all() del arranque solo crea tablas nuevas, nunca altera existentes.
-# Alembic aplica los cambios de schema pendientes. En una base creada por
-# create_all sin historial alembic, se marca el head actual primero (el schema
-# ya coincide) para que futuros upgrades apliquen solo lo nuevo.
+# Alembic aplica los cambios de schema pendientes. Una base creada por create_all
+# no tiene historial: se marca c009 (no head) y upgrade aplica el resto. Marcar head
+# daba por aplicada la migración más nueva SIN crear sus columnas (create_all no
+# altera tablas existentes) y la app tronaba. De c009 en adelante las migraciones son
+# idempotentes: revisan con inspector antes de crear.
 echo -e "${BLUE}ℹ ${NC} Aplicando migraciones de base de datos..."
 sleep 5  # dar tiempo a que los contenedores estén exec-ready
 HAS_ALEMBIC=$($COMPOSE_CMD $COMPOSE_FILE exec -T db psql -U casaleones -d casaleones -tAc \
   "SELECT to_regclass('alembic_version') IS NOT NULL" 2>/dev/null | tr -d '[:space:]' || echo "f")
 if [ "$HAS_ALEMBIC" != "t" ]; then
-  $COMPOSE_CMD $COMPOSE_FILE exec -T web flask db stamp head 2>/dev/null \
-    && echo -e "${GREEN}✓${NC} Base marcada en head (primera vez con Alembic)" \
+  $COMPOSE_CMD $COMPOSE_FILE exec -T web flask db stamp c009 2>/dev/null \
+    && echo -e "${GREEN}✓${NC} Historial Alembic iniciado en c009 (primera vez)" \
     || echo "⚠️  No se pudo hacer stamp (se reintentará en la próxima actualización)."
 fi
 $COMPOSE_CMD $COMPOSE_FILE exec -T web flask db upgrade 2>/dev/null \

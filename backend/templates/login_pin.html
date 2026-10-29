@@ -1,0 +1,207 @@
+{% extends 'layouts/_layout_auth.html' %}
+{% block page_title %}¿Quién eres?{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+  .cl-auth__card { max-width: 640px; }
+  .cl-pin-titulo { text-align: center; margin-bottom: var(--cl-space-4); }
+  .cl-pin-titulo h1 { font-size: 24px; font-weight: 800; color: var(--cl-text-primary); margin: 0; }
+  .cl-pin-titulo p { color: var(--cl-text-secondary); font-size: var(--cl-text-sm); margin: 4px 0 0; }
+
+  .cl-pin-personas { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+  .cl-pin-persona {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 18px 10px; min-height: 120px;
+    background: var(--cl-surface-3, var(--cl-surface-2)); border: 1px solid var(--cl-border-color);
+    border-radius: 16px; cursor: pointer; color: var(--cl-text-primary);
+    transition: transform var(--cl-transition-fast), border-color var(--cl-transition-fast);
+  }
+  .cl-pin-persona:active { transform: scale(.97); }
+  .cl-pin-persona:hover, .cl-pin-persona:focus-visible { border-color: var(--cl-brand-text); }
+  .cl-pin-avatar {
+    width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--cl-primary-500, #C41E3A); color: #fff; font-size: 22px; font-weight: 800;
+  }
+  .cl-pin-persona strong { font-size: 16px; line-height: 1.2; text-align: center; }
+  .cl-pin-persona small { font-size: 12.5px; color: var(--cl-text-secondary); }
+
+  .cl-pin-panel { display: none; text-align: center; }
+  .cl-pin-panel.is-activo { display: block; }
+  .cl-pin-panel__nombre { font-size: 20px; font-weight: 800; color: var(--cl-text-primary); }
+  .cl-pin-puntos { display: flex; justify-content: center; gap: 16px; margin: 18px 0 8px; }
+  .cl-pin-punto { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--cl-text-secondary); }
+  .cl-pin-punto.is-lleno { background: var(--cl-text-primary); border-color: var(--cl-text-primary); }
+  .cl-pin-puntos.is-error { animation: pinTiembla .35s; }
+  .cl-pin-puntos.is-error .cl-pin-punto { border-color: var(--cl-error-text); }
+  @keyframes pinTiembla { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+  .cl-pin-mensaje { min-height: 22px; font-size: var(--cl-text-sm); color: var(--cl-error-text); margin-bottom: 8px; }
+
+  .cl-pin-teclado { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 320px; margin: 0 auto; }
+  .cl-pin-tecla {
+    height: 64px; border-radius: 14px; font-size: 26px; font-weight: 700;
+    background: var(--cl-surface-3, var(--cl-surface-2)); border: 1px solid var(--cl-border-color);
+    color: var(--cl-text-primary); cursor: pointer; user-select: none;
+  }
+  .cl-pin-tecla:active { background: var(--cl-overlay-strong); }
+  .cl-pin-tecla--sec { font-size: 15px; font-weight: 600; color: var(--cl-text-secondary); }
+  .cl-pin-tecla:disabled { opacity: .5; }
+
+  .cl-pin-pie { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    margin-top: var(--cl-space-5); font-size: var(--cl-text-sm); }
+  .cl-pin-pie a { color: var(--cl-text-secondary); }
+  @media (prefers-reduced-motion: reduce) { .cl-pin-puntos.is-error { animation: none; } }
+  /* Celular: 2 por fila (a 1 por fila, con 5 personas había que deslizar para encontrarse) */
+  @media (max-width: 480px) {
+    .cl-auth__card { padding: 22px 14px; }
+    .cl-pin-personas { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .cl-pin-persona { min-height: 104px; padding: 12px 6px; }
+    .cl-pin-avatar { width: 44px; height: 44px; font-size: 19px; }
+    .cl-pin-tecla { height: 60px; }
+  }
+</style>
+{% endblock %}
+
+{% block auth_content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% for category, message in messages %}
+<div class="cl-toast cl-toast--{{ 'error' if category in ('danger','error') else category }}" role="alert"
+  style="position:relative;margin-bottom:var(--cl-space-3)">
+  <span>{{ message }}</span>
+</div>
+{% endfor %}
+{% endwith %}
+
+{# ── Paso 1: tocar tu nombre ── #}
+<div id="pinPersonas">
+  <div class="cl-pin-titulo">
+    <h1>¿Quién eres?</h1>
+    <p>{{ nombre_negocio }}{% if nombre_negocio %} · {% endif %}{{ dispositivo.nombre }}</p>
+  </div>
+
+  {% if personal %}
+  <div class="cl-pin-personas" role="list">
+    {% for u in personal %}
+    <button type="button" class="cl-pin-persona" role="listitem" data-id="{{ u.id }}" data-nombre="{{ u.nombre }}">
+      <span class="cl-pin-avatar" aria-hidden="true">{{ u.nombre[0]|upper }}</span>
+      <strong>{{ u.nombre }}</strong>
+      <small>{% if u.es_cocina %}{{ u.estacion_nombre or 'Cocina' }}{% else %}Mesero{% endif %}</small>
+    </button>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="text-align:center;color:var(--cl-text-secondary);">
+    Todavía no hay personal con PIN. La dueña lo da de alta en Admin → Usuarios.
+  </p>
+  {% endif %}
+</div>
+
+{# ── Paso 2: teclear el PIN ── #}
+<div class="cl-pin-panel" id="pinPanel" aria-live="polite">
+  <div class="cl-pin-panel__nombre" id="pinNombre"></div>
+  <div style="color:var(--cl-text-secondary);font-size:var(--cl-text-sm);">Escribe tu PIN</div>
+  <div class="cl-pin-puntos" id="pinPuntos" aria-hidden="true">
+    <span class="cl-pin-punto"></span><span class="cl-pin-punto"></span>
+    <span class="cl-pin-punto"></span><span class="cl-pin-punto"></span>
+  </div>
+  <div class="cl-pin-mensaje" id="pinMensaje" role="alert"></div>
+  <div class="cl-pin-teclado" id="pinTeclado">
+    {% for n in [1, 2, 3, 4, 5, 6, 7, 8, 9] %}
+    <button type="button" class="cl-pin-tecla" data-digito="{{ n }}">{{ n }}</button>
+    {% endfor %}
+    <button type="button" class="cl-pin-tecla cl-pin-tecla--sec" id="pinVolver">Volver</button>
+    <button type="button" class="cl-pin-tecla" data-digito="0">0</button>
+    <button type="button" class="cl-pin-tecla cl-pin-tecla--sec" id="pinBorrar" aria-label="Borrar">⌫</button>
+  </div>
+</div>
+
+<div class="cl-pin-pie">
+  <a href="{{ url_for('auth.login', modo='contrasena') }}">Entrar con contraseña</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script nonce="{{ csp_nonce }}">
+(function () {
+  var LONGITUD = 4;
+  var personas = document.getElementById('pinPersonas');
+  var panel = document.getElementById('pinPanel');
+  var puntos = document.querySelectorAll('#pinPuntos .cl-pin-punto');
+  var caja = document.getElementById('pinPuntos');
+  var mensaje = document.getElementById('pinMensaje');
+  var teclas = document.querySelectorAll('#pinTeclado button');
+  var usuarioId = null, pin = '', enviando = false;
+
+  function pintar() {
+    puntos.forEach(function (p, i) { p.classList.toggle('is-lleno', i < pin.length); });
+  }
+  function abrir(btn) {
+    usuarioId = btn.dataset.id;
+    document.getElementById('pinNombre').textContent = btn.dataset.nombre;
+    pin = ''; mensaje.textContent = ''; pintar();
+    personas.style.display = 'none';
+    panel.classList.add('is-activo');
+  }
+  function volver() {
+    usuarioId = null; pin = ''; pintar();
+    panel.classList.remove('is-activo');
+    personas.style.display = '';
+  }
+  function bloquearTeclado(si) { teclas.forEach(function (t) { t.disabled = si; }); }
+  function error(texto) {
+    mensaje.textContent = texto;
+    caja.classList.remove('is-error'); void caja.offsetWidth; caja.classList.add('is-error');
+    if (navigator.vibrate) navigator.vibrate(120);
+    pin = ''; pintar();
+  }
+  function enviar() {
+    enviando = true; bloquearTeclado(true);
+    fetch('{{ url_for("acceso.entrar_con_pin") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario_id: Number(usuarioId), pin: pin })
+    })
+      .then(function (r) { return r.json().then(function (d) { return { status: r.status, data: d }; }); })
+      .then(function (res) {
+        if (res.data.ok) { window.location.href = res.data.redirect; return; }
+        var texto = res.data.error || 'No se pudo entrar.';
+        if (res.data.restantes !== undefined && res.data.restantes <= 2) {
+          texto += ' Te quedan ' + res.data.restantes + ' intento' + (res.data.restantes === 1 ? '' : 's') + '.';
+        }
+        error(texto);
+      })
+      .catch(function () { error('Sin conexión. Revisa el WiFi e intenta de nuevo.'); })
+      .finally(function () { enviando = false; bloquearTeclado(false); });
+  }
+  function teclear(d) {
+    if (enviando || !usuarioId || pin.length >= LONGITUD) return;
+    mensaje.textContent = '';
+    pin += d; pintar();
+    if (pin.length === LONGITUD) enviar();
+  }
+
+  document.querySelectorAll('.cl-pin-persona').forEach(function (b) {
+    b.addEventListener('click', function () { abrir(b); });
+  });
+  document.querySelectorAll('[data-digito]').forEach(function (b) {
+    b.addEventListener('click', function () { teclear(b.dataset.digito); });
+  });
+  document.getElementById('pinBorrar').addEventListener('click', function () {
+    if (enviando) return; pin = pin.slice(0, -1); pintar();
+  });
+  document.getElementById('pinVolver').addEventListener('click', volver);
+  // Teclado físico (tablet con teclado o computadora)
+  document.addEventListener('keydown', function (e) {
+    if (!usuarioId) return;
+    if (/^\d$/.test(e.key)) teclear(e.key);
+    else if (e.key === 'Backspace') { pin = pin.slice(0, -1); pintar(); }
+    else if (e.key === 'Escape') volver();
+  });
+
+  // Con un solo usuario no hay nada que elegir
+  var unicos = document.querySelectorAll('.cl-pin-persona');
+  if (unicos.length === 1) abrir(unicos[0]);
+})();
+</script>
+{% endblock %}

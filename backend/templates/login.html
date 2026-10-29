@@ -26,10 +26,12 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
   <div class="cl-auth__input-group">
-    <label class="cl-form-label" for="email">Correo electrónico</label>
-    <i data-lucide="mail" class="icon-sm cl-auth__input-icon"></i>
-    <input type="email" class="cl-form-input" name="email" id="email" placeholder="tu@correo.com" autocomplete="email"
-      required autofocus>
+    <label class="cl-form-label" for="email">Usuario o correo</label>
+    <i data-lucide="user" class="icon-sm cl-auth__input-icon"></i>
+    {# name="email" por compatibilidad; el servidor acepta usuario corto o correo #}
+    <input type="text" class="cl-form-input" name="email" id="email" placeholder="pepe" autocomplete="username"
+      autocapitalize="none" autocorrect="off" spellcheck="false" value="{{ identificador or '' }}"
+      required {% if not identificador %}autofocus{% endif %}>
   </div>
 
   <div class="cl-auth__input-group">
@@ -48,6 +50,14 @@
     Ingresar
   </button>
 </form>
+
+<p style="text-align:center;margin-top:var(--cl-space-4);font-size:var(--cl-text-sm);">
+  {% if dispositivo %}
+  <a href="{{ url_for('auth.login') }}" style="color:var(--cl-text-secondary);">← Entrar con PIN</a>
+  {% else %}
+  <a href="{{ url_for('acceso.vincular') }}" style="color:var(--cl-text-secondary);">¿Personal con PIN? Vincular este aparato</a>
+  {% endif %}
+</p>
 {% endblock %}
 
 {% block scripts %}

@@ -10,12 +10,16 @@
     breadcrumb=[('Configuración', ''), ('Usuarios', url_for('admin.lista_usuarios')), (('Editar' if usuario else 'Nuevo'), '')]
 ) }}
 
+{# Al volver con errores se conserva lo capturado (form), si no lo del usuario #}
+{% macro v(campo, actual='') %}{{ form.get(campo) if form and form.get(campo) is not none else actual }}{% endmacro %}
+
 <div class="cl-card" style="max-width:640px;">
-  <form method="POST">
+  <form method="POST" id="usuarioForm">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    {{ form_group('nombre', 'Nombre', value=usuario.nombre if usuario else '', required=true, icon='user') }}
-    {{ form_group('email', 'Email', type='email', value=usuario.email if usuario else '', required=true, icon='mail') }}
+    {{ form_group('nombre', 'Nombre', value=v('nombre', usuario.nombre if usuario else ''), required=true, icon='user') }}
+    {{ form_group('usuario', 'Usuario para entrar', value=v('usuario', usuario.username if usuario else ''), icon='at-sign',
+                  placeholder='pepe', hint='Corto, sin espacios. Si lo dejas vacío se toma del nombre.') }}
 
     {# Dynamic roles: static roles + one cocina entry per station #}
     {% set roles = [
@@ -33,13 +37,28 @@
     {% elif usuario %}
       {% set rol_value = usuario.rol %}
     {% else %}
-      {% set rol_value = '' %}
+      {% set rol_value = 'mesero' %}
     {% endif %}
-    {{ form_select('rol', 'Rol', options=roles, value=rol_value, required=true) }}
+    {{ form_select('rol', 'Rol', options=roles, value=v('rol', rol_value), required=true) }}
 
-    {{ form_group('password', 'Contraseña' ~ (' (dejar vacío para no cambiar)' if usuario else ''),
-                  type='password', required=not usuario, icon='lock',
-                  hint='Mín. 8 caracteres, mayúscula, minúscula y número') }}
+    <div id="grupoPin">
+      {{ form_group('pin', 'PIN de 4 números' ~ (' (déjalo vacío para no cambiarlo)' if usuario and usuario.pin_hash else ''),
+                    value=v('pin'), icon='grid-3x3', placeholder='0000', pattern='[0-9]{4}',
+                    hint='Con él entra en las tablets y celulares autorizados. Dáselo en persona.') }}
+      {% if usuario and usuario.pin_bloqueado %}
+      <p style="font-size:var(--cl-text-sm);color:var(--cl-warning-text);margin-top:-6px;">
+        Tiene el PIN bloqueado por intentos fallidos. Al poner uno nuevo se desbloquea.
+      </p>
+      {% endif %}
+    </div>
+
+    <div id="grupoPassword">
+      {{ form_group('password', 'Contraseña' ~ (' (dejar vacío para no cambiar)' if usuario and usuario.password_hash else ''),
+                    type='password', icon='lock', hint='Mín. 8 caracteres, mayúscula, minúscula y número') }}
+    </div>
+
+    {{ form_group('email', 'Correo (opcional)', type='email', value=v('email', usuario.email if usuario and usuario.email else ''), icon='mail',
+                  hint='Sólo hace falta para quien administra: sirve para recuperar el acceso.') }}
 
     <div class="d-flex gap-2 mt-4">
       <button type="submit" class="cl-btn cl-btn--primary">
@@ -49,4 +68,22 @@
     </div>
   </form>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script nonce="{{ csp_nonce }}">
+(function () {
+  // Personal (mesero/cocina) → PIN; administradores → contraseña
+  var rol = document.querySelector('[name="rol"]');
+  var pin = document.getElementById('grupoPin'), pass = document.getElementById('grupoPassword');
+  function ajustar() {
+    var personal = rol.value === 'mesero' || rol.value.indexOf('cocina:') === 0;
+    pin.style.display = personal ? '' : 'none';
+    pass.style.display = personal ? 'none' : '';
+  }
+  rol.addEventListener('change', ajustar);
+  ajustar();
+})();
+</script>
 {% endblock %}
