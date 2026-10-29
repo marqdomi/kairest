@@ -81,7 +81,11 @@
     "nombre": "Taqueria",
     "descripcion": "Tacos, quesadillas, antojitos y bebidas",
     "icon": "flame",
-    "estaciones": ["Parrilla", "Comal", "Barra"],
+    "estaciones": [
+      "Parrilla",
+      "Comal",
+      "Barra"
+    ],
     "categorias": [
       "Tacos",
       "Quesadillas",
@@ -91,45 +95,241 @@
       "Extras"
     ],
     "productos": [
-      {"nombre": "Taco de Bistec",      "precio": 25.0, "categoria": "Tacos",       "estacion": "Parrilla", "unidad": "pieza"},
-      {"nombre": "Taco de Pastor",      "precio": 22.0, "categoria": "Tacos",       "estacion": "Parrilla", "unidad": "pieza"},
-      {"nombre": "Taco de Suadero",     "precio": 25.0, "categoria": "Tacos",       "estacion": "Parrilla", "unidad": "pieza"},
-      {"nombre": "Taco de Longaniza",   "precio": 25.0, "categoria": "Tacos",       "estacion": "Parrilla", "unidad": "pieza"},
-      {"nombre": "Taco de Chorizo",     "precio": 25.0, "categoria": "Tacos",       "estacion": "Parrilla", "unidad": "pieza"},
-      {"nombre": "Taco de Tripa",       "precio": 25.0, "categoria": "Tacos",       "estacion": "Parrilla", "unidad": "pieza"},
-      {"nombre": "Taco de Cabeza",      "precio": 25.0, "categoria": "Tacos",       "estacion": "Parrilla", "unidad": "pieza"},
-      {"nombre": "Taco de Lengua",      "precio": 30.0, "categoria": "Tacos",       "estacion": "Parrilla", "unidad": "pieza"},
-      {"nombre": "Taco Campechano",     "precio": 28.0, "categoria": "Tacos",       "estacion": "Parrilla", "unidad": "pieza"},
-      {"nombre": "Taco de Cecina",      "precio": 28.0, "categoria": "Tacos",       "estacion": "Parrilla", "unidad": "pieza"},
-      {"nombre": "Quesadilla de Queso",       "precio": 30.0, "categoria": "Quesadillas", "estacion": "Comal", "unidad": "pieza"},
-      {"nombre": "Quesadilla de Chicharron",  "precio": 30.0, "categoria": "Quesadillas", "estacion": "Comal", "unidad": "pieza"},
-      {"nombre": "Quesadilla de Huitlacoche", "precio": 35.0, "categoria": "Quesadillas", "estacion": "Comal", "unidad": "pieza"},
-      {"nombre": "Quesadilla de Flor de Calabaza", "precio": 35.0, "categoria": "Quesadillas", "estacion": "Comal", "unidad": "pieza"},
-      {"nombre": "Quesadilla de Tinga",       "precio": 35.0, "categoria": "Quesadillas", "estacion": "Comal", "unidad": "pieza"},
-      {"nombre": "Quesadilla de Champiñones", "precio": 35.0, "categoria": "Quesadillas", "estacion": "Comal", "unidad": "pieza"},
-      {"nombre": "Gringa de Pastor",    "precio": 40.0, "categoria": "Gringas",     "estacion": "Parrilla", "unidad": "pieza"},
-      {"nombre": "Gringa de Bistec",    "precio": 40.0, "categoria": "Gringas",     "estacion": "Parrilla", "unidad": "pieza"},
-      {"nombre": "Gringa Campechana",   "precio": 45.0, "categoria": "Gringas",     "estacion": "Parrilla", "unidad": "pieza"},
-      {"nombre": "Torta de Bistec",     "precio": 55.0, "categoria": "Tortas",      "estacion": "Parrilla", "unidad": "pieza"},
-      {"nombre": "Torta de Pastor",     "precio": 50.0, "categoria": "Tortas",      "estacion": "Parrilla", "unidad": "pieza"},
-      {"nombre": "Torta de Milanesa",   "precio": 55.0, "categoria": "Tortas",      "estacion": "Parrilla", "unidad": "pieza"},
-      {"nombre": "Torta Cubana",        "precio": 65.0, "categoria": "Tortas",      "estacion": "Parrilla", "unidad": "pieza"},
-      {"nombre": "Coca-Cola 600ml",     "precio": 25.0, "categoria": "Bebidas",     "estacion": "Barra",    "unidad": "pieza"},
-      {"nombre": "Coca-Cola 355ml",     "precio": 20.0, "categoria": "Bebidas",     "estacion": "Barra",    "unidad": "pieza"},
-      {"nombre": "Agua de Jamaica 1L",  "precio": 35.0, "categoria": "Bebidas",     "estacion": "Barra",    "unidad": "litro"},
-      {"nombre": "Agua de Horchata 1L", "precio": 35.0, "categoria": "Bebidas",     "estacion": "Barra",    "unidad": "litro"},
-      {"nombre": "Agua Natural",        "precio": 18.0, "categoria": "Bebidas",     "estacion": "Barra",    "unidad": "pieza"},
-      {"nombre": "Cerveza",             "precio": 40.0, "categoria": "Bebidas",     "estacion": "Barra",    "unidad": "pieza"},
-      {"nombre": "Orden de Nopales",    "precio": 15.0, "categoria": "Extras",      "estacion": "Comal",    "unidad": "orden"},
-      {"nombre": "Guacamole",           "precio": 25.0, "categoria": "Extras",      "estacion": "Comal",    "unidad": "orden"},
-      {"nombre": "Orden de Frijoles",   "precio": 20.0, "categoria": "Extras",      "estacion": "Comal",    "unidad": "orden"}
+      {
+        "nombre": "Taco de Bistec",
+        "precio": 25.0,
+        "categoria": "Tacos",
+        "estacion": "Parrilla",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de Pastor",
+        "precio": 22.0,
+        "categoria": "Tacos",
+        "estacion": "Parrilla",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de Suadero",
+        "precio": 25.0,
+        "categoria": "Tacos",
+        "estacion": "Parrilla",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de Longaniza",
+        "precio": 25.0,
+        "categoria": "Tacos",
+        "estacion": "Parrilla",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de Chorizo",
+        "precio": 25.0,
+        "categoria": "Tacos",
+        "estacion": "Parrilla",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de Tripa",
+        "precio": 25.0,
+        "categoria": "Tacos",
+        "estacion": "Parrilla",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de Cabeza",
+        "precio": 25.0,
+        "categoria": "Tacos",
+        "estacion": "Parrilla",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de Lengua",
+        "precio": 30.0,
+        "categoria": "Tacos",
+        "estacion": "Parrilla",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco Campechano",
+        "precio": 28.0,
+        "categoria": "Tacos",
+        "estacion": "Parrilla",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de Cecina",
+        "precio": 28.0,
+        "categoria": "Tacos",
+        "estacion": "Parrilla",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Quesadilla de Queso",
+        "precio": 30.0,
+        "categoria": "Quesadillas",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Quesadilla de Chicharron",
+        "precio": 30.0,
+        "categoria": "Quesadillas",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Quesadilla de Huitlacoche",
+        "precio": 35.0,
+        "categoria": "Quesadillas",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Quesadilla de Flor de Calabaza",
+        "precio": 35.0,
+        "categoria": "Quesadillas",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Quesadilla de Tinga",
+        "precio": 35.0,
+        "categoria": "Quesadillas",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Quesadilla de Champiñones",
+        "precio": 35.0,
+        "categoria": "Quesadillas",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Gringa de Pastor",
+        "precio": 40.0,
+        "categoria": "Gringas",
+        "estacion": "Parrilla",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Gringa de Bistec",
+        "precio": 40.0,
+        "categoria": "Gringas",
+        "estacion": "Parrilla",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Gringa Campechana",
+        "precio": 45.0,
+        "categoria": "Gringas",
+        "estacion": "Parrilla",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Torta de Bistec",
+        "precio": 55.0,
+        "categoria": "Tortas",
+        "estacion": "Parrilla",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Torta de Pastor",
+        "precio": 50.0,
+        "categoria": "Tortas",
+        "estacion": "Parrilla",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Torta de Milanesa",
+        "precio": 55.0,
+        "categoria": "Tortas",
+        "estacion": "Parrilla",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Torta Cubana",
+        "precio": 65.0,
+        "categoria": "Tortas",
+        "estacion": "Parrilla",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Coca-Cola 600ml",
+        "precio": 25.0,
+        "categoria": "Bebidas",
+        "estacion": "Barra",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Coca-Cola 355ml",
+        "precio": 20.0,
+        "categoria": "Bebidas",
+        "estacion": "Barra",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Agua de Jamaica 1L",
+        "precio": 35.0,
+        "categoria": "Bebidas",
+        "estacion": "Barra",
+        "unidad": "litro"
+      },
+      {
+        "nombre": "Agua de Horchata 1L",
+        "precio": 35.0,
+        "categoria": "Bebidas",
+        "estacion": "Barra",
+        "unidad": "litro"
+      },
+      {
+        "nombre": "Agua Natural",
+        "precio": 18.0,
+        "categoria": "Bebidas",
+        "estacion": "Barra",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Cerveza",
+        "precio": 40.0,
+        "categoria": "Bebidas",
+        "estacion": "Barra",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Orden de Nopales",
+        "precio": 15.0,
+        "categoria": "Extras",
+        "estacion": "Comal",
+        "unidad": "orden"
+      },
+      {
+        "nombre": "Guacamole",
+        "precio": 25.0,
+        "categoria": "Extras",
+        "estacion": "Comal",
+        "unidad": "orden"
+      },
+      {
+        "nombre": "Orden de Frijoles",
+        "precio": 20.0,
+        "categoria": "Extras",
+        "estacion": "Comal",
+        "unidad": "orden"
+      }
     ]
   },
   "restaurante": {
     "nombre": "Restaurante / Fonda",
     "descripcion": "Comida corrida, platos fuertes, sopas y postres",
     "icon": "utensils",
-    "estaciones": ["Cocina Caliente", "Cocina Fria", "Barra"],
+    "estaciones": [
+      "Cocina Caliente",
+      "Cocina Fria",
+      "Barra"
+    ],
     "categorias": [
       "Entradas",
       "Sopas y Caldos",
@@ -139,43 +339,227 @@
       "Bebidas"
     ],
     "productos": [
-      {"nombre": "Ensalada Mixta",           "precio": 65.0,  "categoria": "Entradas",        "estacion": "Cocina Fria",     "unidad": "plato"},
-      {"nombre": "Guacamole con Totopos",    "precio": 80.0,  "categoria": "Entradas",        "estacion": "Cocina Fria",     "unidad": "orden"},
-      {"nombre": "Sopa de Tortilla",         "precio": 55.0,  "categoria": "Sopas y Caldos",  "estacion": "Cocina Caliente", "unidad": "plato"},
-      {"nombre": "Crema de Elote",           "precio": 55.0,  "categoria": "Sopas y Caldos",  "estacion": "Cocina Caliente", "unidad": "plato"},
-      {"nombre": "Caldo de Pollo",           "precio": 65.0,  "categoria": "Sopas y Caldos",  "estacion": "Cocina Caliente", "unidad": "plato"},
-      {"nombre": "Pozole Rojo",              "precio": 85.0,  "categoria": "Sopas y Caldos",  "estacion": "Cocina Caliente", "unidad": "plato"},
-      {"nombre": "Enchiladas Verdes",        "precio": 95.0,  "categoria": "Platos Fuertes",  "estacion": "Cocina Caliente", "unidad": "plato"},
-      {"nombre": "Enchiladas Rojas",         "precio": 95.0,  "categoria": "Platos Fuertes",  "estacion": "Cocina Caliente", "unidad": "plato"},
-      {"nombre": "Milanesa de Res",          "precio": 120.0, "categoria": "Platos Fuertes",  "estacion": "Cocina Caliente", "unidad": "plato"},
-      {"nombre": "Milanesa de Pollo",        "precio": 110.0, "categoria": "Platos Fuertes",  "estacion": "Cocina Caliente", "unidad": "plato"},
-      {"nombre": "Pollo en Mole",            "precio": 115.0, "categoria": "Platos Fuertes",  "estacion": "Cocina Caliente", "unidad": "plato"},
-      {"nombre": "Chiles Rellenos",          "precio": 105.0, "categoria": "Platos Fuertes",  "estacion": "Cocina Caliente", "unidad": "plato"},
-      {"nombre": "Bistec a la Mexicana",     "precio": 125.0, "categoria": "Platos Fuertes",  "estacion": "Cocina Caliente", "unidad": "plato"},
-      {"nombre": "Cecina Enchilada",         "precio": 130.0, "categoria": "Platos Fuertes",  "estacion": "Cocina Caliente", "unidad": "plato"},
-      {"nombre": "Chilaquiles Verdes",       "precio": 75.0,  "categoria": "Platos Fuertes",  "estacion": "Cocina Caliente", "unidad": "plato"},
-      {"nombre": "Chilaquiles Rojos",        "precio": 75.0,  "categoria": "Platos Fuertes",  "estacion": "Cocina Caliente", "unidad": "plato"},
-      {"nombre": "Arroz Rojo",               "precio": 25.0,  "categoria": "Guarniciones",    "estacion": "Cocina Caliente", "unidad": "orden"},
-      {"nombre": "Frijoles Refritos",        "precio": 25.0,  "categoria": "Guarniciones",    "estacion": "Cocina Caliente", "unidad": "orden"},
-      {"nombre": "Papas a la Francesa",      "precio": 40.0,  "categoria": "Guarniciones",    "estacion": "Cocina Caliente", "unidad": "orden"},
-      {"nombre": "Ensalada de Acompañamiento","precio": 30.0, "categoria": "Guarniciones",    "estacion": "Cocina Fria",     "unidad": "orden"},
-      {"nombre": "Flan Napolitano",          "precio": 45.0,  "categoria": "Postres",         "estacion": "Cocina Fria",     "unidad": "pieza"},
-      {"nombre": "Pastel de Chocolate",      "precio": 55.0,  "categoria": "Postres",         "estacion": "Cocina Fria",     "unidad": "pieza"},
-      {"nombre": "Pay de Queso",             "precio": 50.0,  "categoria": "Postres",         "estacion": "Cocina Fria",     "unidad": "pieza"},
-      {"nombre": "Agua del Dia 1L",          "precio": 30.0,  "categoria": "Bebidas",         "estacion": "Barra",           "unidad": "litro"},
-      {"nombre": "Coca-Cola 600ml",          "precio": 25.0,  "categoria": "Bebidas",         "estacion": "Barra",           "unidad": "pieza"},
-      {"nombre": "Limonada",                 "precio": 30.0,  "categoria": "Bebidas",         "estacion": "Barra",           "unidad": "vaso"},
-      {"nombre": "Cafe Americano",           "precio": 30.0,  "categoria": "Bebidas",         "estacion": "Barra",           "unidad": "taza"},
-      {"nombre": "Cerveza",                  "precio": 40.0,  "categoria": "Bebidas",         "estacion": "Barra",           "unidad": "pieza"},
-      {"nombre": "Agua Natural",             "precio": 18.0,  "categoria": "Bebidas",         "estacion": "Barra",           "unidad": "pieza"},
-      {"nombre": "Comida Corrida",           "precio": 85.0,  "categoria": "Platos Fuertes",  "estacion": "Cocina Caliente", "unidad": "menú"}
+      {
+        "nombre": "Ensalada Mixta",
+        "precio": 65.0,
+        "categoria": "Entradas",
+        "estacion": "Cocina Fria",
+        "unidad": "plato"
+      },
+      {
+        "nombre": "Guacamole con Totopos",
+        "precio": 80.0,
+        "categoria": "Entradas",
+        "estacion": "Cocina Fria",
+        "unidad": "orden"
+      },
+      {
+        "nombre": "Sopa de Tortilla",
+        "precio": 55.0,
+        "categoria": "Sopas y Caldos",
+        "estacion": "Cocina Caliente",
+        "unidad": "plato"
+      },
+      {
+        "nombre": "Crema de Elote",
+        "precio": 55.0,
+        "categoria": "Sopas y Caldos",
+        "estacion": "Cocina Caliente",
+        "unidad": "plato"
+      },
+      {
+        "nombre": "Caldo de Pollo",
+        "precio": 65.0,
+        "categoria": "Sopas y Caldos",
+        "estacion": "Cocina Caliente",
+        "unidad": "plato"
+      },
+      {
+        "nombre": "Pozole Rojo",
+        "precio": 85.0,
+        "categoria": "Sopas y Caldos",
+        "estacion": "Cocina Caliente",
+        "unidad": "plato"
+      },
+      {
+        "nombre": "Enchiladas Verdes",
+        "precio": 95.0,
+        "categoria": "Platos Fuertes",
+        "estacion": "Cocina Caliente",
+        "unidad": "plato"
+      },
+      {
+        "nombre": "Enchiladas Rojas",
+        "precio": 95.0,
+        "categoria": "Platos Fuertes",
+        "estacion": "Cocina Caliente",
+        "unidad": "plato"
+      },
+      {
+        "nombre": "Milanesa de Res",
+        "precio": 120.0,
+        "categoria": "Platos Fuertes",
+        "estacion": "Cocina Caliente",
+        "unidad": "plato"
+      },
+      {
+        "nombre": "Milanesa de Pollo",
+        "precio": 110.0,
+        "categoria": "Platos Fuertes",
+        "estacion": "Cocina Caliente",
+        "unidad": "plato"
+      },
+      {
+        "nombre": "Pollo en Mole",
+        "precio": 115.0,
+        "categoria": "Platos Fuertes",
+        "estacion": "Cocina Caliente",
+        "unidad": "plato"
+      },
+      {
+        "nombre": "Chiles Rellenos",
+        "precio": 105.0,
+        "categoria": "Platos Fuertes",
+        "estacion": "Cocina Caliente",
+        "unidad": "plato"
+      },
+      {
+        "nombre": "Bistec a la Mexicana",
+        "precio": 125.0,
+        "categoria": "Platos Fuertes",
+        "estacion": "Cocina Caliente",
+        "unidad": "plato"
+      },
+      {
+        "nombre": "Cecina Enchilada",
+        "precio": 130.0,
+        "categoria": "Platos Fuertes",
+        "estacion": "Cocina Caliente",
+        "unidad": "plato"
+      },
+      {
+        "nombre": "Chilaquiles Verdes",
+        "precio": 75.0,
+        "categoria": "Platos Fuertes",
+        "estacion": "Cocina Caliente",
+        "unidad": "plato"
+      },
+      {
+        "nombre": "Chilaquiles Rojos",
+        "precio": 75.0,
+        "categoria": "Platos Fuertes",
+        "estacion": "Cocina Caliente",
+        "unidad": "plato"
+      },
+      {
+        "nombre": "Arroz Rojo",
+        "precio": 25.0,
+        "categoria": "Guarniciones",
+        "estacion": "Cocina Caliente",
+        "unidad": "orden"
+      },
+      {
+        "nombre": "Frijoles Refritos",
+        "precio": 25.0,
+        "categoria": "Guarniciones",
+        "estacion": "Cocina Caliente",
+        "unidad": "orden"
+      },
+      {
+        "nombre": "Papas a la Francesa",
+        "precio": 40.0,
+        "categoria": "Guarniciones",
+        "estacion": "Cocina Caliente",
+        "unidad": "orden"
+      },
+      {
+        "nombre": "Ensalada de Acompañamiento",
+        "precio": 30.0,
+        "categoria": "Guarniciones",
+        "estacion": "Cocina Fria",
+        "unidad": "orden"
+      },
+      {
+        "nombre": "Flan Napolitano",
+        "precio": 45.0,
+        "categoria": "Postres",
+        "estacion": "Cocina Fria",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Pastel de Chocolate",
+        "precio": 55.0,
+        "categoria": "Postres",
+        "estacion": "Cocina Fria",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Pay de Queso",
+        "precio": 50.0,
+        "categoria": "Postres",
+        "estacion": "Cocina Fria",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Agua del Dia 1L",
+        "precio": 30.0,
+        "categoria": "Bebidas",
+        "estacion": "Barra",
+        "unidad": "litro"
+      },
+      {
+        "nombre": "Coca-Cola 600ml",
+        "precio": 25.0,
+        "categoria": "Bebidas",
+        "estacion": "Barra",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Limonada",
+        "precio": 30.0,
+        "categoria": "Bebidas",
+        "estacion": "Barra",
+        "unidad": "vaso"
+      },
+      {
+        "nombre": "Cafe Americano",
+        "precio": 30.0,
+        "categoria": "Bebidas",
+        "estacion": "Barra",
+        "unidad": "taza"
+      },
+      {
+        "nombre": "Cerveza",
+        "precio": 40.0,
+        "categoria": "Bebidas",
+        "estacion": "Barra",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Agua Natural",
+        "precio": 18.0,
+        "categoria": "Bebidas",
+        "estacion": "Barra",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Comida Corrida",
+        "precio": 85.0,
+        "categoria": "Platos Fuertes",
+        "estacion": "Cocina Caliente",
+        "unidad": "menú"
+      }
     ]
   },
   "cafeteria": {
     "nombre": "Cafeteria",
     "descripcion": "Cafe de especialidad, panaderia y snacks",
     "icon": "coffee",
-    "estaciones": ["Barista", "Cocina", "Mostrador"],
+    "estaciones": [
+      "Barista",
+      "Cocina",
+      "Mostrador"
+    ],
     "categorias": [
       "Cafe Caliente",
       "Cafe Frio",
@@ -185,36 +569,647 @@
       "Postres"
     ],
     "productos": [
-      {"nombre": "Americano",               "precio": 45.0,  "categoria": "Cafe Caliente",     "estacion": "Barista",   "unidad": "taza"},
-      {"nombre": "Espresso",                "precio": 35.0,  "categoria": "Cafe Caliente",     "estacion": "Barista",   "unidad": "taza"},
-      {"nombre": "Espresso Doble",          "precio": 45.0,  "categoria": "Cafe Caliente",     "estacion": "Barista",   "unidad": "taza"},
-      {"nombre": "Capuchino",               "precio": 55.0,  "categoria": "Cafe Caliente",     "estacion": "Barista",   "unidad": "taza"},
-      {"nombre": "Latte",                   "precio": 60.0,  "categoria": "Cafe Caliente",     "estacion": "Barista",   "unidad": "taza"},
-      {"nombre": "Mocha",                   "precio": 65.0,  "categoria": "Cafe Caliente",     "estacion": "Barista",   "unidad": "taza"},
-      {"nombre": "Chocolate Caliente",      "precio": 50.0,  "categoria": "Cafe Caliente",     "estacion": "Barista",   "unidad": "taza"},
-      {"nombre": "Te Verde",                "precio": 40.0,  "categoria": "Cafe Caliente",     "estacion": "Barista",   "unidad": "taza"},
-      {"nombre": "Te de Manzanilla",        "precio": 40.0,  "categoria": "Cafe Caliente",     "estacion": "Barista",   "unidad": "taza"},
-      {"nombre": "Frappe de Cafe",          "precio": 70.0,  "categoria": "Cafe Frio",         "estacion": "Barista",   "unidad": "vaso"},
-      {"nombre": "Frappe de Mocha",         "precio": 75.0,  "categoria": "Cafe Frio",         "estacion": "Barista",   "unidad": "vaso"},
-      {"nombre": "Cold Brew",               "precio": 60.0,  "categoria": "Cafe Frio",         "estacion": "Barista",   "unidad": "vaso"},
-      {"nombre": "Latte Frio",              "precio": 65.0,  "categoria": "Cafe Frio",         "estacion": "Barista",   "unidad": "vaso"},
-      {"nombre": "Smoothie de Frutos Rojos","precio": 70.0,  "categoria": "Bebidas Especiales","estacion": "Barista",   "unidad": "vaso"},
-      {"nombre": "Smoothie de Mango",       "precio": 70.0,  "categoria": "Bebidas Especiales","estacion": "Barista",   "unidad": "vaso"},
-      {"nombre": "Chai Latte",              "precio": 60.0,  "categoria": "Bebidas Especiales","estacion": "Barista",   "unidad": "taza"},
-      {"nombre": "Matcha Latte",            "precio": 65.0,  "categoria": "Bebidas Especiales","estacion": "Barista",   "unidad": "taza"},
-      {"nombre": "Croissant",               "precio": 40.0,  "categoria": "Panaderia",         "estacion": "Mostrador", "unidad": "pieza"},
-      {"nombre": "Croissant de Chocolate",  "precio": 50.0,  "categoria": "Panaderia",         "estacion": "Mostrador", "unidad": "pieza"},
-      {"nombre": "Pan de Muerto",           "precio": 45.0,  "categoria": "Panaderia",         "estacion": "Mostrador", "unidad": "pieza"},
-      {"nombre": "Muffin de Arandano",      "precio": 45.0,  "categoria": "Panaderia",         "estacion": "Mostrador", "unidad": "pieza"},
-      {"nombre": "Concha",                  "precio": 15.0,  "categoria": "Panaderia",         "estacion": "Mostrador", "unidad": "pieza"},
-      {"nombre": "Cuerno de Jamon y Queso", "precio": 50.0,  "categoria": "Panaderia",         "estacion": "Mostrador", "unidad": "pieza"},
-      {"nombre": "Sandwich Club",           "precio": 85.0,  "categoria": "Sandwiches",        "estacion": "Cocina",    "unidad": "pieza"},
-      {"nombre": "Panini Caprese",          "precio": 80.0,  "categoria": "Sandwiches",        "estacion": "Cocina",    "unidad": "pieza"},
-      {"nombre": "Baguette de Jamon",       "precio": 75.0,  "categoria": "Sandwiches",        "estacion": "Cocina",    "unidad": "pieza"},
-      {"nombre": "Wrap de Pollo",           "precio": 80.0,  "categoria": "Sandwiches",        "estacion": "Cocina",    "unidad": "pieza"},
-      {"nombre": "Cheesecake",              "precio": 65.0,  "categoria": "Postres",           "estacion": "Mostrador", "unidad": "pieza"},
-      {"nombre": "Brownie",                 "precio": 50.0,  "categoria": "Postres",           "estacion": "Mostrador", "unidad": "pieza"},
-      {"nombre": "Galleta de Chocolate",    "precio": 35.0,  "categoria": "Postres",           "estacion": "Mostrador", "unidad": "pieza"}
+      {
+        "nombre": "Americano",
+        "precio": 45.0,
+        "categoria": "Cafe Caliente",
+        "estacion": "Barista",
+        "unidad": "taza"
+      },
+      {
+        "nombre": "Espresso",
+        "precio": 35.0,
+        "categoria": "Cafe Caliente",
+        "estacion": "Barista",
+        "unidad": "taza"
+      },
+      {
+        "nombre": "Espresso Doble",
+        "precio": 45.0,
+        "categoria": "Cafe Caliente",
+        "estacion": "Barista",
+        "unidad": "taza"
+      },
+      {
+        "nombre": "Capuchino",
+        "precio": 55.0,
+        "categoria": "Cafe Caliente",
+        "estacion": "Barista",
+        "unidad": "taza"
+      },
+      {
+        "nombre": "Latte",
+        "precio": 60.0,
+        "categoria": "Cafe Caliente",
+        "estacion": "Barista",
+        "unidad": "taza"
+      },
+      {
+        "nombre": "Mocha",
+        "precio": 65.0,
+        "categoria": "Cafe Caliente",
+        "estacion": "Barista",
+        "unidad": "taza"
+      },
+      {
+        "nombre": "Chocolate Caliente",
+        "precio": 50.0,
+        "categoria": "Cafe Caliente",
+        "estacion": "Barista",
+        "unidad": "taza"
+      },
+      {
+        "nombre": "Te Verde",
+        "precio": 40.0,
+        "categoria": "Cafe Caliente",
+        "estacion": "Barista",
+        "unidad": "taza"
+      },
+      {
+        "nombre": "Te de Manzanilla",
+        "precio": 40.0,
+        "categoria": "Cafe Caliente",
+        "estacion": "Barista",
+        "unidad": "taza"
+      },
+      {
+        "nombre": "Frappe de Cafe",
+        "precio": 70.0,
+        "categoria": "Cafe Frio",
+        "estacion": "Barista",
+        "unidad": "vaso"
+      },
+      {
+        "nombre": "Frappe de Mocha",
+        "precio": 75.0,
+        "categoria": "Cafe Frio",
+        "estacion": "Barista",
+        "unidad": "vaso"
+      },
+      {
+        "nombre": "Cold Brew",
+        "precio": 60.0,
+        "categoria": "Cafe Frio",
+        "estacion": "Barista",
+        "unidad": "vaso"
+      },
+      {
+        "nombre": "Latte Frio",
+        "precio": 65.0,
+        "categoria": "Cafe Frio",
+        "estacion": "Barista",
+        "unidad": "vaso"
+      },
+      {
+        "nombre": "Smoothie de Frutos Rojos",
+        "precio": 70.0,
+        "categoria": "Bebidas Especiales",
+        "estacion": "Barista",
+        "unidad": "vaso"
+      },
+      {
+        "nombre": "Smoothie de Mango",
+        "precio": 70.0,
+        "categoria": "Bebidas Especiales",
+        "estacion": "Barista",
+        "unidad": "vaso"
+      },
+      {
+        "nombre": "Chai Latte",
+        "precio": 60.0,
+        "categoria": "Bebidas Especiales",
+        "estacion": "Barista",
+        "unidad": "taza"
+      },
+      {
+        "nombre": "Matcha Latte",
+        "precio": 65.0,
+        "categoria": "Bebidas Especiales",
+        "estacion": "Barista",
+        "unidad": "taza"
+      },
+      {
+        "nombre": "Croissant",
+        "precio": 40.0,
+        "categoria": "Panaderia",
+        "estacion": "Mostrador",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Croissant de Chocolate",
+        "precio": 50.0,
+        "categoria": "Panaderia",
+        "estacion": "Mostrador",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Pan de Muerto",
+        "precio": 45.0,
+        "categoria": "Panaderia",
+        "estacion": "Mostrador",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Muffin de Arandano",
+        "precio": 45.0,
+        "categoria": "Panaderia",
+        "estacion": "Mostrador",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Concha",
+        "precio": 15.0,
+        "categoria": "Panaderia",
+        "estacion": "Mostrador",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Cuerno de Jamon y Queso",
+        "precio": 50.0,
+        "categoria": "Panaderia",
+        "estacion": "Mostrador",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Sandwich Club",
+        "precio": 85.0,
+        "categoria": "Sandwiches",
+        "estacion": "Cocina",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Panini Caprese",
+        "precio": 80.0,
+        "categoria": "Sandwiches",
+        "estacion": "Cocina",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Baguette de Jamon",
+        "precio": 75.0,
+        "categoria": "Sandwiches",
+        "estacion": "Cocina",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Wrap de Pollo",
+        "precio": 80.0,
+        "categoria": "Sandwiches",
+        "estacion": "Cocina",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Cheesecake",
+        "precio": 65.0,
+        "categoria": "Postres",
+        "estacion": "Mostrador",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Brownie",
+        "precio": 50.0,
+        "categoria": "Postres",
+        "estacion": "Mostrador",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Galleta de Chocolate",
+        "precio": 35.0,
+        "categoria": "Postres",
+        "estacion": "Mostrador",
+        "unidad": "pieza"
+      }
+    ]
+  },
+  "casaleones": {
+    "nombre": "Barbacoa y Carnitas",
+    "descripcion": "Barbacoa por kilo, tacos surtidos, quesadillas, tlacoyos y consome",
+    "icon": "beef",
+    "estaciones": [
+      "Taquero",
+      "Comal",
+      "Bebidas"
+    ],
+    "categorias": [
+      "Porciones de Barbacoa",
+      "Porciones de Carnitas",
+      "Pollo",
+      "Consomé",
+      "Tacos de Barbacoa",
+      "Campechanos",
+      "Quesadillas",
+      "Tlacoyos",
+      "Antojitos",
+      "Paquetes",
+      "Bebidas"
+    ],
+    "productos": [
+      {
+        "nombre": "1 kg Barbacoa",
+        "precio": 550.0,
+        "categoria": "Porciones de Barbacoa",
+        "estacion": "Taquero",
+        "unidad": "kg"
+      },
+      {
+        "nombre": "3/4 kg Barbacoa",
+        "precio": 415.0,
+        "categoria": "Porciones de Barbacoa",
+        "estacion": "Taquero",
+        "unidad": "kg"
+      },
+      {
+        "nombre": "1/2 kg Barbacoa",
+        "precio": 280.0,
+        "categoria": "Porciones de Barbacoa",
+        "estacion": "Taquero",
+        "unidad": "kg"
+      },
+      {
+        "nombre": "1/4 kg Barbacoa",
+        "precio": 140.0,
+        "categoria": "Porciones de Barbacoa",
+        "estacion": "Taquero",
+        "unidad": "kg"
+      },
+      {
+        "nombre": "1 kg Carnitas",
+        "precio": 300.0,
+        "categoria": "Porciones de Carnitas",
+        "estacion": "Taquero",
+        "unidad": "kg"
+      },
+      {
+        "nombre": "3/4 kg Carnitas",
+        "precio": 225.0,
+        "categoria": "Porciones de Carnitas",
+        "estacion": "Taquero",
+        "unidad": "kg"
+      },
+      {
+        "nombre": "1/2 kg Carnitas",
+        "precio": 150.0,
+        "categoria": "Porciones de Carnitas",
+        "estacion": "Taquero",
+        "unidad": "kg"
+      },
+      {
+        "nombre": "1/4 kg Carnitas",
+        "precio": 80.0,
+        "categoria": "Porciones de Carnitas",
+        "estacion": "Taquero",
+        "unidad": "kg"
+      },
+      {
+        "nombre": "1 Pollo para llevar",
+        "precio": 80.0,
+        "categoria": "Pollo",
+        "estacion": "Taquero",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "1 Pollo para comer aquí",
+        "precio": 90.0,
+        "categoria": "Pollo",
+        "estacion": "Taquero",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "2 Pollos con 1 lt consomé",
+        "precio": 190.0,
+        "categoria": "Consomé",
+        "estacion": "Taquero",
+        "unidad": "litro"
+      },
+      {
+        "nombre": "Taco de espaldilla",
+        "precio": 35.0,
+        "categoria": "Tacos de Barbacoa",
+        "estacion": "Taquero",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de falda",
+        "precio": 35.0,
+        "categoria": "Tacos de Barbacoa",
+        "estacion": "Taquero",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de costilla",
+        "precio": 35.0,
+        "categoria": "Tacos de Barbacoa",
+        "estacion": "Taquero",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de maciza",
+        "precio": 35.0,
+        "categoria": "Tacos de Barbacoa",
+        "estacion": "Taquero",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de panza",
+        "precio": 35.0,
+        "categoria": "Tacos de Barbacoa",
+        "estacion": "Taquero",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de cabeza",
+        "precio": 35.0,
+        "categoria": "Tacos de Barbacoa",
+        "estacion": "Taquero",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de ojo",
+        "precio": 35.0,
+        "categoria": "Tacos de Barbacoa",
+        "estacion": "Taquero",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de lengua",
+        "precio": 35.0,
+        "categoria": "Tacos de Barbacoa",
+        "estacion": "Taquero",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de cachete",
+        "precio": 35.0,
+        "categoria": "Tacos de Barbacoa",
+        "estacion": "Taquero",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de pescuezo",
+        "precio": 35.0,
+        "categoria": "Tacos de Barbacoa",
+        "estacion": "Taquero",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Taco de espinazo (surtida)",
+        "precio": 35.0,
+        "categoria": "Tacos de Barbacoa",
+        "estacion": "Taquero",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Campechano maciza con panza",
+        "precio": 38.0,
+        "categoria": "Campechanos",
+        "estacion": "Taquero",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Campechano espaldilla con panza",
+        "precio": 38.0,
+        "categoria": "Campechanos",
+        "estacion": "Taquero",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Campechano falda con panza",
+        "precio": 38.0,
+        "categoria": "Campechanos",
+        "estacion": "Taquero",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Campechano costilla con panza",
+        "precio": 38.0,
+        "categoria": "Campechanos",
+        "estacion": "Taquero",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Quesadilla chicharrón prensado",
+        "precio": 33.0,
+        "categoria": "Quesadillas",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Quesadilla champiñón",
+        "precio": 33.0,
+        "categoria": "Quesadillas",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Quesadilla flor de calabaza",
+        "precio": 33.0,
+        "categoria": "Quesadillas",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Quesadilla huitlacoche",
+        "precio": 33.0,
+        "categoria": "Quesadillas",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Quesadilla mole verde",
+        "precio": 33.0,
+        "categoria": "Quesadillas",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Quesadilla tinga",
+        "precio": 33.0,
+        "categoria": "Quesadillas",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Quesadilla jamón con queso",
+        "precio": 33.0,
+        "categoria": "Quesadillas",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Quesadilla de queso",
+        "precio": 33.0,
+        "categoria": "Quesadillas",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Quesadilla de barbacoa (especial)",
+        "precio": 65.0,
+        "categoria": "Quesadillas",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Quesadilla de carnitas (especial)",
+        "precio": 40.0,
+        "categoria": "Quesadillas",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Tlacoyo de frijol",
+        "precio": 33.0,
+        "categoria": "Tlacoyos",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Tlacoyo de requesón",
+        "precio": 33.0,
+        "categoria": "Tlacoyos",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Tlacoyo de albahaca",
+        "precio": 33.0,
+        "categoria": "Tlacoyos",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Tlacoyo de chicharrón prensado",
+        "precio": 33.0,
+        "categoria": "Tlacoyos",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Tlacoyo con barbacoa (especial)",
+        "precio": 65.0,
+        "categoria": "Tlacoyos",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Tlacoyo con carnitas (especial)",
+        "precio": 55.0,
+        "categoria": "Tlacoyos",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Tortillas hechas a mano (kg)",
+        "precio": 30.0,
+        "categoria": "Antojitos",
+        "estacion": "Comal",
+        "unidad": "kg"
+      },
+      {
+        "nombre": "Orden de tacos dorados (3 flautas)",
+        "precio": 90.0,
+        "categoria": "Antojitos",
+        "estacion": "Comal",
+        "unidad": "orden"
+      },
+      {
+        "nombre": "Flauta individual",
+        "precio": 33.0,
+        "categoria": "Antojitos",
+        "estacion": "Comal",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Plato de consomé",
+        "precio": 35.0,
+        "categoria": "Consomé",
+        "estacion": "Taquero",
+        "unidad": "porción"
+      },
+      {
+        "nombre": "1/2 litro de consomé",
+        "precio": 35.0,
+        "categoria": "Consomé",
+        "estacion": "Taquero",
+        "unidad": "litro"
+      },
+      {
+        "nombre": "1 litro de consomé",
+        "precio": 60.0,
+        "categoria": "Consomé",
+        "estacion": "Taquero",
+        "unidad": "litro"
+      },
+      {
+        "nombre": "Paquete: 1/4 kg barbacoa + 1 plato consomé",
+        "precio": 175.0,
+        "categoria": "Paquetes",
+        "estacion": "Taquero",
+        "unidad": "paquete"
+      },
+      {
+        "nombre": "Paquete: 1/2 kg barbacoa + 1 lt consomé",
+        "precio": 340.0,
+        "categoria": "Paquetes",
+        "estacion": "Taquero",
+        "unidad": "paquete"
+      },
+      {
+        "nombre": "Paquete: 3/4 kg barbacoa + 1/2 lt consomé",
+        "precio": 500.0,
+        "categoria": "Paquetes",
+        "estacion": "Taquero",
+        "unidad": "paquete"
+      },
+      {
+        "nombre": "Paquete: 1 kg barbacoa + 2 lt consomé",
+        "precio": 670.0,
+        "categoria": "Paquetes",
+        "estacion": "Taquero",
+        "unidad": "paquete"
+      },
+      {
+        "nombre": "Refresco Coca-Cola",
+        "precio": 25.0,
+        "categoria": "Bebidas",
+        "estacion": "Bebidas",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Jugo Boing (mango)",
+        "precio": 25.0,
+        "categoria": "Bebidas",
+        "estacion": "Bebidas",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Jugo Boing (guayaba)",
+        "precio": 25.0,
+        "categoria": "Bebidas",
+        "estacion": "Bebidas",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Agua fresca (Jamaica)",
+        "precio": 40.0,
+        "categoria": "Bebidas",
+        "estacion": "Bebidas",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Agua fresca (otro sabor)",
+        "precio": 40.0,
+        "categoria": "Bebidas",
+        "estacion": "Bebidas",
+        "unidad": "pieza"
+      },
+      {
+        "nombre": "Café",
+        "precio": 25.0,
+        "categoria": "Bebidas",
+        "estacion": "Bebidas",
+        "unidad": "pieza"
+      }
     ]
   }
 }

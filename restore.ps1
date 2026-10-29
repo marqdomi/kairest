@@ -1,5 +1,5 @@
-# ═══════════════════════════════════════════════════
-# KaiRest POS — Restaurar base de datos desde backup (Windows)
+# ===================================================
+# KaiRest POS - Restaurar base de datos desde backup (Windows)
 #
 # Uso:
 #   .\restore.ps1                          # restaura el backup mas reciente
@@ -7,25 +7,25 @@
 #
 # Los backups se generan automaticamente cada hora en .\backups\
 # (formato pg_dump -Fc) y antes de cada actualizacion (pre_update_*).
-# ═══════════════════════════════════════════════════
+# ===================================================
 #Requires -Version 5.1
 param([string]$Dump)
 
 $ErrorActionPreference = "Stop"
 
 Write-Host ""
-Write-Host "  KaiRest POS — Restaurar backup" -ForegroundColor Cyan
+Write-Host "  KaiRest POS - Restaurar backup" -ForegroundColor Cyan
 Write-Host ""
 
-# ── Detect compose command ──
+# -- Detect compose command --
 $composeCmd = $null
 try {
-    docker compose version 2>&1 | Out-Null
+    docker compose version | Out-Null
     if ($LASTEXITCODE -eq 0) { $composeCmd = "docker compose" }
 } catch {}
 if (-not $composeCmd) {
     try {
-        docker-compose version 2>&1 | Out-Null
+        docker-compose version | Out-Null
         if ($LASTEXITCODE -eq 0) { $composeCmd = "docker-compose" }
     } catch {}
 }
@@ -34,7 +34,7 @@ if (-not $composeCmd) {
     exit 1
 }
 
-# ── Determine compose file (misma regla que update.ps1) ──
+# -- Determine compose file (misma regla que update.ps1) --
 # Si existe docker-compose.yml, esa es la instalacion (install.ps1 siempre usa ese,
 # clone con Git o corra desde la carpeta copiada). prod.yml es solo para despliegues
 # con imagen pre-construida, que nunca tienen el archivo de build.
@@ -49,7 +49,7 @@ if (Test-Path "docker-compose.yml") {
 }
 $compose = ("$composeCmd $composeFile").Trim()
 
-# ── Pick backup file ──
+# -- Pick backup file --
 if (-not $Dump) {
     $ultimo = Get-ChildItem -Path "backups\*.dump" -ErrorAction SilentlyContinue |
               Sort-Object LastWriteTime -Descending | Select-Object -First 1
@@ -64,7 +64,7 @@ if (-not $Dump -or -not (Test-Path $Dump)) {
 $Dump = (Resolve-Path $Dump).Path
 $tam = "{0:N1} MB" -f ((Get-Item $Dump).Length / 1MB)
 
-# ── Confirm ──
+# -- Confirm --
 Write-Host "  Se restaurara: $Dump ($tam)" -ForegroundColor Yellow
 Write-Host "  ESTO REEMPLAZA TODOS LOS DATOS ACTUALES de la base." -ForegroundColor Yellow
 $confirm = Read-Host "  Escribe SI para confirmar"
@@ -73,7 +73,7 @@ if ($confirm -ne "SI") {
     exit 0
 }
 
-# ── Safety backup of current state before restoring ──
+# -- Safety backup of current state before restoring --
 # La redireccion de PowerShell convierte la salida a texto y corrompe el .dump
 # binario, por eso pg_dump/pg_restore van via cmd /c (redireccion de bytes).
 Write-Host "  Creando respaldo de seguridad del estado actual..." -ForegroundColor Cyan
@@ -87,18 +87,18 @@ if ((Test-Path $previo) -and ((Get-Item $previo).Length -gt 0)) {
     if (Test-Path $previo) { Remove-Item $previo -Force }
 }
 
-# ── Stop the app (keep db running) so no writes land mid-restore ──
+# -- Stop the app (keep db running) so no writes land mid-restore --
 Write-Host "  Deteniendo la aplicacion..." -ForegroundColor Cyan
-cmd /c "$compose stop web" 2>&1 | Select-Object -Last 1
+cmd /c "$compose stop web" | Select-Object -Last 1
 
-# ── Restore ──
+# -- Restore --
 Write-Host "  Restaurando base de datos..." -ForegroundColor Cyan
 cmd /c "$compose exec -T db pg_restore --clean --if-exists --no-owner --no-acl -U casaleones -d casaleones < ""$Dump"""
 $restoreExit = $LASTEXITCODE
 
-# ── Restart app ──
+# -- Restart app --
 Write-Host "  Reiniciando la aplicacion..." -ForegroundColor Cyan
-cmd /c "$compose start web" 2>&1 | Select-Object -Last 1
+cmd /c "$compose start web" | Select-Object -Last 1
 
 if ($restoreExit -ne 0) {
     Write-Host ""
@@ -106,7 +106,7 @@ if ($restoreExit -ne 0) {
     Write-Host "  Es normal si el backup es de una version anterior; revisa que los datos esten completos." -ForegroundColor Yellow
 }
 
-# ── Health check ──
+# -- Health check --
 $port = "5005"
 if (Test-Path ".env") {
     foreach ($line in (Get-Content ".env" -ErrorAction SilentlyContinue)) {

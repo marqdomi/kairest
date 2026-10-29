@@ -9,7 +9,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 from flask import Blueprint, render_template, request, jsonify, Response, g, flash, redirect, url_for
 from backend.utils import login_required, filtrar_por_sucursal
-from backend.services.tiempo import hoy_local, rango_utc, dia_local, hora_local_sql
+from backend.services.tiempo import hoy_local, rango_utc, dia_local, hora_local_sql, a_local
 from backend.extensions import db
 from backend.models.models import (
     Sale, SaleItem, Producto, Pago, Orden, Usuario, Ingrediente,
@@ -113,7 +113,10 @@ def export_ventas_csv():
     writer = csv.writer(output)
     writer.writerow(['ID', 'Fecha', 'Mesa', 'Mesero', 'Total', 'Estado'])
     for v in ventas:
-        writer.writerow([v.id, v.fecha_hora.strftime('%Y-%m-%d %H:%M'),
+        # fecha_hora se guarda en UTC: sin convertir, una venta de las 21:00
+        # locales se exporta con la fecha del día siguiente y el CSV no cuadra
+        # con el corte de caja.
+        writer.writerow([v.id, a_local(v.fecha_hora).strftime('%Y-%m-%d %H:%M'),
                          v.mesa_id or 'Llevar', v.usuario.nombre if v.usuario else '',
                          float(v.total), v.estado])
 

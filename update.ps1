@@ -1,23 +1,23 @@
-# ═══════════════════════════════════════════════════
-# KaiRest POS — Actualizar (Windows)
+# ===================================================
+# KaiRest POS - Actualizar (Windows)
 # Crea backup, actualiza codigo y reinicia servicios
-# ═══════════════════════════════════════════════════
+# ===================================================
 #Requires -Version 5.1
 $ErrorActionPreference = "Stop"
 
 Write-Host ""
-Write-Host "  KaiRest POS — Actualizar" -ForegroundColor Cyan
+Write-Host "  KaiRest POS - Actualizar" -ForegroundColor Cyan
 Write-Host ""
 
-# ── Detect compose command ──
+# -- Detect compose command --
 $composeCmd = $null
 try {
-    docker compose version 2>&1 | Out-Null
+    docker compose version | Out-Null
     if ($LASTEXITCODE -eq 0) { $composeCmd = "docker compose" }
 } catch {}
 if (-not $composeCmd) {
     try {
-        docker-compose version 2>&1 | Out-Null
+        docker-compose version | Out-Null
         if ($LASTEXITCODE -eq 0) { $composeCmd = "docker-compose" }
     } catch {}
 }
@@ -26,7 +26,7 @@ if (-not $composeCmd) {
     exit 1
 }
 
-# ── Determine compose file (misma regla que update.sh) ──
+# -- Determine compose file (misma regla que update.sh) --
 # install.ps1 instala con docker-compose.yml (build local) tanto si clona con Git
 # como si corre desde la carpeta copiada en USB. Cambiar a prod a media vida haria
 # jalar una imagen distinta a la que tiene corriendo el equipo, asi que la regla es:
@@ -41,7 +41,7 @@ if (Test-Path "docker-compose.yml") {
     if (Test-Path ".git") {
         Write-Host "  Descargando ultima version del codigo..." -ForegroundColor Cyan
         try {
-            git pull --rebase 2>&1 | Out-Null
+            git pull --rebase | Out-Null
         } catch {
             Write-Host "  No se pudo hacer git pull." -ForegroundColor Yellow
         }
@@ -57,7 +57,7 @@ if (Test-Path "docker-compose.yml") {
 }
 $compose = ("$composeCmd $composeFile").Trim()
 
-# ── Create backup before updating ──
+# -- Create backup before updating --
 Write-Host "  Creando backup de la base de datos..." -ForegroundColor Cyan
 if (-not (Test-Path "backups")) { New-Item -ItemType Directory -Path "backups" | Out-Null }
 
@@ -74,18 +74,18 @@ if ((Test-Path $backupFile) -and ((Get-Item $backupFile).Length -gt 0)) {
     if (Test-Path $backupFile) { Remove-Item $backupFile -Force }
 }
 
-# ── Pull latest image / rebuild ──
+# -- Pull latest image / rebuild --
 if ($buildFlag) {
     Write-Host "  Reconstruyendo la aplicacion..." -ForegroundColor Cyan
 } else {
     Write-Host "  Descargando ultima version..." -ForegroundColor Cyan
-    cmd /c "$compose pull" 2>&1 | Select-Object -Last 3
+    cmd /c "$compose pull" | Select-Object -Last 3
 }
 
 Write-Host "  Aplicando actualizacion..." -ForegroundColor Cyan
-cmd /c "$compose up -d $buildFlag" 2>&1 | Select-Object -Last 5
+cmd /c "$compose up -d $buildFlag" | Select-Object -Last 5
 
-# ── Apply schema migrations ──
+# -- Apply schema migrations --
 # create_all() del arranque solo crea tablas nuevas, nunca altera existentes.
 # Alembic aplica los cambios de schema pendientes. En una base creada por
 # create_all sin historial alembic, se marca el head actual primero (el schema
@@ -108,7 +108,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "  No se pudieron aplicar migraciones. Revisa: $compose logs web" -ForegroundColor Yellow
 }
 
-# ── Wait for health ──
+# -- Wait for health --
 Write-Host "  Esperando a que la aplicacion inicie..." -ForegroundColor Cyan
 
 # Read port from .env or default

@@ -42,7 +42,8 @@ Children: list of (label, endpoint) for sub-nav #}
 'key': 'catalogo',
 'items': [
 {'icon': 'package', 'label': 'Productos', 'endpoint': 'admin.lista_productos'},
-{'icon': 'grid-3x3', 'label': 'Mesas', 'endpoint': 'admin.lista_mesas'}
+{'icon': 'grid-3x3', 'label': 'Mesas', 'endpoint': 'admin.lista_mesas'},
+{'icon': 'chef-hat', 'label': 'Estaciones', 'endpoint': 'admin.lista_estaciones'}
 ]
 },
 {
@@ -65,7 +66,7 @@ Children: list of (label, endpoint) for sub-nav #}
 {'label': 'Productos', 'endpoint': 'reportes.reporte_productos'},
 {'label': 'Meseros', 'endpoint': 'reportes.reporte_meseros'},
 {'label': 'Pagos', 'endpoint': 'reportes.reporte_pagos'},
-{'label': 'Inventario', 'endpoint': 'reportes.reporte_inventario'}
+{'label': 'Inventario', 'endpoint': 'reportes.reporte_inventario', 'modulo': 'inventario'}
 ]}
 ]
 },
@@ -149,11 +150,15 @@ Children: list of (label, endpoint) for sub-nav #}
       </a>
       <div class="collapse{% if child_active %} show{% endif %}"
         id="sidebar_sub_{{ loop.index0 }}_{{ loop.parent.loop.index0 if loop.parent is defined else 0 }}">
+        {# Un sub-reporte puede pertenecer a un módulo que este modo no muestra
+           (Reportes vive en Ventas, pero el de Inventario es de Inventario). #}
         {% for child in item.children %}
+        {% if modo_sistema == 'avanzado' or child.modulo is not defined or child.modulo in modulos_basicos %}
         <a class="cl-sidebar__sublink{% if request.endpoint == child.endpoint %} active{% endif %}"
           href="{{ url_for(child.endpoint) }}">
           {{ child.label }}
         </a>
+        {% endif %}
         {% endfor %}
       </div>
     </div>

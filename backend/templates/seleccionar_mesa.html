@@ -58,27 +58,34 @@
 
   <div class="col-6 col-sm-4 col-md-3 col-lg-2 mesa-card-wrapper" data-zone="{{ m.zona or '' }}">
     {% if is_available %}
-    {# Available — click to create order #}
-    <form method="POST" action="{{ url_for('meseros.seleccionar_mesa') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="hidden" name="mesa_id" value="{{ m.id }}">
-      <button type="submit" class="cl-mesa-tile cl-mesa-tile--available" title="Disponible — Click para crear orden">
-        <div class="cl-mesa-tile__number">{{ m.numero }}</div>
-        <div class="cl-mesa-tile__info">
-          <i data-lucide="users" class="icon-xs"></i> {{ m.capacidad }}
-        </div>
-        <div class="cl-mesa-tile__status">Disponible</div>
-      </button>
-    </form>
-    {% elif is_occupied %}
-    {# Occupied — click opens the cuentas selector (mesas compartidas) #}
-    <a href="{{ url_for('meseros.cuentas_mesa', mesa_id=m.id) }}"
-       class="cl-mesa-tile cl-mesa-tile--occupied"
-       title="Ocupada — {{ cuentas|length }} cuenta{{ 's' if cuentas|length != 1 }} activa{{ 's' if cuentas|length != 1 }}">
+    {# Available — pregunta cuántos son antes de abrir la cuenta #}
+    <button type="button" class="cl-mesa-tile cl-mesa-tile--available"
+            data-abrir-mesa data-mesa-id="{{ m.id }}" data-mesa-numero="{{ m.numero }}"
+            data-mesa-capacidad="{{ m.capacidad }}"
+            title="Disponible — Click para crear orden">
       <div class="cl-mesa-tile__number">{{ m.numero }}</div>
       <div class="cl-mesa-tile__info">
         <i data-lucide="users" class="icon-xs"></i> {{ m.capacidad }}
       </div>
+      <div class="cl-mesa-tile__status">Disponible</div>
+    </button>
+    {% elif is_occupied %}
+    {# Occupied — click opens the cuentas selector (mesas compartidas) #}
+    {% set sentados = mesa_personas.get(m.id, 0) if mesa_personas is defined else 0 %}
+    {% set lugares_libres = m.capacidad - sentados %}
+    <a href="{{ url_for('meseros.cuentas_mesa', mesa_id=m.id) }}"
+       class="cl-mesa-tile cl-mesa-tile--occupied"
+       title="Ocupada — {{ cuentas|length }} cuenta{{ 's' if cuentas|length != 1 }} activa{{ 's' if cuentas|length != 1 }}{% if sentados %} · {{ sentados }} de {{ m.capacidad }} lugares{% endif %}">
+      <div class="cl-mesa-tile__number">{{ m.numero }}</div>
+      <div class="cl-mesa-tile__info">
+        {# Con gente registrada se muestra ocupación real: una mesa de 12 con 2
+           personas tiene lugar para más. #}
+        <i data-lucide="users" class="icon-xs"></i>
+        {% if sentados %}{{ sentados }}/{{ m.capacidad }}{% else %}{{ m.capacidad }}{% endif %}
+      </div>
+      {% if sentados and lugares_libres > 0 %}
+      <div class="cl-mesa-tile__libres">{{ lugares_libres }} lugar{{ 'es' if lugares_libres != 1 }} libre{{ 's' if lugares_libres != 1 }}</div>
+      {% endif %}
       {% if cuentas %}
       <div class="cl-mesa-tile__order">
         <span class="cl-badge cl-badge--pill" style="font-size: 10px; background: rgba(255,255,255,0.2); color: white;">
@@ -198,9 +205,90 @@ button.cl-mesa-tile--available {
   opacity: 0.6;
 }
 .cl-mesa-tile--maintenance:hover { transform: none; box-shadow: none; }
+
+/* Lugares libres en una mesa ocupada: una de 12 con 2 personas admite más */
+.cl-mesa-tile__libres {
+  font-size: 10px;
+  line-height: 1.2;
+  margin-top: 2px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  white-space: nowrap;
+}
 </style>
 
+{# ── ¿Cuántas personas? — se pregunta al abrir una mesa disponible ── #}
+<div class="modal fade" id="modalPersonas" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Mesa <span id="mpNumero"></span> — ¿cuántas personas?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form method="POST" action="{{ url_for('meseros.seleccionar_mesa') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="mesa_id" id="mpMesaId">
+        <div class="modal-body">
+          <p class="text-muted" style="font-size:13px;margin-bottom:12px;">
+            Sirve para saber cuántos lugares quedan libres. Puedes omitirlo.
+          </p>
+          <div id="mpBotones" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;"></div>
+          <label class="cl-form-label" for="mpOtro">Otro número</label>
+          <input type="number" class="cl-form-input" name="num_personas" id="mpOtro"
+                 min="1" max="99" placeholder="Ej: 14" style="max-width:140px;">
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="cl-btn cl-btn--ghost" name="omitir" value="1">Omitir</button>
+          <button type="submit" class="cl-btn cl-btn--primary">Abrir cuenta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script nonce="{{ csp_nonce }}">
+// ── Abrir mesa: preguntar cuántas personas ──
+(function () {
+  var modalEl = document.getElementById('modalPersonas');
+  if (!modalEl) return;
+  var modal = new bootstrap.Modal(modalEl);
+  var inputOtro = document.getElementById('mpOtro');
+  var contBotones = document.getElementById('mpBotones');
+
+  document.querySelectorAll('[data-abrir-mesa]').forEach(function (tile) {
+    tile.addEventListener('click', function () {
+      var capacidad = parseInt(tile.dataset.mesaCapacidad, 10) || 4;
+      document.getElementById('mpMesaId').value = tile.dataset.mesaId;
+      document.getElementById('mpNumero').textContent = tile.dataset.mesaNumero;
+      inputOtro.value = '';
+
+      // Atajos hasta la capacidad de la mesa: en servicio se elige de un toque.
+      // Escriben en el mismo campo y envían, para que sólo viaje un valor.
+      contBotones.innerHTML = '';
+      var tope = Math.min(capacidad, 8);
+      for (var n = 1; n <= tope; n++) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'cl-btn cl-btn--outline';
+        b.dataset.personas = String(n);
+        b.textContent = String(n);
+        b.style.minWidth = '46px';
+        contBotones.appendChild(b);
+      }
+      modal.show();
+    });
+  });
+
+  contBotones.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('[data-personas]');
+    if (!btn) return;
+    inputOtro.value = btn.dataset.personas;
+    btn.closest('form').submit();
+  });
+})();
+
 function filterZone(zone, btn) {
   // Update active button
   document.querySelectorAll('.mesa-zone-filter').forEach(b => {

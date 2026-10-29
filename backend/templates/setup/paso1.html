@@ -5,13 +5,22 @@
 <h1 class="cl-setup__title">Tu Negocio</h1>
 <p class="cl-setup__subtitle">¿Cómo se llama tu restaurante o puesto?</p>
 
-<form method="POST" action="{{ url_for('setup.paso1') }}" novalidate>
+<form method="POST" action="{{ url_for('setup.paso1') }}" enctype="multipart/form-data" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
   <div class="cl-form-group">
     <label class="cl-form-label" for="nombre_negocio">Nombre del negocio</label>
     <input type="text" class="cl-form-input" name="nombre_negocio" id="nombre_negocio" value="{{ nombre_actual }}"
       placeholder="Ej: Barbacoa Don José" maxlength="100" required autofocus>
+    <small class="cl-form-hint">Es el nombre que aparece en el ticket del cliente.</small>
+  </div>
+
+  <div class="cl-form-group">
+    <label class="cl-form-label" for="logo">Logo <span style="font-weight:400;opacity:.7;">(opcional)</span></label>
+    <input type="file" class="cl-form-input" name="logo" id="logo" accept=".png,.jpg,.jpeg,.svg,.webp">
+    <small class="cl-form-hint">
+      Encabeza el ticket y el panel. Puedes agregarlo o cambiarlo después en Personalización.
+    </small>
   </div>
 
   <div class="cl-setup__actions">

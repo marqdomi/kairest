@@ -1,0 +1,123 @@
+{% extends 'layouts/_layout_admin.html' %}
+{% block page_title %}Estaciones{% endblock %}
+
+{% block admin_breadcrumb %}
+<div class="cl-breadcrumb">
+  <span>Catálogo</span>
+  <i data-lucide="chevron-right" style="width:13px;height:13px;"></i>
+  <span class="cl-breadcrumb__current">Estaciones</span>
+</div>
+{% endblock %}
+
+{% block admin_content %}
+{% from 'components/_modal.html' import confirm_modal %}
+
+{# ── Page Header ── #}
+<div class="cl-page-hdr">
+  <div>
+    <h1>Estaciones</h1>
+    <p>{{ estaciones|length }} estación{{ 'es' if estaciones|length != 1 else '' }} de cocina configurada{{ 's' if estaciones|length != 1 else '' }}
+    </p>
+  </div>
+  <div class="cl-page-hdr__right">
+    <a href="{{ url_for('admin.estacion_nueva') }}" class="cl-btn--v7-primary">
+      <i data-lucide="plus" class="icon-sm"></i> Nueva Estación
+    </a>
+  </div>
+</div>
+
+{# ── Productos sin estación: bloquean el cobro de su orden ── #}
+{% if huerfanos %}
+<div class="cl-card" style="border-left:3px solid var(--cl-error-text);margin-bottom:20px;">
+  <div class="cl-card__hdr">
+    <span class="cl-card__title">
+      <i data-lucide="alert-triangle" style="width:15px;height:15px;color:var(--cl-error-text);"></i>
+      {{ huerfanos|length }} producto{{ 's' if huerfanos|length != 1 else '' }} sin estación
+    </span>
+  </div>
+  <div class="cl-card__body">
+    <p style="margin:0 0 12px;color:var(--cl-text-secondary);font-size:13px;">
+      Estos productos no aparecen en ningún panel de cocina: nadie los prepara y la
+      cuenta que los incluya <strong>no se puede cobrar</strong>. Asígnales una estación
+      para destrabarlas — las órdenes abiertas se corrigen solas.
+    </p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      {% for p in huerfanos %}
+      <a href="{{ url_for('admin.producto_editar', id=p.id) }}" class="cl-btn--v7-outline cl-btn--sm">
+        <i data-lucide="wrench" style="width:13px;height:13px;"></i> {{ p.nombre }}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Table Card ── #}
+<div class="cl-card">
+  {% if estaciones %}
+  <div style="overflow-x:auto;">
+    <table class="cl-table--v7" aria-label="Lista de estaciones">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Estación</th>
+          <th>Productos asignados</th>
+          <th style="text-align:right;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in estaciones %}
+        <tr>
+          <td style="color:var(--cl-text-tertiary);font-size:12px;">{{ loop.index }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <i data-lucide="chef-hat" style="width:16px;height:16px;color:var(--cl-text-tertiary);"></i>
+              <span style="font-weight:600;">{{ e.nombre }}</span>
+            </div>
+          </td>
+          <td>{{ conteos.get(e.id, 0) }}</td>
+          <td style="text-align:right;">
+            <div style="display:flex;justify-content:flex-end;gap:6px;">
+              <a href="{{ url_for('cocina.station_view', slug=slugs[e.id]) }}"
+                class="cl-btn--v7-outline cl-btn--sm" title="Ver KDS de {{ e.nombre }}">
+                <i data-lucide="monitor" style="width:13px;height:13px;"></i>
+              </a>
+              <a href="{{ url_for('admin.estacion_editar', id=e.id) }}" class="cl-btn--v7-outline cl-btn--sm"
+                title="Editar {{ e.nombre }}">
+                <i data-lucide="pencil" style="width:13px;height:13px;"></i>
+              </a>
+              <button class="cl-btn--v7-outline cl-btn--sm"
+                style="color:var(--cl-error-text);border-color:rgba(240,68,56,0.2);" data-bs-toggle="modal"
+                data-bs-target="#deleteModal" data-action="{{ url_for('admin.estacion_eliminar', id=e.id) }}"
+                data-name="{{ e.nombre }}" title="Eliminar {{ e.nombre }}">
+                <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="display:flex;flex-direction:column;align-items:center;padding:48px;gap:12px;opacity:.45;">
+    <i data-lucide="chef-hat" style="width:40px;height:40px;color:var(--cl-text-tertiary);"></i>
+    <p style="font-size:14px;color:var(--cl-text-tertiary);margin:0;">No hay estaciones configuradas</p>
+    <a href="{{ url_for('admin.estacion_nueva') }}" class="cl-btn--v7-primary" style="opacity:1;">
+      <i data-lucide="plus" class="icon-sm"></i> Crear primera estación
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+{{ confirm_modal(id='deleteModal', title='¿Eliminar estación?', body='Esta acción no se puede deshacer.',
+confirm_text='Eliminar', form_action='#') }}
+
+<script nonce="{{ csp_nonce }}">
+  document.getElementById('deleteModal').addEventListener('show.bs.modal', function (e) {
+    this.querySelector('form').setAttribute('action', e.relatedTarget.getAttribute('data-action'));
+    const name = e.relatedTarget.getAttribute('data-name');
+    this.querySelector('.modal-body').textContent = `¿Eliminar "${name}"? Esta acción no se puede deshacer.`;
+  });
+</script>
+{% endblock %}
