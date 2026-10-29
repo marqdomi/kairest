@@ -877,3 +877,19 @@ del preview hace HEAD / 3 veces por segundo).
   (`error.html`, JSON en `/api/`); `manifest.json` `start_url` = `/`
 - `services/tiempo.fecha_larga()` — fecha en español sin depender del locale
 - Tests: `tests/test_demo_cliente.py` (11). Suite total 156 passed.
+
+### Validación con el stack real (Docker + PostgreSQL) — 3 bugs que SQLite/localhost ocultaban
+- **La imagen Docker no arrancaba**: `requirements.txt` sin versiones → una imagen nueva
+  jalaba SQLAlchemy 2.1 (driver psycopg v3 por defecto, no instalado). Los tests pasaban
+  porque el venv tenía 2.0. Ahora el `dockerfile` instala `backend/requirements.lock`
+  (versiones exactas del venv probado; gunicorn 23.0.0). El CMD por defecto usa el worker
+  eventlet y respeta `$PORT`
+- **Socket.IO rechazaba a las tablets** que entran por la IP de la red (400 "Not an
+  accepted origin"): sólo aceptaba `CORS_ORIGINS` (= localhost). `_origen_socket_permitido`
+  en `extensions.py` acepta el mismo origen (incluye X-Forwarded-Host/Proto) + la lista
+- **Folios quemados**: toques simultáneos al primer producto asignaban un folio por petición
+  (8 toques → la orden quedaba con el 4). `asignar_folio` relee la orden con el contador
+  bloqueado. Sin el lock de la orden además se **perdían cantidades** (8 toques → total 3)
+- `scripts/prueba_concurrencia_pg.py` — prueba manual contra PostgreSQL (SQLite no la
+  reproduce), con control negativo verificado para ambos arreglos
+- Tests: 3 de origen Socket.IO en `test_demo_cliente.py`. Suite total 159 passed.

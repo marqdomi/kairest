@@ -113,3 +113,24 @@ class TestCorteSinTarjeta:
         login(client, 'super_test@test.com', 'Test1234!')
         html = client.get('/admin/corte-caja').get_data(as_text=True)
         assert '>Tarjeta</span>' in html
+
+
+class TestOrigenSocketIO:
+    """La tablet abre el sistema por la IP de la red, no por localhost."""
+
+    def _env(self, host, scheme='http', **extra):
+        return {'HTTP_HOST': host, 'wsgi.url_scheme': scheme, **extra}
+
+    def test_mismo_origen_por_ip_de_la_red(self):
+        from backend.extensions import _origen_socket_permitido
+        assert _origen_socket_permitido('http://192.168.0.70:5005', self._env('192.168.0.70:5005'))
+
+    def test_dominio_detras_de_proxy_https(self):
+        from backend.extensions import _origen_socket_permitido
+        env = self._env('web:5005', HTTP_X_FORWARDED_HOST='casaleones.kainet.mx',
+                        HTTP_X_FORWARDED_PROTO='https')
+        assert _origen_socket_permitido('https://casaleones.kainet.mx', env)
+
+    def test_otro_sitio_se_rechaza(self):
+        from backend.extensions import _origen_socket_permitido
+        assert not _origen_socket_permitido('https://sitio-malo.com', self._env('192.168.0.70:5005'))
