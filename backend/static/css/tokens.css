@@ -239,6 +239,23 @@
      primary = marca (rojo), y los -600 semánticos faltantes. */
   --cl-primary-100: var(--cl-red-100, #FCE7EB);
   --cl-primary-500: var(--cl-red-500);
+
+  /* Alias que las plantillas usaban sin que existieran: el navegador descartaba la
+     regla entera (bordes y fondos que no se pintaban, botones que se veían distintos).
+     Apuntan a tokens que ya cambian con el tema, así que sirven en claro y oscuro. */
+  --cl-border: var(--cl-border-color);
+  --cl-surface: var(--cl-surface-1);
+  --cl-primary-50: var(--cl-red-50);
+  --cl-primary-300: var(--cl-red-200);
+  --cl-primary-400: var(--cl-red-400);
+  --cl-error-300: var(--cl-error-100);
+  --cl-error-400: var(--cl-error-500);
+  --cl-text-muted: var(--cl-text-tertiary);
+  --cl-danger: var(--cl-danger-text);
+  --cl-warning: var(--cl-warning-text);
+  --cl-success: var(--cl-success-text);
+  --cl-info: var(--cl-info-text);
+  --cl-transition-normal: var(--cl-transition-base);
   --cl-primary-600: var(--cl-red-600);
   --cl-primary-700: var(--cl-red-700);
   --cl-success-600: var(--cl-success-700);
@@ -314,6 +331,9 @@
   --cl-info-text: var(--cl-info-500);
   --cl-danger-500: var(--cl-error-500);
   --cl-danger-text: var(--cl-error-500);
+  /* Fondo de selección (método de pago activo, etc.): en oscuro un tinte, no el rosa claro */
+  --cl-primary-50: rgba(196, 30, 58, 0.16);
+  --cl-error-300: rgba(240, 68, 56, 0.35);
   --cl-brand-text: var(--cl-red-400);
 
   --cl-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.30);

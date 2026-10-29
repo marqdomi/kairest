@@ -1076,3 +1076,20 @@ nunca quedaba lista y **la mesa no se podía cobrar**.
   marca Bebidas una vez en Admin → Estaciones
 - Tests: `tests/test_casa_leones_bebidas.py` (5, control negativo: los 5 fallan sin el
   cambio). Suite: 433 passed
+
+## Pasada de botones y selecciones (v6.9)
+Barrido de botones/selectores en celular (375), tablet (768) y escritorio.
+- **13 tokens usados pero nunca definidos** (`--cl-border`, `--cl-surface`,
+  `--cl-primary-50/300/400`, `--cl-error-300/400`, `--cl-text-muted`, `--cl-danger`,
+  `--cl-warning`, `--cl-success`, `--cl-info`, `--cl-transition-normal`): caían a
+  transparente/heredado — las cajas de método de pago del cobro **no tenían borde ni
+  fondo**. Definidos como alias en `tokens.css` (con override oscuro donde aplica)
+- Carrito del mesero: el aviso "en cocina" + "Avisar" + Cobrar no cabían en una fila
+  (Cobrar cortado). El aviso va en su propio renglón; `min-width:0` en el banner — sin
+  eso toma el ancho de su texto y empuja "Avisar" fuera de la pantalla
+- Renglones pendientes de una orden ya enviada decían "🆕 Nuevo": ya están en el KDS.
+  Ahora "En cocina"
+- Cobro: billetes rápidos en fila flexible a partes iguales (salen de 1 a 4) y "Exacto"
+  a lo ancho; propina con el mismo patrón, todo a 44px. El 0% inicial nacía sin marcar
+- Toolbar de tablas: chips de filtro 38px (igual que el buscador); reportes: "Filtrar"
+  sin `--sm` para igualar los 40px de los campos de fecha
