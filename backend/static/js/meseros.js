@@ -849,9 +849,27 @@ $(document).ready(function() {
             if (!res.ok) throw new Error('No se pudieron cargar los datos');
             const data = await res.json();
 
+            // `esc` del bloque de arriba es local a otra función; aquí se toma
+            // el helper global de base.html.
+            const esc = window.__escapeHtml || function (s) { return String(s == null ? '' : s); };
+
+            // El negocio sale de lo capturado en el wizard / Personalización.
+            // Antes decía "CASA LEONES" (el cliente demo) en cualquier instalación.
+            const neg = data.negocio || {};
+            const nombreNegocio = neg.nombre || 'Ticket de Venta';
+            const numeroOrden = data.orden_numero || data.orden_id;
+            const logo = neg.logo_url
+                ? `<div class="center"><img src="${window.location.origin}${neg.logo_url}"
+                     alt="" style="max-width:140px;max-height:70px;object-fit:contain;margin-bottom:4px;"></div>`
+                : '';
+            const contacto = [neg.direccion, neg.telefono].filter(Boolean)
+                .map(t => `<div class="center" style="font-size:10px;">${esc(t)}</div>`).join('');
+            const rfc = neg.rfc
+                ? `<div class="center" style="font-size:10px;">RFC: ${esc(neg.rfc)}</div>` : '';
+
             const win = window.open('', '_blank', 'width=350,height=600');
             let html = `<!DOCTYPE html><html><head><meta charset="utf-8">
-                <title>Ticket #${data.orden_id}</title>
+                <title>Ticket #${numeroOrden}</title>
                 <style>
                     body{font-family:'Courier New',monospace;font-size:12px;width:280px;margin:0 auto;padding:10px;}
                     .center{text-align:center;}
@@ -863,18 +881,21 @@ $(document).ready(function() {
                     .total-row td{font-weight:bold;font-size:14px;padding-top:5px;}
                     @media print{body{margin:0;padding:5px;}}
                 </style></head><body>
-                <div class="center bold" style="font-size:16px;">CASA LEONES</div>
+                ${logo}
+                <div class="center bold" style="font-size:16px;">${esc(nombreNegocio)}</div>
+                ${contacto}
+                ${rfc}
                 <div class="center">Ticket de Venta</div>
                 <div class="line"></div>
-                <div>Orden: #${data.orden_id}</div>
-                <div>${data.mesa_numero ? 'Mesa: ' + data.mesa_numero : 'Para Llevar'}</div>
+                <div>Orden: #${numeroOrden}</div>
+                <div>${data.mesa_numero ? 'Mesa: ' + esc(data.mesa_numero) : 'Para Llevar'}</div>
                 <div>Fecha: ${new Date().toLocaleString('es-MX')}</div>
                 <div class="line"></div>
                 <table>
                     <tr class="bold"><td>Producto</td><td class="right">Cant</td><td class="right">P.U.</td><td class="right">Importe</td></tr>`;
 
             data.detalles.forEach(item => {
-                html += `<tr><td>${item.nombre}</td><td class="right">${item.cantidad}</td><td class="right">$${item.precio.toFixed(2)}</td><td class="right">$${item.subtotal.toFixed(2)}</td></tr>`;
+                html += `<tr><td>${esc(item.nombre)}</td><td class="right">${esc(item.cantidad)}</td><td class="right">$${item.precio.toFixed(2)}</td><td class="right">$${item.subtotal.toFixed(2)}</td></tr>`;
             });
 
             html += `</table>
@@ -896,13 +917,13 @@ $(document).ready(function() {
             if (data.pagos.length > 0) {
                 html += `<div class="line"></div><div class="bold">Pagos:</div>`;
                 data.pagos.forEach(p => {
-                    html += `<div>${p.metodo}: $${p.monto.toFixed(2)}${p.referencia ? ' ('+p.referencia+')' : ''}</div>`;
+                    html += `<div>${esc(p.metodo)}: $${p.monto.toFixed(2)}${p.referencia ? ' (' + esc(p.referencia) + ')' : ''}</div>`;
                 });
             }
 
             html += `<div class="line"></div>
                 <div class="center">¡Gracias por su visita!</div>
-                <div class="center" style="font-size:10px;">Casa Leones POS v2.0</div>
+                ${neg.slogan ? `<div class="center" style="font-size:10px;">${esc(neg.slogan)}</div>` : ''}
                 <script>window.onload=function(){window.print();}<\/script>
                 </body></html>`;
 

@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
-from backend.models.models import Orden, OrdenDetalle, Producto, utc_now, OrdenEstado
-from backend.extensions import db, socketio
-from backend.utils import obtener_ordenes_por_estacion, verificar_orden_completa, login_required
+from backend.models.models import Orden, OrdenEstado
+from backend.utils import obtener_ordenes_por_estacion, login_required
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -53,42 +52,15 @@ def listar_ordenes():
     else:
         return jsonify({'error': 'se requiere parámetro estacion o estado'}), 400
 
-@api_bp.route('/ordenes/<int:orden_id>/detalle/<int:detalle_id>/listo', methods=['POST'])
-@login_required()
-def marcar_detalle_listo(orden_id, detalle_id):
-    detalle = db.get_or_404(OrdenDetalle, detalle_id)
-    if detalle.estado == OrdenEstado.LISTO:
-        return jsonify({'message': 'Ya estaba marcado como listo'}), 200
-    detalle.estado = OrdenEstado.LISTO
-    detalle.fecha_listo = utc_now()
-    orden = db.session.get(Orden, orden_id)
-    # Transition to en_preparacion on first item marked listo
-    if orden and orden.estado == OrdenEstado.ENVIADO:
-        orden.estado = OrdenEstado.EN_PREPARACION
-        socketio.emit('orden_en_preparacion', {
-            'orden_id': orden.id,
-            'mesa_nombre': orden.mesa.numero if orden.mesa else 'Para Llevar',
-        })
-    db.session.commit()
-    verificar_orden_completa(orden_id)
-    socketio.emit('item_listo_notificacion', {
-        'item_id': detalle.id,
-        'orden_id': orden_id,
-        'producto_id': detalle.producto_id,
-        'producto_nombre': detalle.producto.nombre,
-        'mesa_nombre': orden.mesa.numero if orden and orden.mesa else 'Para Llevar',
-        'mensaje': f'¡{detalle.producto.nombre} de la orden {orden_id} está listo!'
-    })
-    # Emit progress
-    all_detalles = OrdenDetalle.query.filter_by(orden_id=orden_id).all()
-    items_listos = sum(1 for d in all_detalles if d.estado == OrdenEstado.LISTO)
-    socketio.emit('item_progreso', {
-        'orden_id': orden_id,
-        'items_listos': items_listos,
-        'items_total': len(all_detalles),
-        'mesa_nombre': orden.mesa.numero if orden and orden.mesa else 'Para Llevar',
-    })
-    return jsonify({'message': 'Item marcado como listo.'}), 200
+# NOTA: `POST /ordenes/<id>/detalle/<detalle_id>/listo` fue eliminado.
+# Duplicaba el marcado del KDS pero sin ninguno de sus guards: cualquier usuario
+# con sesión (mesero ajeno incluido) podía marcar listo un item de otra orden, y
+# ni siquiera comprobaba que el detalle perteneciera a la orden indicada — se
+# podía disparar el cambio de estado y las notificaciones sobre una orden que no
+# era. Además `api_bp` está exento de CSRF. Ningún frontend la llamaba.
+# El flujo vivo es `/cocina/<slug>/marcar/<orden_id>/<detalle_id>`, con alcance
+# por estación y orden, y 409 en órdenes cerradas o canceladas.
+
 
 @api_bp.route('/ordenes/<int:orden_id>/pagar', methods=['POST'])
 @login_required()

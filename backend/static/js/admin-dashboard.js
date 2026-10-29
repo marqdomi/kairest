@@ -103,10 +103,14 @@
         : 'Sin órdenes activas';
 
       // Stock alerts count
+      // En modo básico el módulo de Inventario está oculto y estas tarjetas no
+      // existen en el DOM. Antes había un `return` aquí, que dejaba la tarjeta
+      // de "Último corte" (más abajo) cargando para siempre.
       const countEl = document.getElementById('kpi-alertasStockCount');
-      if (!countEl) return;
-      countEl.textContent = stock.count;
-      countEl.classList.toggle('text-danger', stock.count > 0);
+      if (countEl) {
+        countEl.textContent = stock.count;
+        countEl.classList.toggle('text-danger', stock.count > 0);
+      }
 
       // Stock alerts list
       const stockList = document.getElementById('stockAlertsList');
@@ -115,7 +119,9 @@
         stockBadge.textContent = stock.count;
         stockBadge.style.display = stock.count > 0 ? 'inline-flex' : 'none';
       }
-      if (stock.count === 0) {
+      if (!stockList) {
+        // sin panel de inventario que pintar
+      } else if (stock.count === 0) {
         stockList.innerHTML = `
           <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:10px;opacity:.5;">
             <i data-lucide="package-check" style="width:32px;height:32px;color:var(--cl-success-500);"></i>

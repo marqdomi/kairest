@@ -7,7 +7,7 @@ from backend.models.models import (
     Cliente, MovimientoInventario, OrdenEstado,
 )
 from backend.extensions import db, socketio
-from backend.services.tiempo import hoy_local, rango_utc
+from backend.services.tiempo import hoy_local, rango_utc, a_local
 from backend.services.cobro import cerrar_orden_pagada
 from backend.services.pagos import metodos_pago_detalle, metodos_pago_habilitados
 from backend.utils import (login_required, verificar_propiedad_orden, filtrar_por_sucursal,
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 meseros_bp = Blueprint('meseros', __name__, url_prefix='/meseros')
 
-ESTADOS_MODIFICABLES = [OrdenEstado.PENDIENTE, OrdenEstado.ENVIADO, OrdenEstado.EN_PREPARACION, OrdenEstado.LISTA_PARA_ENTREGAR]
+from backend.models.models import ESTADOS_MODIFICABLES  # noqa: E402  (re-export)
 
 
 def _revertir_inventario_orden(orden, usuario_id):
@@ -177,7 +177,10 @@ def historial_csv():
         mesa = f'Mesa {o.mesa.numero}' if o.mesa else 'Para llevar'
         productos = '; '.join(f'{d.producto.nombre} x{d.cantidad}' for d in o.detalles)
         total = float(o.total or 0)
-        writer.writerow([f'#{o.id}', o.tiempo_registro.strftime('%H:%M'), mesa, o.estado, productos, f'${total:.2f}'])
+        # Folio del día (lo que ve el cliente), no el id interno; y la hora
+        # convertida a la zona del negocio (la columna se guarda en UTC).
+        writer.writerow([f'#{o.numero}', a_local(o.tiempo_registro).strftime('%H:%M'),
+                         mesa, o.estado, productos, f'${total:.2f}'])
 
     output.seek(0)
     return Response(
@@ -299,17 +302,30 @@ def seleccionar_mesa():
 
     mesas = filtrar_por_sucursal(Mesa.query, Mesa).order_by(Mesa.numero).all()
 
-    # Mesas compartidas: cada mesa puede tener VARIAS cuentas activas
+    # Mesas compartidas: cada mesa puede tener VARIAS cuentas activas.
+    # `no_es_borrador` excluye las cuentas vacías: una que el mesero abrió y
+    # abandonó no debe pintar la mesa como ocupada (la mesa sólo se ocupa con el
+    # primer producto, así que si no, el mosaico y el estado real no coinciden).
     active_orders = Orden.query.filter(
         Orden.estado.notin_([OrdenEstado.PAGADA, OrdenEstado.FINALIZADA, OrdenEstado.CANCELADA]),
+        no_es_borrador(),
     ).order_by(Orden.tiempo_registro).all()
     mesa_order_map = {}
     for o in active_orders:
         if o.mesa_id:
             mesa_order_map.setdefault(o.mesa_id, []).append(o)
 
+    # Cuánta gente hay sentada por mesa, sumando todas sus cuentas: una mesa de
+    # 12 con dos clientes no está "llena", y el mesero necesita verlo para
+    # sentar a alguien más ahí.
+    mesa_personas = {
+        mesa_id: sum(o.num_personas or 0 for o in ordenes)
+        for mesa_id, ordenes in mesa_order_map.items()
+    }
+
     zonas = sorted(set(m.zona for m in mesas if m.zona))
     return render_template('seleccionar_mesa.html', mesas=mesas,
+                           mesa_personas=mesa_personas,
                            mesa_order_map=mesa_order_map, zonas=zonas)
 
 
@@ -445,6 +461,17 @@ def agregar_productos_a_orden(orden_id):
                 nuevos.append(d)
 
         db.session.commit()
+
+        # Si la orden ya había salido de la cocina (todo listo) y ahora tiene
+        # items sin preparar, tiene que volver: el KDS sólo muestra órdenes en
+        # enviado/en_preparacion, así que sin esto el producto nuevo no le
+        # llegaba a nadie y la cuenta se podía cobrar con comida sin hacer.
+        if orden.estado == OrdenEstado.LISTA_PARA_ENTREGAR and any(
+                d.estado == OrdenEstado.PENDIENTE for d in orden.detalles):
+            orden.estado = OrdenEstado.EN_PREPARACION
+            db.session.commit()
+            logger.info('Orden %s regresa a en_preparacion: se agregaron productos', orden_id)
+
         # Con el primer producto deja de ser borrador: folio del día y mesa ocupada
         from backend.services.folio import asignar_folio
         asignar_folio(orden)
@@ -666,8 +693,14 @@ def get_cobrar_orden_info(orden_id):
         'referencia': p.referencia,
     } for p in orden.pagos]
 
+    from backend.services.negocio import datos_negocio
+
     return jsonify({
         "orden_id": orden.id,
+        # Lo que se le dice al cliente es el folio del día, no el id interno.
+        "orden_numero": orden.numero,
+        # El ticket traía "CASA LEONES" escrito a mano: sale del negocio real.
+        "negocio": datos_negocio(),
         "mesa_numero": orden.mesa.numero if orden.mesa else None,
         "alias": orden.alias,
         "es_para_llevar": orden.es_para_llevar,

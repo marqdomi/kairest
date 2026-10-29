@@ -55,11 +55,29 @@ Usage:
     </a>
     {% endif %}
 
-    {# Station pill #}
+    {# Station pill — dropdown to jump between stations (admin/superadmin only) #}
+    {% if estaciones_todas is defined and estaciones_todas|length > 1 %}
+    <div class="cl-kds-station" style="padding:0;">
+      <div class="cl-kds-station__dot"></div>
+      <i data-lucide="chef-hat" style="width:16px;height:16px;"></i>
+      <select id="kdsStationSelect" aria-label="Cambiar de estación"
+        style="background:transparent;border:none;color:inherit;font:inherit;font-weight:inherit;cursor:pointer;padding:4px 2px;">
+        {% for est in estaciones_todas %}
+        <option value="{{ est.slug }}" {{ 'selected' if est.activa else '' }}>{{ est.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <script nonce="{{ csp_nonce }}">
+      document.getElementById('kdsStationSelect').addEventListener('change', function () {
+        window.location.href = '/cocina/' + this.value;
+      });
+    </script>
+    {% else %}
     <div class="cl-kds-station">
       <div class="cl-kds-station__dot"></div>
       <i data-lucide="chef-hat" style="width:16px;height:16px;"></i> {{ kds_label|default('Cocina') }}
     </div>
+    {% endif %}
 
     {# Pending count #}
     <div class="cl-kds-pending">

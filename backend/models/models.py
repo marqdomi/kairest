@@ -31,6 +31,18 @@ class OrdenEstado:
     LISTO = 'listo'
 
 
+# Estados en los que todavía se le pueden agregar productos a una cuenta.
+# Vive aquí y no en una ruta porque lo aplican dos caminos distintos: la
+# pantalla de "agregar productos" y el carrito del mesero, que guarda cada
+# producto al tocarlo contra `POST /api/ordenes/<id>/detalle`.
+ESTADOS_MODIFICABLES = [
+    OrdenEstado.PENDIENTE,
+    OrdenEstado.ENVIADO,
+    OrdenEstado.EN_PREPARACION,
+    OrdenEstado.LISTA_PARA_ENTREGAR,
+]
+
+
 # -------------------- CONFIGURACIÓN DEL SISTEMA (Fase 7 - Onboarding) --------------------
 
 class FolioDiario(db.Model):

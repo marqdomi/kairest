@@ -95,7 +95,7 @@ def _col_local(col):
     """
     from backend.extensions import db
 
-    bind = db.session.bind
+    bind = db.session.get_bind()
     dialect = bind.dialect.name if bind is not None else 'sqlite'
     if dialect == 'postgresql':
         return func.timezone(os.getenv('APP_TIMEZONE', _DEFAULT_TZ), func.timezone('UTC', col))

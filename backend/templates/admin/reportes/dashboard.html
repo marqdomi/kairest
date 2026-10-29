@@ -27,11 +27,14 @@
     {'icon': 'package',          'title': 'Top Productos',       'desc': 'Productos más vendidos e ingresos',               'url': url_for('reportes.reporte_productos', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin),    'color': 'success'},
     {'icon': 'users',            'title': 'Rendimiento Meseros', 'desc': 'Ventas y órdenes por mesero',                     'url': url_for('reportes.reporte_meseros', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin),      'color': 'info'},
     {'icon': 'credit-card',      'title': 'Métodos de Pago',     'desc': 'Desglose efectivo / tarjeta / transferencia',     'url': url_for('reportes.reporte_pagos', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin),        'color': 'warning'},
-    {'icon': 'alert-triangle',   'title': 'Inventario / Mermas', 'desc': 'Mermas de ingredientes en el periodo',            'url': url_for('reportes.reporte_inventario', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin),   'color': 'danger'},
-    {'icon': 'percent',          'title': 'Rentabilidad',        'desc': 'Costo, margen y utilidad por producto',           'url': url_for('reportes.reporte_rentabilidad', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin), 'color': 'gray'},
-    {'icon': 'bike',             'title': 'Delivery / Canales',  'desc': 'Ventas por canal y comisiones delivery',          'url': url_for('reportes.reporte_delivery', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin),     'color': 'secondary'}
+    {'icon': 'alert-triangle',   'title': 'Inventario / Mermas', 'desc': 'Mermas de ingredientes en el periodo',            'url': url_for('reportes.reporte_inventario', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin),   'color': 'danger',    'modulo': 'inventario'},
+    {'icon': 'percent',          'title': 'Rentabilidad',        'desc': 'Costo, margen y utilidad por producto',           'url': url_for('reportes.reporte_rentabilidad', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin), 'color': 'gray',      'modulo': 'inventario'},
+    {'icon': 'bike',             'title': 'Delivery / Canales',  'desc': 'Ventas por canal y comisiones delivery',          'url': url_for('reportes.reporte_delivery', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin),     'color': 'secondary', 'modulo': 'delivery'}
   ] %}
-  {% for r in reports %}
+  {# Reportes de módulos que este modo no muestra: en básico no hay inventario,
+     así que "Mermas" saldría vacío y "Rentabilidad" daría 100% de margen en
+     todo (el costo de receta es 0 si nadie captura ingredientes). #}
+  {% for r in reports if modo_sistema == 'avanzado' or r.modulo is not defined %}
   <div class="col-md-4 col-lg-3">
     <a href="{{ r.url }}" class="cl-card cl-card--hover h-100 d-block text-decoration-none" style="border-top: 3px solid var(--cl-{{ r.color }});">
       <div class="cl-card__body text-center py-4">

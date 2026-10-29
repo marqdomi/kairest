@@ -90,10 +90,14 @@
   icon='chef-hat', color='yellow',
   id='ordenesCocina') }}
 
+  {# Inventario sólo existe en modo avanzado: en básico el módulo está oculto
+     y esta tarjeta no tendría de dónde salir. #}
+  {% if modo_sistema == 'avanzado' %}
   {{ kpi_card('Alertas Stock', '<span class="cl-skeleton"
     style="width:40px;height:28px;border-radius:6px;display:inline-block;"></span>',
   icon='alert-triangle', color='red',
   id='alertasStockCount') }}
+  {% endif %}
 </div>
 
 {# ── Charts Row ── #}
@@ -132,8 +136,12 @@
 </div>
 
 {# ── Bottom Row: Stock Alerts + Activity Feed ── #}
-<div style="display:grid;grid-template-columns:420px 1fr;gap:16px;margin-bottom:20px;">
+{# En modo básico no hay panel de inventario, así que la fila pasa a una sola
+   columna: si no, el feed de actividad se encajaría en los 420px de la tarjeta
+   que ya no existe. #}
+<div style="display:grid;grid-template-columns:{{ '420px 1fr' if modo_sistema == 'avanzado' else '1fr' }};gap:16px;margin-bottom:20px;">
 
+  {% if modo_sistema == 'avanzado' %}
   {# Stock alerts #}
   <div class="cl-card">
     <div class="cl-card__hdr">
@@ -151,6 +159,7 @@
       </div>
     </div>
   </div>
+  {% endif %}
 
   {# Activity feed #}
   <div class="cl-card">

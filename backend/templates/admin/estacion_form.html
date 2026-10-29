@@ -1,0 +1,26 @@
+{% extends 'layouts/_layout_admin.html' %}
+{% block page_title %}{{ 'Editar' if estacion else 'Nueva' }} Estación{% endblock %}
+
+{% block admin_content %}
+{% from 'components/_page_header.html' import page_header %}
+{% from 'components/_form_group.html' import form_group %}
+
+{{ page_header(
+    'Editar ' ~ estacion.nombre if estacion else 'Nueva Estación',
+    breadcrumb=[('Catálogo', ''), ('Estaciones', url_for('admin.lista_estaciones')), (('Editar' if estacion else 'Nueva'), '')]
+) }}
+
+<div class="cl-card" style="max-width:480px;">
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {{ form_group('nombre', 'Nombre de la estación', value=estacion.nombre if estacion else '', required=true,
+    icon='chef-hat', placeholder='Parrilla, Comal, Bebidas…') }}
+    <div class="d-flex gap-2 mt-4">
+      <button type="submit" class="cl-btn cl-btn--primary">
+        <i data-lucide="save" class="icon-sm"></i> Guardar
+      </button>
+      <a href="{{ url_for('admin.lista_estaciones') }}" class="cl-btn cl-btn--ghost">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

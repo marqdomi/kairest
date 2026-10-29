@@ -313,9 +313,20 @@ def station_view(slug):
     cfg = _build_cfg(estacion)
     detalles = _query_pending_detalles(estacion.nombre)
     ordenes_data = _group_by_orden(detalles)
+
+    # Admin/superadmin can jump between stations from the KDS header; cocina staff
+    # stay locked to their assigned station (_require_station_access already enforces it).
+    estaciones_todas = []
+    if session.get('rol') in ('admin', 'superadmin'):
+        estaciones_todas = [
+            {'nombre': e.nombre, 'slug': _slugify(e.nombre), 'activa': e.id == estacion.id}
+            for e in Estacion.query.order_by(Estacion.nombre).all()
+        ]
+
     return render_template('kds_station.html',
                            ordenes_data=ordenes_data, now_utc=datetime.now(timezone.utc).replace(tzinfo=None),
-                           station=cfg['slug'], station_slug=cfg['slug'], cfg=cfg)
+                           station=cfg['slug'], station_slug=cfg['slug'], cfg=cfg,
+                           estaciones_todas=estaciones_todas)
 
 
 # ── Dynamic fragment endpoint (AJAX refresh) ───────────────────
@@ -426,14 +437,6 @@ def station_batch_listo(slug):
     orden = db.get_or_404(Orden, orden_id)
     if orden.estado in (OrdenEstado.CANCELADA, OrdenEstado.PAGADA, OrdenEstado.FINALIZADA):
         return jsonify({'error': f'Orden {orden.estado}, no se puede modificar'}), 409
-    # Transition to en_preparacion on first item if still enviado
-    if orden.estado == OrdenEstado.ENVIADO:
-        orden.estado = OrdenEstado.EN_PREPARACION
-        socketio.emit('orden_en_preparacion', {
-            'orden_id': orden.id,
-            'mesa_nombre': orden.mesa.numero if orden.mesa else 'Para Llevar',
-        })
-        logger.info('Orden %s → en_preparacion (batch)', orden_id)
 
     marked = []
     now = utc_now()
@@ -447,6 +450,17 @@ def station_batch_listo(slug):
             detalle.estado = OrdenEstado.LISTO
             detalle.fecha_listo = now
             marked.append(detalle)
+
+    # La transición va DESPUÉS de marcar: antes se hacía de entrada, así que un
+    # batch que no marcaba nada (ids de otra estación o ya listos) igual sacaba
+    # la orden de "enviado" y le avisaba al mesero que ya la estaban preparando.
+    if marked and orden.estado == OrdenEstado.ENVIADO:
+        orden.estado = OrdenEstado.EN_PREPARACION
+        socketio.emit('orden_en_preparacion', {
+            'orden_id': orden.id,
+            'mesa_nombre': orden.mesa.numero if orden.mesa else 'Para Llevar',
+        })
+        logger.info('Orden %s → en_preparacion (batch)', orden_id)
 
     db.session.commit()
     verificar_orden_completa(orden_id)
