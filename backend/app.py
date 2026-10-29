@@ -73,9 +73,11 @@ def create_app():
     # Páginas de error en español: sin esto un mesero que abre una estación ajena
     # o una liga vieja ve la página cruda de Werkzeug en inglés y sin salida.
     _ERRORES = {
+        400: ('Solicitud inválida', 'Algo de lo que se envió no está bien. Regresa e inténtalo de nuevo.', 'circle-alert'),
         403: ('Sin acceso', 'Esta pantalla es de otro rol o de otra estación.', 'lock'),
         404: ('No encontrado', 'La página que buscas no existe o ya se cerró.', 'search-x'),
         405: ('Acción no válida', 'Esa liga no se abre así. Regresa a tu pantalla.', 'ban'),
+        415: ('Solicitud inválida', 'Algo de lo que se envió no está bien. Regresa e inténtalo de nuevo.', 'circle-alert'),
         429: ('Demasiados intentos', 'Espera un minuto y vuelve a intentarlo.', 'timer'),
         500: ('Algo salió mal', 'Ocurrió un error inesperado. Intenta de nuevo.', 'triangle-alert'),
     }
@@ -130,6 +132,10 @@ def create_app():
         app.config['SESSION_REDIS'] = _redis.from_url(redis_url + '/1')
     else:
         app.config['SESSION_TYPE'] = 'filesystem'
+        # El backend de archivos borra sesiones al azar al pasar de 500 (default de
+        # cachelib). Con sesiones de 30 días y una por cada visita al login, en una demo
+        # larga sin Redis se llegaba al tope y la dueña quedaba fuera de golpe.
+        app.config.setdefault('SESSION_FILE_THRESHOLD', 20000)
     server_session.init_app(app)
 
     # Sentry (Fase 4 - Item 25)
@@ -211,11 +217,13 @@ def create_app():
             from backend.models.models import Sucursal
             sucursal = Sucursal.query.first()
             brand_name = sucursal.nombre if sucursal else 'KaiRest'
+            # Sin logo propio del negocio, el ícono de KaiRest (la mascota de 1.5 MB que
+            # iba aquí se pintaba a 28px en cada pantalla y no se alcanzaba a leer)
             brand_logo = getattr(sucursal, 'logo_url', None) or _url_for(
-                'static', filename='img/kainetResto.png')
+                'static', filename='img/kairest-logo.svg')
         except Exception:
             brand_name = 'KaiRest'
-            brand_logo = _url_for('static', filename='img/kainetResto.png')
+            brand_logo = _url_for('static', filename='img/kairest-logo.svg')
         return dict(
             brand_name=brand_name,
             brand_logo=brand_logo,
@@ -239,7 +247,8 @@ def create_app():
             from backend.models.models import Estacion
             from text_unidecode import unidecode
             import re as _re
-            estaciones = Estacion.query.order_by(Estacion.nombre).all()
+            # En el orden en que el negocio las definió en el wizard (no alfabético)
+            estaciones = Estacion.query.order_by(Estacion.id).all()
             nav = []
             for e in estaciones:
                 slug = _re.sub(r'[^a-z0-9]+', '-', unidecode(e.nombre).lower()).strip('-')

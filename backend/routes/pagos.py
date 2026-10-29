@@ -89,6 +89,16 @@ def verificar_pago(pago_id):
     orden.detalles
     orden.pagos
 
+    # La cuenta ya se cubrió por otro lado (el cliente dijo que transfería, no llegó y
+    # pagó en efectivo). Confirmar esta transferencia contaba el dinero dos veces: una
+    # cuenta de $630 quedaba con $1,160 cobrados y el corte sumaba lo que no es venta.
+    # Si de verdad llegó, es una devolución, no un ingreso: que se rechace aquí.
+    if orden.estado == 'pagada' or orden.saldo_pendiente() <= 0:
+        return jsonify(success=False,
+                       message='Esa cuenta ya está pagada por otro medio. Si el depósito sí '
+                               'llegó, hay que devolverlo; recházala aquí para que no se '
+                               'cuente dos veces.'), 409
+
     pago.verificado = True
     pago.verificado_por = session.get('user_id')
     pago.fecha_verificacion = utc_now()

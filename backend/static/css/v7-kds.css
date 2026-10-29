@@ -386,9 +386,11 @@
     color: var(--cl-text-primary);
     flex: 1;
     line-height: 1.3;
+    overflow-wrap: anywhere;
 }
 
 .cl-kds-item__note {
+    overflow-wrap: anywhere;  /* notas largas parten renglón en vez de ensanchar la tarjeta */
     margin-top: 4px;
     display: flex;
     align-items: flex-start;

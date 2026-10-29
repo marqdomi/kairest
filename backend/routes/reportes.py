@@ -315,6 +315,9 @@ def reporte_pagos():
     ).filter(
         Pago.fecha >= desde,
         Pago.fecha < hasta,
+        # Una transferencia sin confirmar no es ingreso (igual que en el corte); sin
+        # esto el reporte de pagos no cuadraba con ventas ni con el corte
+        Pago.verificado.is_(True),
     )
     suc_id = getattr(g, 'sucursal_id', None)
     if suc_id is not None:
@@ -501,6 +504,9 @@ def api_pagos_chart():
     ).filter(
         Pago.fecha >= desde,
         Pago.fecha < hasta,
+        # Una transferencia sin confirmar no es ingreso (igual que en el corte); sin
+        # esto el reporte de pagos no cuadraba con ventas ni con el corte
+        Pago.verificado.is_(True),
     )
     if suc_id is not None:
         q = q.join(Orden, Pago.orden_id == Orden.id).filter(Orden.sucursal_id == suc_id)

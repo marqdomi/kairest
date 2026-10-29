@@ -1,7 +1,7 @@
 {% extends 'setup/_layout_setup.html' %}
 
 {% block setup_content %}
-  <h1 class="cl-setup__title">Tu Menu</h1>
+  <h1 class="cl-setup__title">Tu menú</h1>
   <p class="cl-setup__subtitle">Elige una plantilla o carga tus productos manualmente.</p>
 
   <form method="POST" action="{{ url_for('setup.paso3') }}" id="menuForm" novalidate>
@@ -43,7 +43,7 @@
           <strong class="cl-tpl-card__name">Manual</strong>
           <small class="cl-tpl-card__desc">Agrega tus propios productos uno por uno</small>
           <div class="cl-tpl-card__meta">
-            <span><i data-lucide="info" style="width:12px;height:12px"></i> Puedes agregar mas despues</span>
+            <span><i data-lucide="info" style="width:12px;height:12px"></i> Puedes agregar más después</span>
           </div>
         </div>
       </label>
@@ -51,22 +51,24 @@
 
     {# ── Configuración flexible de estaciones (solo para plantillas) ── #}
     <div id="stationsConfig" style="display:none; margin-bottom:var(--cl-space-5)">
-      <div class="cl-form-group" style="max-width:220px">
-        <label class="cl-form-label">¿Cuántas estaciones de cocina vas a operar?</label>
-        <input type="number" class="cl-form-input" id="cantidadEstaciones" min="1">
+      <div class="cl-form-group">
+        <label class="cl-form-label" for="cantidadEstaciones">Estaciones de cocina</label>
+        <input type="number" class="cl-form-input" id="cantidadEstaciones" min="1" style="max-width:120px">
+        <p class="cl-form-hint">Cuántas pantallas de cocina vas a operar (taquero, comal, bebidas…).</p>
       </div>
       <div id="stationNamesContainer"></div>
-      <div id="stationMapContainer"></div>
-      <p style="font-size:var(--cl-text-xs);color:var(--cl-text-secondary);margin-top:var(--cl-space-2)">
-        Si eliges menos estaciones que las que trae la plantilla, decide abajo a
+      {# La explicación va ANTES de los selects que explica (antes quedaba debajo) #}
+      <p style="font-size:var(--cl-text-xs);color:var(--cl-text-secondary);margin:var(--cl-space-3) 0 var(--cl-space-2)">
+        Si eliges menos estaciones que las que trae la plantilla, decide aquí abajo a
         cuál de tus estaciones reales va cada grupo de productos.
       </p>
+      <div id="stationMapContainer"></div>
     </div>
 
     {# ── Manual products section (hidden by default) ── #}
     <div id="manualSection" style="display:none;">
       <p style="font-size:var(--cl-text-sm);color:var(--cl-text-secondary);margin-bottom:var(--cl-space-3)">
-        Agrega al menos 1 producto. Puedes agregar mas desde el panel de admin.
+        Agrega al menos 1 producto. Puedes agregar más desde el panel de admin.
       </p>
       <div id="productRows">
         <div class="cl-setup__row">
@@ -110,7 +112,7 @@
 
     <div class="cl-setup__actions">
       <a href="{{ url_for('setup.paso2') }}" class="cl-btn cl-btn--outline">
-        <i data-lucide="arrow-left" style="width:16px;height:16px"></i> Atras
+        <i data-lucide="arrow-left" style="width:16px;height:16px"></i> Atrás
       </a>
       <button type="submit" class="cl-btn cl-btn--primary">
         Siguiente <i data-lucide="arrow-right" style="width:16px;height:16px"></i>

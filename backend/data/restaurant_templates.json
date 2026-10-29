@@ -78,7 +78,7 @@
     ]
   },
   "taqueria": {
-    "nombre": "Taqueria",
+    "nombre": "Taquería",
     "descripcion": "Tacos, quesadillas, antojitos y bebidas",
     "icon": "flame",
     "estaciones": [
@@ -327,7 +327,7 @@
     "icon": "utensils",
     "estaciones": [
       "Cocina Caliente",
-      "Cocina Fria",
+      "Cocina Fría",
       "Barra"
     ],
     "categorias": [
@@ -343,14 +343,14 @@
         "nombre": "Ensalada Mixta",
         "precio": 65.0,
         "categoria": "Entradas",
-        "estacion": "Cocina Fria",
+        "estacion": "Cocina Fría",
         "unidad": "plato"
       },
       {
         "nombre": "Guacamole con Totopos",
         "precio": 80.0,
         "categoria": "Entradas",
-        "estacion": "Cocina Fria",
+        "estacion": "Cocina Fría",
         "unidad": "orden"
       },
       {
@@ -476,28 +476,28 @@
         "nombre": "Ensalada de Acompañamiento",
         "precio": 30.0,
         "categoria": "Guarniciones",
-        "estacion": "Cocina Fria",
+        "estacion": "Cocina Fría",
         "unidad": "orden"
       },
       {
         "nombre": "Flan Napolitano",
         "precio": 45.0,
         "categoria": "Postres",
-        "estacion": "Cocina Fria",
+        "estacion": "Cocina Fría",
         "unidad": "pieza"
       },
       {
         "nombre": "Pastel de Chocolate",
         "precio": 55.0,
         "categoria": "Postres",
-        "estacion": "Cocina Fria",
+        "estacion": "Cocina Fría",
         "unidad": "pieza"
       },
       {
         "nombre": "Pay de Queso",
         "precio": 50.0,
         "categoria": "Postres",
-        "estacion": "Cocina Fria",
+        "estacion": "Cocina Fría",
         "unidad": "pieza"
       },
       {
@@ -552,8 +552,8 @@
     ]
   },
   "cafeteria": {
-    "nombre": "Cafeteria",
-    "descripcion": "Cafe de especialidad, panaderia y snacks",
+    "nombre": "Cafetería",
+    "descripcion": "Café de especialidad, panadería y snacks",
     "icon": "coffee",
     "estaciones": [
       "Barista",
@@ -783,7 +783,7 @@
   },
   "casaleones": {
     "nombre": "Barbacoa y Carnitas",
-    "descripcion": "Barbacoa por kilo, tacos surtidos, quesadillas, tlacoyos y consome",
+    "descripcion": "Barbacoa por kilo, tacos surtidos, quesadillas, tlacoyos y consomé",
     "icon": "beef",
     "estaciones": [
       "Taquero",

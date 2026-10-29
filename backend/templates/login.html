@@ -3,8 +3,9 @@
 
 {% block auth_content %}
 <div class="cl-auth__brand">
-  <img src="{{ url_for('static', filename='img/kainetResto.png') }}" alt="KaiResto" class="cl-auth__logo">
-  <h1 class="cl-auth__title">Bienvenido</h1>
+  <img src="{{ brand_logo }}" alt="" class="cl-auth__logo">
+  {# La tablet es del negocio: saluda con su nombre. "KaiRest · hecho por kainet." va abajo #}
+  <h1 class="cl-auth__title">{{ brand_name }}</h1>
   <p class="cl-auth__subtitle">Inicia sesión para continuar</p>
 </div>
 

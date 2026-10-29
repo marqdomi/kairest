@@ -30,6 +30,23 @@ def _sucursal_actual():
 EXTENSIONES_LOGO = {'png', 'jpg', 'jpeg', 'svg', 'webp'}
 
 
+def _es_imagen(contenido, ext):
+    """Firma del archivo según su extensión. Los SVG además no pueden traer código:
+    se sirven desde el mismo origen que la app (el CSP los frena, pero no se guardan)."""
+    import re
+    if ext == 'png':
+        return contenido.startswith(b'\x89PNG\r\n\x1a\n')
+    if ext in ('jpg', 'jpeg'):
+        return contenido.startswith(b'\xff\xd8\xff')
+    if ext == 'webp':
+        return contenido[:4] == b'RIFF' and contenido[8:12] == b'WEBP'
+    if ext == 'svg':
+        texto = contenido.decode('utf-8', errors='ignore').lower()
+        return '<svg' in texto and not re.search(
+            r'<script|\bon[a-z]+\s*=|javascript:|<foreignobject', texto)
+    return False
+
+
 def guardar_logo(sucursal, archivo):
     """Guarda el logo del negocio y lo deja en `sucursal.logo_url`.
 
@@ -50,6 +67,13 @@ def guardar_logo(sucursal, archivo):
     ext = archivo.filename.rsplit('.', 1)[-1].lower() if '.' in archivo.filename else ''
     if ext not in EXTENSIONES_LOGO:
         return False, 'Formato de imagen no soportado. Usa PNG, JPG, SVG o WebP.'
+
+    # La extensión no basta: un texto renombrado a .png quedaba como logo y salía roto
+    # en el login, la barra y el ticket. Se revisa el contenido real del archivo.
+    contenido = archivo.read()
+    archivo.seek(0)
+    if not _es_imagen(contenido, ext):
+        return False, 'Ese archivo no es una imagen válida. Usa PNG, JPG, SVG o WebP.'
 
     destino = os.path.join(current_app.static_folder, 'uploads', 'logos')
     os.makedirs(destino, exist_ok=True)

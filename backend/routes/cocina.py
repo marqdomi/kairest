@@ -254,7 +254,8 @@ def api_estaciones():
     meseros (saber si una estación necesita apoyo sin entrar a verla).
     """
     from sqlalchemy import func
-    estaciones = Estacion.query.order_by(Estacion.nombre).all()
+    # En el orden en que el negocio las definió en el wizard (no alfabético)
+    estaciones = Estacion.query.order_by(Estacion.id).all()
     pendientes = dict(
         db.session.query(Producto.estacion_id,
                          func.coalesce(func.sum(OrdenDetalle.cantidad), 0))

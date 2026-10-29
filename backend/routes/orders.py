@@ -8,6 +8,9 @@ from backend.extensions import db, socketio
 
 orders_bp = Blueprint('orders', __name__, url_prefix='/api')
 
+# Tope por renglón: suficiente para un pedido grande, y ataja un "1000" tecleado de más
+CANTIDAD_MAXIMA = 999
+
 @orders_bp.route('/ordenes', methods=['POST'])
 # Levantar una orden es trabajo de piso. Las pantallas que lo hacen
 # (seleccionar_mesa, crear_orden_para_llevar) ya son de mesero, pero esta API
@@ -70,7 +73,12 @@ def add_product_to_order(orden_id):
     if not data or 'producto_id' not in data:
         return jsonify({'error': 'Body JSON con producto_id requerido.'}), 400
     producto_id = data.get('producto_id')
-    cantidad = data.get('cantidad', 1)
+    # El cliente sólo manda +1, pero el server no puede confiar en eso: cantidad 0 o
+    # negativa se guardaba ("−2 kg Barbacoa") y restaba dinero de la cuenta
+    from backend.services.validacion import leer_entero
+    cantidad = leer_entero(data.get('cantidad', 1), 1, CANTIDAD_MAXIMA)
+    if cantidad is None:
+        return jsonify({'error': f'La cantidad debe ser un número entero de 1 a {CANTIDAD_MAXIMA}.'}), 400
     notas = sanitizar_texto(data.get('notas', '') or '', 300)
     producto = db.get_or_404(Producto, producto_id)
     # Lock de la orden: dos toques seguidos al mismo producto llegan como POSTs
@@ -193,9 +201,10 @@ def update_order_detail(orden_id, detalle_id):
     if not data:
         return jsonify({'error': 'Body JSON requerido.'}), 400
     if 'cantidad' in data:
-        nueva_cantidad = int(data['cantidad'])
-        if nueva_cantidad < 1:
-            return jsonify({'error': 'Cantidad mínima es 1.'}), 400
+        from backend.services.validacion import leer_entero
+        nueva_cantidad = leer_entero(data['cantidad'], 1, CANTIDAD_MAXIMA)
+        if nueva_cantidad is None:  # antes int('dos') tronaba con un 500
+            return jsonify({'error': f'La cantidad debe ser un número entero de 1 a {CANTIDAD_MAXIMA}.'}), 400
         if current_app.config.get('INVENTARIO_VALIDAR_STOCK'):
             diff = nueva_cantidad - detalle.cantidad
             if diff > 0:

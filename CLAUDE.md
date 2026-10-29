@@ -978,3 +978,73 @@ Plan y decisiones en `docs/PLAN_ACCESO_PIN.md`. En un puesto lo que importa es e
   c010..c014 sin errores, usernames llenados
 - Tests: `tests/test_acceso_pin.py` (31, controles negativos verificados: sin sesión
   permanente y sin bloqueo fallan). Suite total 197 passed.
+
+## Mejoras visuales de la evaluación (v6.8)
+Implementadas las prioridades de `docs/EVALUACION_VISUAL.md`. Guardas en
+`tests/test_identidad_visual.py` (7, con control negativo).
+
+### Identidad
+- **Un solo ícono**: `img/kairest-logo.svg` = la K de cuatro piezas de kainet en rojo
+  KaiRest (fondo degradado `#C41E3A→#8E1526`). De él salen `icon-192/512.png`,
+  `icon-maskable-512.png` (a sangre, para Android), `apple-touch-icon.png` y
+  `windows-installer/assets/kairest.ico` (`rsvg-convert` + Pillow). Retirados
+  `kainetResto.png` (1.5 MB), `logo.svg` y `logoCasaLeones.svg`
+- `brand_logo` (context processor) = logo del negocio o, si no hay, el ícono de KaiRest.
+  Login, topbar de operaciones y navbar lo usan; el login saluda con `brand_name`
+- Manifest de la PWA: "KaiRest" (decía "Casa Leones POS"); `sw.js` → cache `kairest-v5`
+- **Versión única**: `config.VERSION` (6.8.0) se muestra en el sidebar y es el `?v=` de
+  los estáticos. Subirla en cada release
+
+### Tipografía
+- Inter vendorizada en `static/vendor/fonts/` (latin 400 y 600, OFL). Cada archivo cubre un
+  rango de pesos en `@font-face` (300–500 y 600–900) para que no haya negritas falsas
+- Mono = la del sistema (`ui-monospace`…); JetBrains Mono nunca había cargado
+- **Regla: nada de `@import` a servidores externos** — el CSP es 'self' y el sistema opera
+  offline (lo revisa `test_sin_fuentes_externas`)
+
+### Mesero / cobro
+- Estado vacío sin FAB duplicado; ícono `clipboard-list`; "Cobrar" con ícono `wallet`
+- Avisos de "producto agregado" arriba en celular (tapaban Enviar a Cocina / Cobrar)
+- Etiqueta de categoría oculta cuando hay una categoría elegida; atajo "/" sólo con
+  puntero fino
+- **Cobro**: montos rápidos = siguientes billetes sobre lo que se debe; el cambio en pantalla
+  incluye la propina (`porCobrarEfectivo()`); en efectivo se manda lo que ENTREGÓ el
+  cliente (antes `min(monto, saldo)` → el server guardaba cambio $0)
+- Avisos de Socket.IO y modal de cobro con el folio (`numOrden()`), no el id interno
+- Estaciones en nav y `/cocina/api/estaciones` en orden de alta (`Estacion.id`)
+
+### Bugs de main corregidos de paso
+- `seleccionar_mesa.html`: el modal "¿cuántas personas?" corría antes de
+  `bootstrap.bundle` → tocar una mesa no hacía nada. Ahora en `DOMContentLoaded`.
+  **Regla: código que use `bootstrap.*` al cargar va en DOMContentLoaded** (el bundle se
+  carga al final de base.html)
+- `admin/ordenes_activas.html` cargaba `meseros.js` sin jQuery
+- Test de ticket que asumía máquina en UTC (`datetime.now()` → `datetime.now(timezone.utc)`)
+
+Suite: 347 passed.
+
+## Prueba como usuario real — Admin (v6.8)
+Recorrido completo con datos equivocados a propósito; detalle en `docs/PRUEBA_USUARIO_REAL.md`,
+guardas en `tests/test_prueba_usuario_admin.py` (43, control negativo: 40 fallan sin el fix).
+- `sanitizar_texto` devuelve texto plano: antes guardaba entidades ("&amp;") y se veían
+- `backend/services/validacion.py`: `leer_monto` ("1,160.50", "$200"), `leer_entero`,
+  `leer_correo`. **Regla: nada de `float()`/`int()`/`Decimal()` directo sobre el form** —
+  caían a 0 en silencio o tronaban con 500
+- API de orden: cantidad 1..999 (`CANTIDAD_MAXIMA` en orders.py); antes aceptaba negativos
+- `verificar_pago`: 409 si la cuenta ya está pagada (contaba el dinero dos veces)
+- Corte: efectivo contado obligatorio y bien leído; personalización, inventario,
+  reservaciones, clientes y sucursales validan en el server
+- Mesero/cocina (`tests/test_prueba_usuario_roles.py`): cancelar exige motivo y lo audita
+  (`MOTIVOS_CANCELACION` = mismos valores que el select del modal); KDS con `min-width:0` en
+  el bloque de texto (una nota larga sacaba el botón de listo); 400/415 en español;
+  `SESSION_FILE_THRESHOLD` 20000 sin Redis (a las 500 sesiones cachelib borraba al azar)
+
+## Un domingo completo (v6.8) — `tests/test_domingo.py`
+Simulación de un día real (16 escenarios, 7 personas con su sesión, reloj movido con
+`_datetime_falso` sobre `models.datetime` y `tiempo.datetime`). Detalle en
+`docs/PRUEBA_USUARIO_REAL.md`. Con `KAIREST_DOMINGO_DB=/ruta.db` deja la base para verla.
+- **Regla de cobro**: `monto` = todo lo que entrega el cliente, propina incluida, en
+  cualquier método; a la cuenta va `monto − propina`. pago.html y meseros.js mandan
+  `saldo + propina` en transferencia. Antes un pago parcial con propina se abonaba entero
+- Reporte de pagos (pantalla y API) y PDF del corte: sólo `Pago.verificado`
+- `_page_header.html`: breadcrumb acepta tuplas o dicts

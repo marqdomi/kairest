@@ -42,8 +42,10 @@ class Config:
     # valida igual; sólo se quita el reloj.
     WTF_CSRF_TIME_LIMIT = None
 
-    # Bump this whenever any static asset (CSS/JS) changes, to force browser reload
-    VERSION = '5.5.0'
+    # Versión ÚNICA del producto: se muestra en el sidebar del admin y es el `?v=` de
+    # todos los CSS/JS. Subirla en cada release — si no, una tablet con caché sigue con
+    # los estilos viejos después de update.sh (estuvo congelada en 5.5.0 hasta v6.8).
+    VERSION = '6.8.0'
 
     # ── Compresión de respuestas ──
     # Los estáticos viajaban sin comprimir (lucide.min.js son 356 KB en crudo).

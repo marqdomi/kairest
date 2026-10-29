@@ -61,6 +61,13 @@
             {% if p.orden and p.orden.alias %}
             <span style="color:var(--cl-text-tertiary);font-size:12px;">· {{ p.orden.alias }}</span>
             {% endif %}
+            {% if p.orden and p.orden.estado == 'pagada' %}
+            {# Se cobró por otro medio mientras esta transferencia esperaba: confirmarla
+               contaría el dinero dos veces (el server ya lo impide) #}
+            <div style="color:var(--cl-warning-text);font-size:12px;font-weight:600;margin-top:2px;">
+              Ya pagada por otro medio — recházala
+            </div>
+            {% endif %}
           </td>
           <td data-label="Referencia" style="font-family:var(--cl-font-mono);">{{ p.referencia or '—' }}</td>
           <td data-label="Cobró" style="color:var(--cl-text-secondary);">{{ p.usuario.nombre if p.usuario else '—' }}</td>

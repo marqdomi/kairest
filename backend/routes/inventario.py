@@ -30,18 +30,56 @@ def lista_ingredientes():
                            ingredientes=ingredientes, alertas=alertas)
 
 
+def _cantidad(campo, *, positivo=False, obligatorio=True):
+    """Lee un número del formulario. Devuelve (Decimal | None, error | None).
+
+    Antes eran `Decimal(request.form[...])` directos: un campo vacío o con texto daba
+    un 500, y los negativos pasaban (stock −10, entradas de −30, mermas negativas que
+    SUBÍAN el inventario).
+    """
+    from backend.services.validacion import leer_monto
+    crudo = (request.form.get(campo) or '').strip()
+    if not crudo:
+        return (None, None) if not obligatorio else (None, 'falta')
+    valor = leer_monto(crudo, minimo=Decimal('0'))
+    if valor is None or (positivo and valor <= 0):
+        return None, 'invalido'
+    return valor, None
+
+
+def _ingrediente_del_form(actual=None):
+    """Valida nombre y números del ingrediente. Devuelve (datos, errores)."""
+    errores = []
+    nombre = sanitizar_texto(request.form.get('nombre', ''), 100)
+    if not nombre:
+        errores.append('Escribe el nombre del ingrediente.')
+    else:
+        otro = Ingrediente.query.filter(db.func.lower(Ingrediente.nombre) == nombre.lower()).first()
+        if otro and (actual is None or otro.id != actual.id):
+            errores.append(f'Ya existe un ingrediente llamado "{nombre}".')
+    datos = {'nombre': nombre, 'unidad': sanitizar_texto(request.form.get('unidad', ''), 20) or 'pieza'}
+    etiquetas = {'stock_actual': 'El stock', 'stock_minimo': 'El stock mínimo',
+                 'costo_unitario': 'El costo'}
+    for campo, etiqueta in etiquetas.items():
+        if actual is not None and campo == 'stock_actual':
+            continue  # el stock se mueve con entradas y mermas, no editando
+        valor, error = _cantidad(campo, obligatorio=False)
+        if error:
+            errores.append(f'{etiqueta} debe ser un número de 0 en adelante.')
+        datos[campo] = valor if valor is not None else Decimal('0')
+    return datos, errores
+
+
 @inventario_bp.route('/ingrediente/nuevo', methods=['GET', 'POST'])
 @login_required(roles=['admin', 'superadmin'])
 def ingrediente_nuevo():
     if request.method == 'POST':
-        i = Ingrediente(
-            nombre=sanitizar_texto(request.form['nombre'], 100),
-            unidad=sanitizar_texto(request.form['unidad'], 20),
-            stock_actual=Decimal(request.form.get('stock_actual', '0')),
-            stock_minimo=Decimal(request.form.get('stock_minimo', '0')),
-            costo_unitario=Decimal(request.form.get('costo_unitario', '0')),
-            sucursal_id=getattr(g, 'sucursal_id', None),
-        )
+        datos, errores = _ingrediente_del_form()
+        if errores:
+            for err in errores:
+                flash(err, 'danger')
+            return render_template('admin/inventario/ingrediente_form.html')
+        i = Ingrediente(sucursal_id=getattr(g, 'sucursal_id', None), **datos)
         db.session.add(i)
         db.session.commit()
         flash('Ingrediente creado.', 'success')
@@ -54,14 +92,26 @@ def ingrediente_nuevo():
 def ingrediente_editar(id):
     i = db.get_or_404(Ingrediente, id)
     if request.method == 'POST':
-        i.nombre = sanitizar_texto(request.form['nombre'], 100)
-        i.unidad = sanitizar_texto(request.form['unidad'], 20)
-        i.stock_minimo = Decimal(request.form.get('stock_minimo', '0'))
-        i.costo_unitario = Decimal(request.form.get('costo_unitario', '0'))
+        datos, errores = _ingrediente_del_form(actual=i)
+        if errores:
+            for err in errores:
+                flash(err, 'danger')
+            return render_template('admin/inventario/ingrediente_form.html', ingrediente=i)
+        for campo, valor in datos.items():
+            setattr(i, campo, valor)
         db.session.commit()
         flash('Ingrediente actualizado.', 'success')
         return redirect(url_for('inventario.lista_ingredientes'))
     return render_template('admin/inventario/ingrediente_form.html', ingrediente=i)
+
+
+def _ingrediente_elegido():
+    """El ingrediente del select, o None si falta / no existe (antes: 500 o 404)."""
+    try:
+        ing_id = int(request.form.get('ingrediente_id', ''))
+    except ValueError:
+        return None
+    return db.session.get(Ingrediente, ing_id)
 
 
 # =====================================================================
@@ -71,9 +121,16 @@ def ingrediente_editar(id):
 @login_required(roles=['admin', 'superadmin'])
 def entrada_stock():
     if request.method == 'POST':
-        ing = db.get_or_404(Ingrediente, int(request.form['ingrediente_id']))
-        cantidad = Decimal(request.form['cantidad'])
-        costo = Decimal(request.form.get('costo', '0'))
+        ing = _ingrediente_elegido()
+        if ing is None:
+            flash('Elige un ingrediente.', 'danger')
+            return redirect(url_for('inventario.entrada_stock'))
+        cantidad, err_cant = _cantidad('cantidad', positivo=True)
+        costo, err_costo = _cantidad('costo', obligatorio=False)
+        if err_cant or err_costo:
+            flash('La cantidad debe ser mayor a 0 y el costo un número de 0 en adelante.', 'danger')
+            return redirect(url_for('inventario.entrada_stock'))
+        costo = costo or Decimal('0')
 
         ing.stock_actual += cantidad
         if costo > 0:
@@ -102,11 +159,23 @@ def entrada_stock():
 @login_required(roles=['admin', 'superadmin'])
 def registrar_merma():
     if request.method == 'POST':
-        ing = db.get_or_404(Ingrediente, int(request.form['ingrediente_id']))
-        cantidad = Decimal(request.form['cantidad'])
+        ing = _ingrediente_elegido()
+        if ing is None:
+            flash('Elige un ingrediente.', 'danger')
+            return redirect(url_for('inventario.registrar_merma'))
+        cantidad, err_cant = _cantidad('cantidad', positivo=True)
+        if err_cant:
+            flash('La cantidad de merma debe ser mayor a 0.', 'danger')
+            return redirect(url_for('inventario.registrar_merma'))
+        # Una merma mayor a lo que hay se recortaba a 0 sin avisar: casi siempre es
+        # un error de captura (kg vs g) y borraba el inventario
+        if cantidad > (ing.stock_actual or 0):
+            flash(f'Sólo hay {float(ing.stock_actual or 0):g} {ing.unidad} de {ing.nombre}: '
+                  'revisa la cantidad de merma.', 'danger')
+            return redirect(url_for('inventario.registrar_merma'))
         motivo = sanitizar_texto(request.form.get('motivo', 'Merma'), 200)
 
-        ing.stock_actual = max(ing.stock_actual - cantidad, Decimal('0'))
+        ing.stock_actual = ing.stock_actual - cantidad
         mov = MovimientoInventario(
             ingrediente_id=ing.id, tipo='merma', cantidad=cantidad,
             motivo=motivo, usuario_id=session.get('user_id'),

@@ -15,7 +15,8 @@ Extends: base.html — no navbar, centered card with progress
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: var(--cl-space-4);
+    /* aire arriba/abajo: en pantallas bajas el paso 3 pegaba con el borde */
+    padding: var(--cl-space-8) var(--cl-space-4);
     background: linear-gradient(135deg, var(--cl-gray-900) 0%, var(--cl-red-900) 100%);
     position: relative;
     overflow: hidden;
@@ -144,6 +145,23 @@ Extends: base.html — no navbar, centered card with progress
   /* El degradado es oscuro en ambos temas: el nombre del producto va claro */
   .cl-setup__firma {
     color: rgba(255, 255, 255, .62);
+  }
+
+  .cl-setup__eyebrow {
+    text-align: center;
+    font-size: var(--cl-text-xs);
+    font-weight: var(--cl-font-semibold);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--cl-brand-text);
+    margin-bottom: var(--cl-space-1);
+  }
+
+  /* Los avisos reusan .cl-toast, pensado para flotar en una esquina (entra deslizándose
+     desde la derecha, máx. 360px). Dentro de la tarjeta va a lo ancho y sin animación. */
+  .cl-setup__card .cl-toast {
+    max-width: none;
+    animation: none;
   }
 
   /* ── Logo ── */

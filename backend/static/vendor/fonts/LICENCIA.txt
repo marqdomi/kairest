@@ -1,0 +1,6 @@
+Inter — Rasmus Andersson (https://rsms.me/inter/)
+SIL Open Font License 1.1 — https://openfontlicense.org
+
+Subconjunto "latin" (incluye á é í ó ú ñ ü ¿ ¡) en pesos 400 y 600, build de
+Fontsource. Vendorizado porque el sistema opera sin internet y el CSP sólo
+permite recursos propios.

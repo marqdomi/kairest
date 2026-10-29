@@ -268,6 +268,10 @@ def seleccionar_mesa():
                 num_personas = int(request.form.get('num_personas') or 0) or None
             except (ValueError, TypeError):
                 num_personas = None
+            # Es opcional: algo fuera de rango (−4, 0, 5000) se toma como "no se dijo"
+            # en vez de guardarse y pintarse en el mapa de mesas
+            if num_personas is not None and not 1 <= num_personas <= 99:
+                num_personas = None
 
             # Si el mesero ya dejó un borrador vacío en esta mesa, se reutiliza en vez
             # de amontonar cuentas fantasma cada vez que entra y se regresa.
@@ -429,7 +433,12 @@ def agregar_productos_a_orden(orden_id):
             prod = db.session.get(Producto, p_data['id'])
             if not prod:
                 continue
-            cantidad = int(p_data['cantidad'])
+            from backend.routes.orders import CANTIDAD_MAXIMA
+            from backend.services.validacion import leer_entero
+            cantidad = leer_entero(p_data.get('cantidad', 1), 1, CANTIDAD_MAXIMA)
+            if cantidad is None:
+                flash(f'Cantidad inválida para {prod.nombre}: de 1 a {CANTIDAD_MAXIMA}.', 'danger')
+                continue
             notas = sanitizar_texto(p_data.get('notas') or '', 300)
 
             # Validación de stock (Sprint 2 — 3.2)
@@ -562,6 +571,16 @@ def entregar_item(orden_id, detalle_id):
     return jsonify(success=True, message="Entregado.")
 
 
+
+# Los mismos valores que el <select> del modal de cancelación (detalle_orden.html)
+MOTIVOS_CANCELACION = {
+    'cliente_solicito': 'El cliente lo solicitó',
+    'error_orden': 'Error al capturar la orden',
+    'producto_agotado': 'Producto agotado',
+    'tiempo_espera': 'Exceso de tiempo de espera',
+    'otro': 'Otro',
+}
+
 @meseros_bp.route('/ordenes/<int:orden_id>/cancelar', methods=['POST'])
 @login_required(roles=['mesero', 'admin', 'superadmin'])
 @verificar_propiedad_orden
@@ -584,6 +603,18 @@ def cancelar_orden(orden_id):
         flash('No se puede cancelar.', 'warning')
         return redirect(url_for('meseros.view_meseros'))
 
+    # El modal pedía el motivo pero aquí no se leía: la auditoría sólo decía "cancelada"
+    # y la dueña no podía revisar por qué se cancelan cuentas (cancelar después de
+    # cobrar en efectivo es justo lo que conviene poder rastrear)
+    motivo = MOTIVOS_CANCELACION.get(request.form.get('motivo_cancelacion', ''))
+    if motivo == 'Otro':
+        detalle = sanitizar_texto(request.form.get('motivo_otro', ''), 200)
+        motivo = f'Otro: {detalle}' if detalle else None
+    if not motivo:
+        db.session.rollback()
+        flash('Elige el motivo de la cancelación (si es "Otro", escríbelo).', 'warning')
+        return redirect(url_for('meseros.detalle_orden', orden_id=orden_id))
+
     # Reverse inventory only if it was actually deducted. Inventory is deducted
     # exclusively when the order closes fully paid (saldo <= 0), so a partial
     # payment alone means nothing to reverse — checking for the salida_venta
@@ -599,7 +630,8 @@ def cancelar_orden(orden_id):
 
     orden.estado = OrdenEstado.CANCELADA
     from backend.services.audit import registrar_auditoria
-    registrar_auditoria('cancelar', 'Orden', orden_id, f'Orden #{orden_id} cancelada.')
+    registrar_auditoria('cancelar', 'Orden', orden_id,
+                        f'Orden #{orden.numero} cancelada. Motivo: {motivo}')
     db.session.commit()
     # Liberar mesa si no quedan órdenes activas (Sprint 2 — 3.3)
     actualizar_estado_mesa(orden.mesa_id)
@@ -746,9 +778,9 @@ def registrar_pago(orden_id):
     if metodo not in metodos_pago_habilitados():
         return jsonify(success=False, message="Método de pago no habilitado."), 400
 
-    try:
-        monto = Decimal(str(data.get('monto', 0)))
-    except Exception:
+    from backend.services.validacion import leer_monto
+    monto = leer_monto(data.get('monto', 0), minimo=Decimal('-1e12'))  # "NaN" tronaba
+    if monto is None:
         return jsonify(success=False, message="Monto inválido."), 400
 
     if monto <= 0:
@@ -763,30 +795,35 @@ def registrar_pago(orden_id):
                                "(folio o nombre de quien transfiere)."), 400
 
     # Propina (Sprint 6 — 3.6)
-    try:
-        propina = Decimal(str(data.get('propina', 0)))
-    except Exception:
-        propina = Decimal('0')
-    if propina < 0:
-        propina = Decimal('0')
+    propina = leer_monto(data.get('propina', 0) or 0) or Decimal('0')
+    # `monto` es TODO lo que entrega el cliente, propina incluida, en cualquier método.
+    # Antes en efectivo la propina sólo se descontaba del cambio: en un pago parcial
+    # ("aquí van $600, $100 son de propina") se abonaban los $600 a la cuenta Y se
+    # registraban $100 de propina — al resto de la mesa se le cobraban $100 de menos y
+    # el corte esperaba $100 que nunca entraron al cajón.
+    if propina > monto:
+        return jsonify(success=False,
+                       message="La propina no puede ser mayor a lo que entrega el cliente."), 400
+    a_cuenta = monto - propina
     orden.propina = (orden.propina or Decimal('0')) + propina
 
     # Recalcular totales
     orden.calcular_totales()
     saldo_antes = orden.saldo_pendiente()
 
-    # Tarjeta/transferencia: no existe "cambio" — un cargo mayor al saldo sería
-    # un sobre-cobro real al cliente, se rechaza en vez de perderse en silencio.
-    if metodo != 'efectivo' and monto > saldo_antes:
+    # Tarjeta/transferencia: no existe "cambio" — un cargo mayor al saldo (sin contar
+    # la propina) sería un sobre-cobro real al cliente, se rechaza.
+    if metodo != 'efectivo' and a_cuenta > saldo_antes:
         return jsonify(success=False,
                        message=f"Monto excede el saldo pendiente (${float(saldo_antes):.2f}).",
                        saldo_pendiente=float(saldo_antes)), 400
+    if a_cuenta <= 0:
+        return jsonify(success=False, message="El pago no abona nada a la cuenta."), 400
 
-    # Efectivo: `monto` es lo que entregó el cliente. A la cuenta solo se aplica
-    # hasta el saldo (Pago.monto alimenta el corte de caja y debe cuadrar con la
-    # venta); el excedente es cambio, descontando la propina que se queda.
-    monto_aplicado = min(monto, saldo_antes) if metodo == 'efectivo' else monto
-    cambio_pago = max(monto - saldo_antes - propina, Decimal('0')) if metodo == 'efectivo' else Decimal('0')
+    # A la cuenta se aplica hasta el saldo (Pago.monto alimenta el corte de caja y
+    # debe cuadrar con la venta); en efectivo el excedente es cambio.
+    monto_aplicado = min(a_cuenta, saldo_antes) if metodo == 'efectivo' else a_cuenta
+    cambio_pago = max(a_cuenta - saldo_antes, Decimal('0')) if metodo == 'efectivo' else Decimal('0')
 
     # El efectivo se da por verificado (está en la mano); la transferencia queda
     # pendiente hasta que alguien la confirme en el banco.

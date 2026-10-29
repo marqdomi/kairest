@@ -38,9 +38,23 @@ def cliente_nuevo():
         else:
             rfc_normalizado = ''
 
+        # Sin nombre el cliente no se encuentra en la búsqueda, y un correo mal escrito
+        # se tiraba en silencio (la factura después no llega)
+        from backend.services.validacion import leer_correo
+        nombre = sanitizar_texto(request.form.get('nombre', ''), 100)
+        _correo, error_correo = leer_correo(request.form.get('email', ''))
+        errores = (['Escribe el nombre del cliente.'] if not nombre else []) + \
+            ([error_correo] if error_correo else [])
+        if errores:
+            for err in errores:
+                flash(err, 'danger')
+            return render_template('admin/clientes/form.html',
+                                   regimenes=CATALOGOS_SAT.get('regimenes_fiscales', {}),
+                                   usos_cfdi=CATALOGOS_SAT.get('usos_cfdi', {}))
+
         regimen = request.form.get('regimen_fiscal', '')
         c = Cliente(
-            nombre=sanitizar_texto(request.form['nombre'], 100),
+            nombre=nombre,
             telefono=sanitizar_telefono(request.form.get('telefono', '')),
             email=sanitizar_email(request.form.get('email', '')),
             rfc=sanitizar_rfc(rfc_normalizado),

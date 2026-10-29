@@ -1,11 +1,9 @@
 /* ═══════════════════════════════════════════════════
-   CasaLeones POS — v7 Base Styles
+   KaiRest — v7 Base Styles
    Global reset over Bootstrap 5.3 for the dark canvas
    ═══════════════════════════════════════════════════ */
 
-/* ── Google Fonts import ──
-   Inter + JetBrains Mono — preconnect is set in base.html */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
+/* Fuentes: @font-face de Inter en tokens.css (vendorizada, sin Google Fonts) */
 
 /* ── Global reset ── */
 *,

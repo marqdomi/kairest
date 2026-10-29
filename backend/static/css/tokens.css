@@ -1,9 +1,29 @@
 /* ═══════════════════════════════════════════════════
-   CasaLeones POS — Design Tokens v6.0
+   KaiRest — Design Tokens v6.0
    Single source of truth for all visual properties
    ═══════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* ── Tipografía ──
+   Inter vendorizada (static/vendor/fonts): antes se pedía a Google Fonts, pero el CSP
+   ('self') la bloqueaba y el sistema opera offline, así que NUNCA cargó: cada equipo
+   pintaba su fuente del sistema (Segoe en Windows, Roboto en Android, SF en iPad).
+   Sólo hay dos archivos (400 y 600, ~35 KB): cada uno cubre un rango de pesos para
+   que el navegador no invente negritas falsas. 500 se ve como 400; 700/800 como 600. */
+@font-face {
+  font-family: 'Inter';
+  src: url('../vendor/fonts/inter-latin-400.woff2') format('woff2');
+  font-weight: 300 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('../vendor/fonts/inter-latin-600.woff2') format('woff2');
+  font-weight: 600 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   /* ─── Primary (Rojo CasaLeones) ─── */
@@ -81,7 +101,9 @@
 
   /* ─── Typography ─── */
   --cl-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --cl-font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+  /* Mono = la del sistema (no se vendoriza una segunda familia): sólo se usa en
+     montos y cronómetros, donde lo que importa son los dígitos de ancho fijo */
+  --cl-font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Consolas, monospace;
 
   --cl-text-xs: 0.75rem;
   --cl-text-sm: 0.875rem;

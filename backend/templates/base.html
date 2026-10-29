@@ -14,7 +14,7 @@
   <!-- PWA display mode handled via manifest.json display: standalone -->
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="KaiRest">
-  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/icon-512.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}">
   <!-- Design System v6 -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}?v={{ config.VERSION }}">
@@ -27,7 +27,8 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v={{ config.VERSION }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tablet.css') }}?v={{ config.VERSION }}">
 
-  <link rel="icon" href="{{ url_for('static', filename='img/icon-512.png') }}" type="image/png">
+  <link rel="icon" href="{{ url_for('static', filename='img/kairest-logo.svg') }}" type="image/svg+xml">
+  <link rel="icon" href="{{ url_for('static', filename='img/icon-192.png') }}" type="image/png" sizes="192x192">
   {% block head %}{% endblock %}
   <!-- Tema: fijar antes de pintar para que no haya parpadeo -->
   <script nonce="{{ csp_nonce }}">
@@ -58,7 +59,7 @@
     aria-label="Navegación principal" style="background:var(--cl-surface-1, #1a1a2e);border-bottom:1px solid var(--cl-border-color, #2a2a3e);">
     <div class="container-fluid">
       <a class="navbar-brand" href="/">
-        <img src="{{ url_for('static', filename='img/kainetResto.png') }}" alt="KaiResto" class="navbar-logo">
+        <img src="{{ brand_logo }}" alt="{{ brand_name }}" class="navbar-logo">
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor01"
         aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">

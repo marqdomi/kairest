@@ -56,10 +56,17 @@ def guardar_datos_bancarios(form):
     from backend.services.sanitizer import sanitizar_texto
 
     errores = []
-    clabe = solo_digitos(form.get('banco_clabe', ''))
-    valida, mensaje = validar_clabe(clabe)
+    clabe_raw = form.get('banco_clabe', '') or ''
+    clabe = solo_digitos(clabe_raw)
+    # Letras en la CLABE: solo_digitos las tiraba y quedaba vacía, que es válido
+    # ("sin CLABE"), así que se BORRABA la CLABE guardada sin decir nada
+    if any(ch.isalpha() for ch in clabe_raw):
+        errores.append('La CLABE son 18 números, sin letras. No se cambió la que tenías.')
+        clabe = None
+    valida, mensaje = validar_clabe(clabe) if clabe is not None else (False, None)
     if not valida:
-        errores.append(mensaje)
+        if mensaje:
+            errores.append(mensaje)
     else:
         ConfiguracionSistema.set('banco_clabe', clabe)
 

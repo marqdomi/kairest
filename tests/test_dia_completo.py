@@ -152,7 +152,7 @@ class TestUnDiaDeOperacion:
         turno.pedir(o3, negocio['agua'], 1)
         turno.a_cocina(o3)
         turno.entrar('ana@taqueria.mx')
-        turno.c.post(f'/meseros/ordenes/{o3.id}/cancelar', json={'motivo': 'se fue'})
+        turno.c.post(f'/meseros/ordenes/{o3.id}/cancelar', data={'motivo_cancelacion': 'cliente_solicito'})
 
         # -- La dueña confirma el depósito --
         turno.entrar('mari@taqueria.mx')
@@ -215,7 +215,7 @@ class TestUnDiaDeOperacion:
         turno.pedir(o, negocio['taco'], 3)
         turno.a_cocina(o)
         turno.entrar('ana@taqueria.mx')
-        turno.c.post(f'/meseros/ordenes/{o.id}/cancelar', json={'motivo': 'se fue'})
+        turno.c.post(f'/meseros/ordenes/{o.id}/cancelar', data={'motivo_cancelacion': 'cliente_solicito'})
 
         db.session.refresh(o)
         assert o.estado == OrdenEstado.CANCELADA

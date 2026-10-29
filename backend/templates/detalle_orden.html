@@ -27,7 +27,8 @@
       <div class="position-relative">
         <i data-lucide="search" class="icon-sm" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--cl-text-tertiary);"></i>
         <input type="text" id="productSearch" class="cl-input" style="padding-left: 36px;"
-               placeholder="Buscar producto... ( / )" autocomplete="off">
+               placeholder="Buscar producto…" autocomplete="off">
+        <kbd class="cl-atajo" aria-hidden="true" title="Atajo de teclado">/</kbd>
       </div>
     </div>
 
@@ -163,7 +164,7 @@
       {% endif %}
       <button type="button" class="cl-btn cl-btn--gold" id="btnCobrar" style="height: 48px; font-weight: var(--cl-font-semibold); flex: 1;"
               data-href="{{ url_for('meseros.pago_view', orden_id=orden.id) }}">
-        <i data-lucide="credit-card" class="icon-sm"></i> Cobrar
+        <i data-lucide="wallet" class="icon-sm"></i> Cobrar
       </button>
       <button type="button" class="cl-btn cl-btn--outline" style="height: 48px;" data-bs-toggle="modal" data-bs-target="#modalCancelar" aria-label="Cancelar orden">
         <i data-lucide="x" class="icon-sm"></i>
@@ -358,6 +359,10 @@
 .cl-orden-contexto strong { color: var(--cl-text-primary); font-size: var(--cl-text-base); }
 .cl-orden-contexto__sep { color: var(--cl-text-tertiary); }
 .cl-orden-contexto i { width: 14px; height: 14px; vertical-align: -2px; }
+.cl-grid--una-categoria .cl-product-tile__cat {
+  display: none;
+}
+
 .cl-product-tile__cat {
   /* La estrella de favorito va encima a la derecha: sin esta reserva la
      categoría ("BARBACOA POR KILO") quedaba debajo de ella. */
@@ -423,7 +428,11 @@
     justify-content: center;
   }
   .tile-fav-btn { top: 0; right: 0; }
-  .cl-product-tile__cat { padding-right: 34px; }
+  .cl-grid--una-categoria .cl-product-tile__cat {
+  display: none;
+}
+
+.cl-product-tile__cat { padding-right: 34px; }
 }
 .tile-fav-btn.is-fav i { fill: var(--cl-gold-500, #D4A843); }
 
@@ -662,6 +671,26 @@
   justify-content: center;
 }
 
+/* Atajo "/" del buscador: sólo con mouse y teclado (en celular no significa nada) */
+.cl-atajo {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 1px 7px;
+  font-size: 11px;
+  font-family: var(--cl-font-mono);
+  color: var(--cl-text-tertiary);
+  background: var(--cl-overlay-subtle);
+  border: 1px solid var(--cl-border-color);
+  border-radius: 5px;
+  pointer-events: none;
+}
+
+@media (pointer: coarse) {
+  .cl-atajo { display: none; }
+}
+
 /* M10: Toast animation */
 .add-toast-container {
   position: fixed;
@@ -676,7 +705,7 @@
 }
 .add-toast {
   background: var(--cl-surface-3, #181A26);
-  color: var(--cl-success-400, #32D583);
+  color: var(--cl-success-text);
   padding: 8px 16px;
   border-radius: var(--cl-radius-full);
   font-size: var(--cl-text-sm);
@@ -717,7 +746,18 @@
     border: none;
   }
   .split-panel__cart.mobile-open { display: flex; }
-  .add-toast-container { bottom: 20px; }
+  /* Arriba, bajo la barra superior: abajo tapaban "Enviar a Cocina" y "Cobrar" (y el
+     botón del carrito) justo mientras el mesero agrega productos rápido */
+  .add-toast-container {
+    top: calc(64px + env(safe-area-inset-top, 0px));
+    bottom: auto;
+    flex-direction: column;
+    max-width: calc(100vw - 32px);
+  }
+  .add-toast {
+    white-space: normal;
+    text-align: center;
+  }
 }
 </style>
 
@@ -761,6 +801,10 @@ function renderFavStars() {
 function filterCategory(cat, btn) {
   document.querySelectorAll('.cl-pill').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
+  // Con una categoría elegida, la etiqueta de categoría en cada tile repite el filtro
+  // y le roba una línea al nombre: se oculta (en Todos/Favoritos/Populares sí informa)
+  document.getElementById('productGrid')
+    .classList.toggle('cl-grid--una-categoria', !['all', '__favoritos', '__populares'].includes(cat));
   const favs = getFavorites();
   document.querySelectorAll('.product-tile-wrapper').forEach(tile => {
     if (cat === 'all') {
@@ -981,7 +1025,7 @@ function showAddToast(text, isError) {
   const toast = document.createElement('div');
   toast.className = 'add-toast';
   if (isError) {
-    toast.style.color = 'var(--cl-error-400)';
+    toast.style.color = 'var(--cl-error-text)';
     toast.style.borderColor = 'rgba(240,68,56,0.2)';
   }
   toast.textContent = text;

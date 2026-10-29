@@ -22,8 +22,12 @@ def lista_sucursales():
 @login_required(roles=['superadmin'])
 def nueva_sucursal():
     if request.method == 'POST':
+        nombre = sanitizar_texto(request.form.get('nombre', ''), 100)
+        if not nombre:  # una sucursal sin nombre no se distingue en el selector
+            flash('Escribe el nombre de la sucursal.', 'danger')
+            return render_template('admin/sucursales/form.html')
         s = Sucursal(
-            nombre=sanitizar_texto(request.form['nombre'], 100),
+            nombre=nombre,
             direccion=sanitizar_texto(request.form.get('direccion', ''), 200),
             telefono=sanitizar_telefono(request.form.get('telefono', '')),
         )
@@ -39,7 +43,11 @@ def nueva_sucursal():
 def editar_sucursal(id):
     s = db.get_or_404(Sucursal, id)
     if request.method == 'POST':
-        s.nombre = sanitizar_texto(request.form['nombre'], 100)
+        nombre = sanitizar_texto(request.form.get('nombre', ''), 100)
+        if not nombre:
+            flash('Escribe el nombre de la sucursal.', 'danger')
+            return render_template('admin/sucursales/form.html', sucursal=s)
+        s.nombre = nombre
         s.direccion = sanitizar_texto(request.form.get('direccion', ''), 200)
         s.telefono = sanitizar_telefono(request.form.get('telefono', ''))
         s.activa = 'activa' in request.form
