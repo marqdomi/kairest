@@ -248,7 +248,8 @@ def create_app():
             from text_unidecode import unidecode
             import re as _re
             # En el orden en que el negocio las definió en el wizard (no alfabético)
-            estaciones = Estacion.query.order_by(Estacion.id).all()
+            # Sin pestaña para las que sirve el mesero: no tienen pantalla de cocina
+            estaciones = Estacion.query.filter(Estacion.la_sirve_mesero.is_(False)).order_by(Estacion.id).all()
             nav = []
             for e in estaciones:
                 slug = _re.sub(r'[^a-z0-9]+', '-', unidecode(e.nombre).lower()).strip('-')

@@ -27,9 +27,8 @@
 {% endblock %}
 
 {% block kds_actions %}
-<button class="cl-icon-btn" id="kdsLlevarToggle" aria-label="Priorizar para llevar" aria-pressed="false"
-  title="Mostrar órdenes para llevar primero (el cliente espera parado)"
-  style="font-size:11px;width:auto;padding:5px 10px;gap:5px;border-radius:20px;">
+<button class="cl-icon-btn cl-kds-toggle" id="kdsLlevarToggle" aria-label="Priorizar para llevar" aria-pressed="false"
+  title="Mostrar órdenes para llevar primero (el cliente espera parado)">
   <i data-lucide="shopping-bag" style="width:13px;height:13px;"></i>
   <span id="kdsLlevarLabel">Llevar 1º: OFF</span>
 </button>
@@ -162,7 +161,7 @@
   socket.on('connect', () => {
     console.log('KDS ' + STATION + ' conectado');
     if (liveDot) { liveDot.classList.remove('cl-live-dot--off'); }
-    if (liveLabel) { liveLabel.textContent = 'Socket.IO conectado'; }
+    if (liveLabel) { liveLabel.textContent = 'En línea'; }
   });
 
   socket.on('disconnect', () => {
@@ -265,7 +264,7 @@
         grid.innerHTML = data.html;
         var cards = grid.querySelectorAll('.cl-kds-card');
         var cardCount = cards.length;
-        document.getElementById('kdsPendingCount').textContent = cardCount || '0';
+        window.kdsPendientes(cardCount);
         document.getElementById('kdsItemCount').textContent = data.conteo_productos;
         if (window.lucide) lucide.createIcons();
         updateTimers();
@@ -572,7 +571,7 @@
 
   // Set initial pending count from DOM
   var initCount = document.querySelectorAll('.cl-kds-card').length;
-  document.getElementById('kdsPendingCount').textContent = initCount || '0';
+  window.kdsPendientes(initCount);
 
   // Auto-refresh every 30s as fallback
   setInterval(refreshOrders, 30000);

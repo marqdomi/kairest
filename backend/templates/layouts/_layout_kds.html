@@ -82,7 +82,7 @@ Usage:
     {# Pending count #}
     <div class="cl-kds-pending">
       <span class="cl-kds-pending__num" id="kdsPendingCount" role="status" aria-label="Órdenes pendientes">—</span>
-      <span style="font-size:12px;">órdenes pendientes</span>
+      <span style="font-size:12px;" id="kdsPendingLabel">órdenes pendientes</span>
     </div>
 
     {# Legend #}
@@ -108,8 +108,7 @@ Usage:
     {# Right actions: sound toggle + clock #}
     <div style="display:flex;align-items:center;gap:12px;">
       {% block kds_actions %}
-      <button class="cl-icon-btn" id="kdsSoundToggle" aria-label="Toggle sonido" title="Sonido"
-        style="font-size:11px;width:auto;padding:5px 10px;gap:5px;border-radius:20px;">
+      <button class="cl-icon-btn cl-kds-toggle" id="kdsSoundToggle" aria-label="Activar o silenciar sonido" title="Sonido">
         <i data-lucide="volume-2" style="width:13px;height:13px;" id="kdsVolumeIcon"></i>
         <span id="kdsSoundLabel">Sonido: ON</span>
       </button>
@@ -152,7 +151,7 @@ Usage:
     </div>
     <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--cl-success-text);">
       <div class="cl-live-dot"></div>
-      <span>Socket.IO conectado</span>
+      <span>En línea</span>
     </div>
   </footer>
 </div>
@@ -160,6 +159,14 @@ Usage:
 {# ── KDS Clock JS ── #}
 <script nonce="{{ csp_nonce }}">
   (function () {
+    // Contador de órdenes con su plural ("1 orden pendiente", no "1 órdenes")
+    window.kdsPendientes = function (n) {
+      n = n || 0;
+      document.getElementById('kdsPendingCount').textContent = n;
+      var lbl = document.getElementById('kdsPendingLabel');
+      if (lbl) lbl.textContent = n === 1 ? 'orden pendiente' : 'órdenes pendientes';
+    };
+
     // Live clock
     var clockEl = document.getElementById('kdsClock');
     function tick() {

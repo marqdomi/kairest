@@ -1407,3 +1407,9 @@ select.cl-input {
     background: var(--cl-overlay-subtle);
     color: var(--cl-text-primary);
 }
+
+/* Barra de tabla (buscador + filtros): el buscador mide 38px y las pastillas 32px; a la
+   misma altura se leen como una sola fila */
+.cl-table-toolbar .cl-filter-pill {
+    min-height: 38px;
+}

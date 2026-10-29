@@ -381,7 +381,8 @@ def _aplicar_formulario_usuario(u, form, nuevo):
 @admin_bp.route('/usuarios/nuevo', methods=['GET', 'POST'])
 @login_required(roles=['admin', 'superadmin'])
 def usuario_nuevo():
-    estaciones = Estacion.query.order_by(Estacion.nombre).all()
+    # Sin las que sirve el mesero: no tienen pantalla que alguien atienda
+    estaciones = Estacion.query.filter(Estacion.la_sirve_mesero.is_(False)).order_by(Estacion.nombre).all()
     if request.method == 'POST':
         u = Usuario()
         errores = _aplicar_formulario_usuario(u, request.form, nuevo=True)
@@ -402,7 +403,7 @@ def usuario_nuevo():
 @login_required(roles=['admin', 'superadmin'])
 def usuario_editar(id):
     u = db.get_or_404(Usuario, id)
-    estaciones = Estacion.query.order_by(Estacion.nombre).all()
+    estaciones = Estacion.query.filter(Estacion.la_sirve_mesero.is_(False)).order_by(Estacion.nombre).all()
     if request.method == 'POST':
         errores = _aplicar_formulario_usuario(u, request.form, nuevo=False)
         if errores:
@@ -758,7 +759,7 @@ def estacion_nueva():
         if error:
             flash(error, 'danger')
             return render_template('admin/estacion_form.html')
-        e = Estacion(nombre=nombre)
+        e = Estacion(nombre=nombre, la_sirve_mesero=bool(request.form.get('la_sirve_mesero')))
         db.session.add(e)
         db.session.commit()
         flash('Estación creada', 'success')
@@ -777,6 +778,19 @@ def estacion_editar(id):
             flash(error, 'danger')
             return render_template('admin/estacion_form.html', estacion=e)
         e.nombre = nombre
+        e.la_sirve_mesero = bool(request.form.get('la_sirve_mesero'))
+        # Si quedan items suyos esperando en alguna pantalla, se resuelven ya: si no,
+        # las órdenes abiertas se quedaban esperando a una estación que nadie atiende
+        if e.la_sirve_mesero:
+            from backend.services.servicio import tras_cambiar_renglones
+            abiertas = Orden.query.join(OrdenDetalle).join(Producto).filter(
+                Producto.estacion_id == e.id,
+                OrdenDetalle.estado == OrdenEstado.PENDIENTE,
+                Orden.estado.notin_([OrdenEstado.PENDIENTE, OrdenEstado.PAGADA,
+                                     OrdenEstado.CANCELADA, OrdenEstado.FINALIZADA]),
+            ).distinct().all()
+            for orden in abiertas:
+                tras_cambiar_renglones(orden)
         db.session.commit()
         flash('Estación actualizada', 'success')
         return redirect(url_for('admin.lista_estaciones'))

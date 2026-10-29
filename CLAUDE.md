@@ -1048,3 +1048,67 @@ Simulación de un día real (16 escenarios, 7 personas con su sesión, reloj mov
   `saldo + propina` en transferencia. Antes un pago parcial con propina se abonaba entero
 - Reporte de pagos (pantalla y API) y PDF del corte: sólo `Pago.verificado`
 - `_page_header.html`: breadcrumb acepta tuplas o dicts
+
+## Bebidas que sirve el mesero — Casa Leones (v6.9)
+En Casa Leones no hay quien atienda una pantalla de Bebidas: los meseros las toman del
+refri. Antes, sin nadie en esa estación, los refrescos se quedaban "pendientes", la orden
+nunca quedaba lista y **la mesa no se podía cobrar**.
+- `Estacion.la_sirve_mesero` (migración **c015**, idempotente). Se marca en el wizard
+  (casilla por estación en el paso 3; la plantilla `casaleones` trae Bebidas marcada,
+  llave `la_sirve_mesero` en el JSON) o en Admin → Estaciones (al marcarla, los items que
+  esperaban en órdenes abiertas se liberan al momento)
+- `services/servicio.py` — **único lugar** que decide el estado de una orden ya enviada:
+  `servir_lo_del_mesero` (lo del mesero queda LISTO al enviar o al agregarse) y
+  `sincronizar_estado` (vuelve a preparación sólo si lo nuevo es de cocina; completada si
+  todo se entregó; lista si todo está listo **o entregado**). Lo usan enviar a cocina, el
+  carrito (`orders.py`), agregar productos (`meseros.py`) y borrar renglón
+- Sin pantalla: fuera de las pestañas, `/cocina/api/estaciones`, el selector del KDS, la
+  comanda impresa y los roles de cocina al dar de alta personal; `/cocina/bebidas`
+  muestra un aviso (redirigir haría bucle para un cocinero asignado a ella)
+- Tarjeta del mesero: badge "Sírvela" + "Entregar" en cuanto se envía la orden
+- `ESTADOS_MODIFICABLES` incluye COMPLETADA: "¿me trae otro refresco?" después de
+  entregar todo ya no da 409
+- Corregido de paso: `verificar_orden_completa` sólo contaba "listo" (si el mesero ya había
+  llevado algo, la orden nunca quedaba lista); `verificarEstadoParaCobro` en meseros.js
+  contaba como entregado lo que seguía en cocina (Cobrar se encendía antes de tiempo);
+  borrar un renglón entregado o de una cuenta pagada ya no se puede (409)
+- **Instalación existente**: la migración deja todas las estaciones sin marcar; la dueña
+  marca Bebidas una vez en Admin → Estaciones
+- Tests: `tests/test_casa_leones_bebidas.py` (5, control negativo: los 5 fallan sin el
+  cambio). Suite: 433 passed
+
+## Pasada de botones y selecciones (v6.9)
+Barrido de botones/selectores en celular (375), tablet (768) y escritorio.
+- **13 tokens usados pero nunca definidos** (`--cl-border`, `--cl-surface`,
+  `--cl-primary-50/300/400`, `--cl-error-300/400`, `--cl-text-muted`, `--cl-danger`,
+  `--cl-warning`, `--cl-success`, `--cl-info`, `--cl-transition-normal`): caían a
+  transparente/heredado — las cajas de método de pago del cobro **no tenían borde ni
+  fondo**. Definidos como alias en `tokens.css` (con override oscuro donde aplica)
+- Carrito del mesero: el aviso "en cocina" + "Avisar" + Cobrar no cabían en una fila
+  (Cobrar cortado). El aviso va en su propio renglón; `min-width:0` en el banner — sin
+  eso toma el ancho de su texto y empuja "Avisar" fuera de la pantalla
+- Renglones pendientes de una orden ya enviada decían "🆕 Nuevo": ya están en el KDS.
+  Ahora "En cocina"
+- Cobro: billetes rápidos en fila flexible a partes iguales (salen de 1 a 4) y "Exacto"
+  a lo ancho; propina con el mismo patrón, todo a 44px. El 0% inicial nacía sin marcar
+- Toolbar de tablas: chips de filtro 38px (igual que el buscador); reportes: "Filtrar"
+  sin `--sm` para igualar los 40px de los campos de fecha
+
+## Revisión final celular + tablet (v6.9)
+Barrido automático (desborde, fuera de pantalla, objetivos táctiles, letra, filas
+disparejas) en 360×640 y 768×1024 sobre mesero, KDS, admin y pantallas de entrada.
+- **La regla táctil de 44px no aplicaba**: vive en `tokens.css` y `v7-components.css`
+  carga después con `.cl-btn--sm { min-height: 32px }`. Prefijo `html` (mismo truco que
+  el piso de letra). Ahora cubre también `.cl-btn--v7-*` y `.cl-period-pill`, y aplica
+  con `(pointer: coarse)` — una tablet se usa con el dedo aunque mida ≥768px
+- **Tablet vertical**: la barra de operaciones no cabía (pestañas encimadas con el menú,
+  la última estación fuera de pantalla). Entre 768–1199px las pestañas fijas quedan como
+  icono (con `aria-label`), la marca sólo logo, el usuario sólo inicial; la fila se
+  desliza si hay muchas estaciones
+- **Admin en celular**: la miga de pan empujaba la campana fuera. Bajo 480px sólo queda
+  la página actual, recortada con elipsis
+- **KDS**: círculo de "listo" se ve de 20px pero se toca en 44 (`::after`); controles del
+  encabezado a 44px sin partir el texto; "1 orden pendiente" (plural); estadísticas del
+  pie se deslizan en celular; reloj oculto bajo 480px; "Socket.IO conectado" → "En línea"
+- Badges de estado del admin (`ordenes_activas`) de 10 → 12px como en la vista del mesero
+- Vincular aparato: el campo de nombre tenía la sangría del icono sin icono

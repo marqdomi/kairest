@@ -212,7 +212,10 @@
               </span>
               <span class="cl-item-qty" style="flex-shrink:0;font-size:12px;color:var(--cl-text-tertiary);">×{{ detalle.cantidad }}</span>
               <span class="estado-producto-texto" style="flex-shrink:0;margin-left:4px;">
-                {% if detalle.estado == 'listo' %}
+                {% if detalle.estado == 'listo' and detalle.producto.estacion and detalle.producto.estacion.la_sirve_mesero %}
+                {# Bebidas a la mano: no las prepara nadie, el mesero las toma y las lleva #}
+                <span class="cl-badge cl-badge--blue" style="font-size:9px;padding:1px 6px;"><i data-lucide="cup-soda" style="width:10px;height:10px;"></i> Sírvela</span>
+                {% elif detalle.estado == 'listo' %}
                 <span class="cl-badge cl-badge--green" style="font-size:9px;padding:1px 6px;">Listo</span>
                 {% elif detalle.estado == 'entregado' %}
                 <span class="cl-badge cl-badge--gray" style="font-size:9px;padding:1px 6px;"><i data-lucide="check" style="width:10px;height:10px;"></i></span>

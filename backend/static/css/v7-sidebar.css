@@ -449,6 +449,34 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-shrink: 0;
+}
+
+/* La miga de pan cede el espacio: en 360px "Configuración › Dispositivos" empujaba la
+   campana fuera de la pantalla. En celular sólo queda la página actual, recortada */
+.cl-topbar__left {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.cl-breadcrumb {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.cl-breadcrumb__current,
+.cl-breadcrumb li.active {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 479.98px) {
+    .cl-breadcrumb > :not(.cl-breadcrumb__current):not(.active),
+    .cl-breadcrumb li.active::before {
+        display: none;
+    }
 }
 
 /* Icon button */
@@ -597,5 +625,41 @@
 
     .cl-content {
         padding: 16px;
+    }
+}
+/* ─── Barra de operaciones en tablet vertical (768–1199px) ───
+   Con marca + 3 pestañas + estaciones + tema + usuario no cabía: las pestañas se
+   encimaban con el menú y la última estación quedaba fuera de la pantalla. Aquí las
+   pestañas fijas quedan como icono, la marca sólo con logo y el usuario sólo con su
+   inicial; las estaciones conservan nombre y contador. */
+.cl-topbar-tabs {
+    display: flex;
+    gap: 2px;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.cl-topbar-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+@media (min-width: 768px) and (max-width: 1199.98px) {
+    .cl-topbar__brand-link > span {
+        display: none;
+    }
+
+    .cl-topbar__brand-link {
+        margin-right: 8px !important;
+    }
+
+    .cl-topbar-tab--fija > span {
+        display: none;
+    }
+
+    .cl-topbar-tab--fija {
+        padding: 7px 12px;
+        min-width: 44px;
+        justify-content: center;
     }
 }

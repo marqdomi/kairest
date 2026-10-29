@@ -40,6 +40,9 @@ ESTADOS_MODIFICABLES = [
     OrdenEstado.ENVIADO,
     OrdenEstado.EN_PREPARACION,
     OrdenEstado.LISTA_PARA_ENTREGAR,
+    # Todo entregado pero sin pagar: es justo cuando piden "¿me trae otro refresco?".
+    # services/servicio.py la regresa al estado que toque
+    OrdenEstado.COMPLETADA,
 ]
 
 
@@ -235,6 +238,11 @@ class Categoria(db.Model):
 class Estacion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(50), unique=True, nullable=False)
+    # Estación sin pantalla de cocina: sus productos los despacha el propio mesero
+    # (las bebidas en un puesto donde están a la mano). Quedan listos al enviar la
+    # orden, no aparecen en ningún KDS y no detienen la orden (services/servicio.py)
+    la_sirve_mesero = db.Column(db.Boolean, default=False, nullable=False,
+                                server_default=db.false())
     productos = db.relationship('Producto', backref='estacion', lazy=True)
 
 

@@ -35,12 +35,14 @@ def get_template_list():
             'icon': tpl['icon'],
             'productos_count': len(tpl['productos']),
             'estaciones': tpl['estaciones'],
+            # Estaciones que en ese tipo de negocio despacha el mesero (sin pantalla)
+            'la_sirve_mesero': tpl.get('la_sirve_mesero', []),
             'categorias': tpl['categorias'],
         })
     return result
 
 
-def seed_from_template(template_key, custom_estaciones=None, origen_map=None):
+def seed_from_template(template_key, custom_estaciones=None, origen_map=None, sirve_mesero=None):
     """Seed categories, stations, and products from a named template.
     Idempotent — skips existing records.
 
@@ -56,6 +58,9 @@ def seed_from_template(template_key, custom_estaciones=None, origen_map=None):
             custom_estaciones is given, each template station maps to
             custom_estaciones[min(i, len(custom_estaciones) - 1)] in order —
             i.e. extra template stations collapse into the last custom one.
+        sirve_mesero: nombres de estaciones finales que despacha el mesero (sin
+            pantalla de cocina). None = lo que diga la plantilla (`la_sirve_mesero`),
+            traducido por el mismo mapeo.
 
     Returns the number of products created.
     """
@@ -90,6 +95,15 @@ def seed_from_template(template_key, custom_estaciones=None, origen_map=None):
         }
     else:
         mapa = {orig.lower(): orig for orig in tpl['estaciones']}
+
+    # ── Las que sirve el mesero (Casa Leones: Bebidas, que están a la mano) ──
+    if sirve_mesero is None:
+        sirve_mesero = [mapa.get(n.lower(), n) for n in tpl.get('la_sirve_mesero', [])]
+    marcadas = {n.lower() for n in sirve_mesero}
+    for nombre_lower, est in estaciones.items():
+        if nombre_lower in {e.lower() for e in estaciones_finales}:
+            est.la_sirve_mesero = nombre_lower in marcadas
+    db.session.commit()
 
     # ── Productos ──
     # Un producto sin estación jamás aparece en ningún KDS y deja su orden

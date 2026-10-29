@@ -139,12 +139,12 @@
     {# Propina section #}
     <div style="margin-top: var(--cl-space-4); padding-top: var(--cl-space-3); border-top: 1px solid var(--cl-border);">
       <p style="font-size: var(--cl-text-sm); color: var(--cl-text-secondary); margin-bottom: var(--cl-space-2);">Propina</p>
-      <div class="d-flex gap-2 flex-wrap">
-        <button class="cl-btn cl-btn--outline cl-btn--sm propina-btn active" data-pct="0">0%</button>
+      <div class="pago-propinas">
+        <button class="cl-btn cl-btn--primary cl-btn--sm propina-btn active" data-pct="0">0%</button>
         <button class="cl-btn cl-btn--outline cl-btn--sm propina-btn" data-pct="10">10%</button>
         <button class="cl-btn cl-btn--outline cl-btn--sm propina-btn" data-pct="15">15%</button>
         <button class="cl-btn cl-btn--outline cl-btn--sm propina-btn" data-pct="20">20%</button>
-        <input type="number" id="propinaCustom" class="cl-input" style="width: 80px; height: 32px; font-size: var(--cl-text-sm);"
+        <input type="number" id="propinaCustom" class="cl-input" aria-label="Propina en pesos"
                placeholder="$" min="0" step="0.5">
       </div>
       <p style="font-size: var(--cl-text-xs); color: var(--cl-text-tertiary); margin-top: var(--cl-space-1);" id="propinaLabel">Propina: $0.00</p>
@@ -288,10 +288,40 @@
 }
 
 /* Quick cash */
+/* Los billetes (de 1 a 4, según lo que se deba) comparten un renglón a partes iguales
+   y "Exacto" va a lo ancho debajo. Con rejilla fija sobraban huecos según cuántos
+   billetes salieran y "Exacto" quedaba chueco */
 .pago-quick-cash {
   display: flex;
-  gap: var(--cl-space-2);
   flex-wrap: wrap;
+  gap: var(--cl-space-2);
+}
+.pago-quick-cash .cl-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+  min-height: 44px;
+  padding-inline: var(--cl-space-2);
+}
+.pago-quick-cash #btnMontoExacto {
+  flex-basis: 100%;
+}
+
+/* Propina: mismo patrón que los billetes, porcentajes y monto libre del mismo alto */
+.pago-propinas {
+  display: flex;
+  gap: var(--cl-space-2);
+}
+.pago-propinas .cl-btn,
+.pago-propinas .cl-input {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  justify-content: center;
+}
+.pago-propinas .cl-input {
+  flex-grow: 1.4;
+  text-align: center;
 }
 
 /* Cambio display */

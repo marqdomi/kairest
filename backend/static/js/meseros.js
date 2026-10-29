@@ -510,21 +510,14 @@ $(document).ready(function() {
         var el = $('#orden-card-' + ordenId);
         if (!el.length) el = $('#orden-acordeon-' + ordenId);
         if (!el.length) return;
-        var todos = true;
+        // Entregado = trae la palomita gris. Antes un renglón sin texto (lo que sigue en
+        // cocina no muestra estado) se contaba como entregado: al llevar los refrescos
+        // primero, "Cobrar" se encendía con los tacos todavía en el comal.
         var items = el.find('.estado-producto-texto');
-        if (!items.length) { todos = false; }
-        else {
-            items.each(function() {
-                var txt = $(this).text().trim().toLowerCase();
-                if (txt !== 'entregado' && txt !== '') {
-                    // Check for the check icon (entregado badge has no text, just icon)
-                    var hasBadgeGray = $(this).find('.cl-badge--gray').length > 0;
-                    if (!hasBadgeGray) {
-                        todos = false; return false;
-                    }
-                }
-            });
-        }
+        var todos = items.length > 0;
+        items.each(function() {
+            if (!$(this).find('.cl-badge--gray').length) { todos = false; return false; }
+        });
         var btn = el.find('.btn-cobrar-orden');
         if (btn.length) {
             btn.prop('disabled', !todos);

@@ -255,7 +255,7 @@ def api_estaciones():
     """
     from sqlalchemy import func
     # En el orden en que el negocio las definió en el wizard (no alfabético)
-    estaciones = Estacion.query.order_by(Estacion.id).all()
+    estaciones = Estacion.query.filter(Estacion.la_sirve_mesero.is_(False)).order_by(Estacion.id).all()
     pendientes = dict(
         db.session.query(Producto.estacion_id,
                          func.coalesce(func.sum(OrdenDetalle.cantidad), 0))
@@ -297,7 +297,7 @@ def index():
                 return redirect(url_for('cocina.station_view', slug=_slugify(est.nombre)))
 
     # Admin/superadmin: show first station or station list
-    first = Estacion.query.order_by(Estacion.id).first()
+    first = Estacion.query.filter(Estacion.la_sirve_mesero.is_(False)).order_by(Estacion.id).first()
     if first:
         return redirect(url_for('cocina.station_view', slug=_slugify(first.nombre)))
     flash('No hay estaciones configuradas.', 'warning')
@@ -310,6 +310,14 @@ def index():
 def station_view(slug):
     """Unified KDS view for any station, resolved by slug."""
     estacion = _get_estacion_or_404(slug)
+    if estacion.la_sirve_mesero:
+        # Una liga vieja o un cocinero que tenía asignada esta estación: no tiene
+        # pantalla. Aviso en vez de redirigir (a `/` lo mandaría de vuelta aquí)
+        return render_template(
+            'error.html', titulo=f'{estacion.nombre} no tiene pantalla',
+            mensaje='Esos productos los sirve el mesero desde su tarjeta. '
+                    'Pide a la dueña que te asigne otra estación.',
+            icono='cup-soda')
     _require_station_access(estacion)
     cfg = _build_cfg(estacion)
     detalles = _query_pending_detalles(estacion.nombre)
@@ -321,7 +329,7 @@ def station_view(slug):
     if session.get('rol') in ('admin', 'superadmin'):
         estaciones_todas = [
             {'nombre': e.nombre, 'slug': _slugify(e.nombre), 'activa': e.id == estacion.id}
-            for e in Estacion.query.order_by(Estacion.nombre).all()
+            for e in Estacion.query.filter(Estacion.la_sirve_mesero.is_(False)).order_by(Estacion.nombre).all()
         ]
 
     return render_template('kds_station.html',

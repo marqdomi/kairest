@@ -418,6 +418,18 @@
     transition: all var(--cl-transition-fast);
 }
 
+/* El círculo se ve de 20px pero se toca en 44: es la única forma de marcar un platillo
+   y en cocina se toca con prisa y con las manos ocupadas */
+.cl-kds-check {
+    position: relative;
+}
+
+.cl-kds-check::after {
+    content: '';
+    position: absolute;
+    inset: -12px;
+}
+
 .cl-kds-check:hover {
     border-color: rgba(255, 255, 255, 0.5);
 }
@@ -595,4 +607,53 @@
 
 .cl-kds-card--flash {
     animation: cl-flash-new 1.8s ease-out;
+}
+/* ─── Controles del encabezado (Llevar 1º, Sonido, estación) ───
+   Medían 26–34px con el texto partido en dos renglones en tablet */
+.cl-kds-toggle {
+    width: auto;
+    min-height: 44px;
+    padding: 0 14px;
+    gap: 6px;
+    border-radius: var(--cl-radius-full);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+#kdsStationSelect {
+    min-height: 40px;
+    padding: 4px 6px 4px 2px !important;
+}
+
+/* En celular las estadísticas no caben en una fila: se deslizan de lado en vez de
+   partirse y cortarse */
+@media (max-width: 767.98px) {
+    .cl-kds-footer {
+        gap: 12px;
+        padding: 0 12px;
+    }
+
+    .cl-kds-stats {
+        flex: 1;
+        min-width: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .cl-kds-stats::-webkit-scrollbar {
+        display: none;
+    }
+
+    .cl-kds-stat {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+}
+
+/* En un teléfono la hora ya está en la barra del sistema; el reloj del tablero empujaba
+   los controles y quedaba cortado */
+@media (max-width: 479.98px) {
+    .cl-kds-clock {
+        display: none;
+    }
 }
