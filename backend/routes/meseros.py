@@ -778,9 +778,9 @@ def registrar_pago(orden_id):
     if metodo not in metodos_pago_habilitados():
         return jsonify(success=False, message="Método de pago no habilitado."), 400
 
-    try:
-        monto = Decimal(str(data.get('monto', 0)))
-    except Exception:
+    from backend.services.validacion import leer_monto
+    monto = leer_monto(data.get('monto', 0), minimo=Decimal('-1e12'))  # "NaN" tronaba
+    if monto is None:
         return jsonify(success=False, message="Monto inválido."), 400
 
     if monto <= 0:
@@ -795,30 +795,35 @@ def registrar_pago(orden_id):
                                "(folio o nombre de quien transfiere)."), 400
 
     # Propina (Sprint 6 — 3.6)
-    try:
-        propina = Decimal(str(data.get('propina', 0)))
-    except Exception:
-        propina = Decimal('0')
-    if propina < 0:
-        propina = Decimal('0')
+    propina = leer_monto(data.get('propina', 0) or 0) or Decimal('0')
+    # `monto` es TODO lo que entrega el cliente, propina incluida, en cualquier método.
+    # Antes en efectivo la propina sólo se descontaba del cambio: en un pago parcial
+    # ("aquí van $600, $100 son de propina") se abonaban los $600 a la cuenta Y se
+    # registraban $100 de propina — al resto de la mesa se le cobraban $100 de menos y
+    # el corte esperaba $100 que nunca entraron al cajón.
+    if propina > monto:
+        return jsonify(success=False,
+                       message="La propina no puede ser mayor a lo que entrega el cliente."), 400
+    a_cuenta = monto - propina
     orden.propina = (orden.propina or Decimal('0')) + propina
 
     # Recalcular totales
     orden.calcular_totales()
     saldo_antes = orden.saldo_pendiente()
 
-    # Tarjeta/transferencia: no existe "cambio" — un cargo mayor al saldo sería
-    # un sobre-cobro real al cliente, se rechaza en vez de perderse en silencio.
-    if metodo != 'efectivo' and monto > saldo_antes:
+    # Tarjeta/transferencia: no existe "cambio" — un cargo mayor al saldo (sin contar
+    # la propina) sería un sobre-cobro real al cliente, se rechaza.
+    if metodo != 'efectivo' and a_cuenta > saldo_antes:
         return jsonify(success=False,
                        message=f"Monto excede el saldo pendiente (${float(saldo_antes):.2f}).",
                        saldo_pendiente=float(saldo_antes)), 400
+    if a_cuenta <= 0:
+        return jsonify(success=False, message="El pago no abona nada a la cuenta."), 400
 
-    # Efectivo: `monto` es lo que entregó el cliente. A la cuenta solo se aplica
-    # hasta el saldo (Pago.monto alimenta el corte de caja y debe cuadrar con la
-    # venta); el excedente es cambio, descontando la propina que se queda.
-    monto_aplicado = min(monto, saldo_antes) if metodo == 'efectivo' else monto
-    cambio_pago = max(monto - saldo_antes - propina, Decimal('0')) if metodo == 'efectivo' else Decimal('0')
+    # A la cuenta se aplica hasta el saldo (Pago.monto alimenta el corte de caja y
+    # debe cuadrar con la venta); en efectivo el excedente es cambio.
+    monto_aplicado = min(a_cuenta, saldo_antes) if metodo == 'efectivo' else a_cuenta
+    cambio_pago = max(a_cuenta - saldo_antes, Decimal('0')) if metodo == 'efectivo' else Decimal('0')
 
     # El efectivo se da por verificado (está en la mano); la transferencia queda
     # pendiente hasta que alguien la confirme en el banco.

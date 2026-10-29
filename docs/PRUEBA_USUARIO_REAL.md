@@ -63,3 +63,41 @@ Guardas en `tests/test_prueba_usuario_roles.py` (6; sin el fix fallan los 6).
 | Entrar con PIN | `usuario_id` con texto → error 500 |
 | Peticiones mal formadas | 400/415 salían en inglés ("Bad Request") |
 | Sesiones sin Redis | Al pasar de 500 sesiones se borraban al azar: la dueña quedó fuera a media prueba. En Docker se usa Redis y no aplica, pero el preview de demo usa archivos |
+
+---
+
+# Un domingo completo — `tests/test_domingo.py`
+
+"Barbacoa Don Chema" con el menú real de la plantilla, 3 meseros con PIN, Taquero / Comal /
+Bebidas y la dueña, cada quien con su propia sesión. El reloj del sistema se mueve con el día
+(09:10 → 22:30, y luego 00:10 del lunes). El test lleva su propio libro de lo que debió pasar
+y al cierre lo compara con la base, el dashboard, los reportes y el corte.
+
+**Escenarios:** familia que pide más con la orden en cocina · para llevar por transferencia ·
+mesa abierta y abandonada · pareja que modifica antes de enviar y paga mitad y mitad · mesa
+compartida con tres cuentas y tres formas de pago · para llevar cancelado (cliente se fue) ·
+descuento autorizado · dedazo en el KDS y deshacer · transferencia rechazada que se paga en
+efectivo · transferencia "en camino" que se paga en efectivo y luego se intenta confirmar ·
+mesa de 6 que paga en partes con propina · orden mal capturada que se cancela y se vuelve a
+levantar · hora pico (6 para llevar) · cena después de las 18:00 · transferencia con propina ·
+última mesa con transferencia sin confirmar al cierre.
+
+**Se verifica:** total de cada cuenta, cambio de cada cobro, ventas = pagos confirmados,
+ventas por mesero (no a la dueña), dashboard (ventas, propinas, órdenes), reporte por día y
+por hora (la cena en domingo), reporte de pagos por método, top de productos, corte contando
+el cajón (diferencia $0), mesas liberadas, folios sin huecos, motivos de cancelación y
+descuento auditados, y que el lunes arranque en cero.
+
+**Resultado:** $7,156.10 en 19 cuentas — efectivo $5,206.10 + transferencias $1,950;
+$351 de propinas en efectivo; cajón esperado $5,557.10; $415 por confirmar (mesa 10).
+
+## Encontrado y corregido
+| Qué | Impacto |
+|---|---|
+| **Pago parcial con propina**: "aquí van $600, $100 son de propina" abonaba los $600 a la cuenta Y registraba $100 de propina | Al resto de la mesa se le cobraban **$100 de menos** y el corte esperaba $100 que nunca entraron al cajón. Ahora `monto` es todo lo que entrega el cliente y a la cuenta va `monto − propina`, en todos los métodos |
+| **Propina por transferencia** | Se registraba pero no se podía cobrar (el server rechazaba transferir más que el saldo). Con la misma regla, ahora sí |
+| **Reporte de pagos y PDF del corte** contaban transferencias **sin confirmar** | No cuadraban con ventas ni con la pantalla del corte ($415 de más en el domingo) |
+| Breadcrumb "label / label" en 15 pantallas (reportes, facturación) y separadores faltantes | Visual |
+
+Para revisarlo en el navegador: `KAIREST_DOMINGO_DB=/ruta/domingo.db pytest tests/test_domingo.py`
+y levantar el server con esa base (reportes con fecha 2026-10-25).

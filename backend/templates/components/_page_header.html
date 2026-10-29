@@ -14,13 +14,25 @@
   <div class="cl-page-header__left">
     {% if breadcrumb %}
     <nav class="cl-page-header__breadcrumb" aria-label="Breadcrumb">
-      {% for label, href in breadcrumb %}
-        {% if href %}
-          <a href="{{ href }}">{{ label }}</a>
-          <span aria-hidden="true">/</span>
+      {# Acepta ('Texto', url) o {'label': 'Texto', 'url': url}: 15 pantallas pasaban
+         diccionarios y, al desarmarlos como par, se veía "label / label" #}
+      {% for paso in breadcrumb %}
+        {% if paso is mapping %}
+          {% set label, href = paso.get('label'), paso.get('url') %}
         {% else %}
-          <span aria-current="page">{{ label }}</span>
+          {% set label, href = paso[0], paso[1] %}
         {% endif %}
+        {# Separador entre TODOS los pasos (antes faltaba tras los que no tienen liga:
+           "Inventario Ingredientes / Merma"). Con liga es un paso padre; sin liga y al
+           final, la página actual #}
+        {% if href and href != '#' %}
+          <a href="{{ href }}">{{ label }}</a>
+        {% elif loop.last %}
+          <span aria-current="page">{{ label }}</span>
+        {% else %}
+          <span>{{ label }}</span>
+        {% endif %}
+        {% if not loop.last %}<span aria-hidden="true">/</span>{% endif %}
       {% endfor %}
     </nav>
     {% endif %}

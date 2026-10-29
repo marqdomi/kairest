@@ -759,7 +759,10 @@ $(document).ready(function() {
             const res = await fetch(`/meseros/ordenes/${ordenId}/pago`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ metodo, monto, referencia, propina }),
+                // `monto` = lo que entrega el cliente, propina incluida (el server abona
+                // monto − propina). En efectivo el campo ya es lo recibido; en los demás
+                // métodos el campo es lo de la cuenta y se le suma la propina.
+                body: JSON.stringify({ metodo, monto: metodo === 'efectivo' ? monto : monto + propina, referencia, propina }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message);

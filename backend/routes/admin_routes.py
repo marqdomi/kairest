@@ -975,7 +975,10 @@ def export_corte_pdf():
 
     pago_q = db.session.query(Pago.metodo, func.sum(Pago.monto).label('total'),
                                func.count(Pago.id).label('cantidad')
-                               ).filter(Pago.fecha >= desde, Pago.fecha < hasta)
+                               ).filter(Pago.fecha >= desde, Pago.fecha < hasta,
+                                        # igual que la pantalla del corte: lo no
+                                        # confirmado no es ingreso del día
+                                        Pago.verificado.is_(True))
     suc_id = getattr(g, 'sucursal_id', None)
     if suc_id is not None:
         pago_q = pago_q.join(Orden, Pago.orden_id == Orden.id).filter(Orden.sucursal_id == suc_id)

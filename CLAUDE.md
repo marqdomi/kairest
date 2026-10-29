@@ -1038,3 +1038,13 @@ guardas en `tests/test_prueba_usuario_admin.py` (43, control negativo: 40 fallan
   (`MOTIVOS_CANCELACION` = mismos valores que el select del modal); KDS con `min-width:0` en
   el bloque de texto (una nota larga sacaba el botón de listo); 400/415 en español;
   `SESSION_FILE_THRESHOLD` 20000 sin Redis (a las 500 sesiones cachelib borraba al azar)
+
+## Un domingo completo (v6.8) — `tests/test_domingo.py`
+Simulación de un día real (16 escenarios, 7 personas con su sesión, reloj movido con
+`_datetime_falso` sobre `models.datetime` y `tiempo.datetime`). Detalle en
+`docs/PRUEBA_USUARIO_REAL.md`. Con `KAIREST_DOMINGO_DB=/ruta.db` deja la base para verla.
+- **Regla de cobro**: `monto` = todo lo que entrega el cliente, propina incluida, en
+  cualquier método; a la cuenta va `monto − propina`. pago.html y meseros.js mandan
+  `saldo + propina` en transferencia. Antes un pago parcial con propina se abonaba entero
+- Reporte de pagos (pantalla y API) y PDF del corte: sólo `Pago.verificado`
+- `_page_header.html`: breadcrumb acepta tuplas o dicts

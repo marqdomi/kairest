@@ -613,7 +613,10 @@ function confirmarPago() {
       // Efectivo: lo que ENTREGÓ el cliente; el server aplica a la cuenta sólo el saldo y
       // calcula el cambio (recibido − saldo − propina). Recortado al saldo, el server
       // nunca se enteraba del efectivo y guardaba cambio $0. Otros métodos: no hay cambio.
-      monto: _selectedMethod === 'efectivo' ? monto : Math.min(monto, _orderData.saldo_pendiente),
+      // Siempre lo que entrega el cliente, propina incluida (el server abona a la
+      // cuenta monto − propina). Efectivo: lo recibido. Transferencia: lo de la cuenta
+      // más la propina, que es lo que de verdad se transfiere.
+      monto: _selectedMethod === 'efectivo' ? monto : Math.min(monto, _orderData.saldo_pendiente) + _propina,
       referencia: referencia,
       propina: _propina,
     })
