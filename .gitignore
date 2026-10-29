@@ -14,3 +14,6 @@ pytest_results.txt
 deploy/gcp/backups/
 windows-installer/dist/
 backend/static/uploads/
+
+# Credenciales locales de demo (el repo es público)
+*.local.md

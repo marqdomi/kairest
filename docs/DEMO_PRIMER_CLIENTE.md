@@ -16,11 +16,15 @@ DATABASE_URL=sqlite:///demo_cliente.db REDIS_URL= RATELIMIT_ENABLED=false ./.ven
 
 | Rol | Usuario | Entra con | Dispositivo sugerido |
 |---|---|---|---|
-| Dueña (superadmin) | `duena` | contraseña `Leones2026demo` | Celular |
-| Mesero | `pepe` | PIN `4826` | Celular |
-| Cocina — Taquero | `tito` | PIN `7391` | Tablet |
-| Cocina — Comal | `cata` | PIN `5937` | Tablet |
-| Cocina — Bebidas | `beto` | PIN `6148` | Tablet |
+| Dueña (superadmin) | `duena` | contraseña | Celular |
+| Mesero | `pepe` | PIN | Celular |
+| Cocina — Taquero | `tito` | PIN | Tablet |
+| Cocina — Comal | `cata` | PIN | Tablet |
+| Cocina — Bebidas | `beto` | PIN | Tablet |
+
+La contraseña y los PIN de la demo local están en `docs/DEMO_CREDENCIALES.local.md`
+(fuera de git: el repo es público). En una instalación nueva se definen en el wizard
+— **nunca reutilices los de la demo en la nube ni con un cliente**.
 
 El PIN sólo funciona en aparatos autorizados: la dueña entra con contraseña →
 Admin → Dispositivos → "Autorizar este" (o "Generar código" y en el otro aparato
