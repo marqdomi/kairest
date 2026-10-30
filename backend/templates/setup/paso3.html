@@ -26,7 +26,12 @@
           </div>
           <div class="cl-tpl-card__tags">
             {% for est in tpl.estaciones %}
+            {% if est in tpl.la_sirve_mesero %}
+            <span class="cl-tpl-tag" title="Sin pantalla de cocina: la sirve el mesero">
+              <i data-lucide="cup-soda" style="width:11px;height:11px"></i> {{ est }} · mesero</span>
+            {% else %}
             <span class="cl-tpl-tag">{{ est }}</span>
+            {% endif %}
             {% endfor %}
           </div>
         </div>
@@ -178,7 +183,10 @@
       margin-top: var(--cl-space-2);
     }
     .cl-tpl-tag {
-      font-size: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 11px;
       padding: 2px 8px;
       border-radius: 99px;
       background: var(--cl-bg-secondary);

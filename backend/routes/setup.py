@@ -253,7 +253,7 @@ def paso3():
                     created += 1
 
             db.session.commit()
-            flash(f'{created} productos agregados.', 'success')
+            flash(f'{created} producto agregado.' if created == 1 else f'{created} productos agregados.', 'success')
         else:
             # Template-based seeding (taqueria, restaurante, cafeteria) — the
             # kitchen may run fewer real stations than the template's default
@@ -297,7 +297,7 @@ def paso3():
                 origen_map=origen_map,
                 sirve_mesero=sirve_mesero,
             )
-            flash(f'Menú cargado: {created} productos agregados.', 'success')
+            flash(f'Menú cargado: {created} producto agregado.' if created == 1 else f'Menú cargado: {created} productos agregados.', 'success')
 
         return redirect(url_for('setup.paso4'))
 
@@ -334,7 +334,7 @@ def paso4():
             cantidad = 8
 
         created = seed_mesas(cantidad)
-        flash(f'{created} mesas creadas.', 'success')
+        flash('1 mesa creada.' if created == 1 else f'{created} mesas creadas.', 'success')
         return redirect(url_for('setup.paso5'))
 
     mesas_existentes = Mesa.query.count()
@@ -405,7 +405,7 @@ def paso5():
 
         db.session.commit()
         if created:
-            flash(f'{created} personas dadas de alta con su PIN.', 'success')
+            flash('1 persona dada de alta con su PIN.' if created == 1 else f'{created} personas dadas de alta con su PIN.', 'success')
 
         # Complete onboarding
         ConfiguracionSistema.set('onboarding_completado', 'true')

@@ -27,7 +27,10 @@ def get_template_list():
     """
     templates = _load_templates()
     result = []
-    for key, tpl in templates.items():
+    # "orden" en el JSON pone primero (y preseleccionada en el wizard) la plantilla del
+    # negocio que se está instalando; las demás conservan el orden del archivo
+    orden = sorted(templates.items(), key=lambda kv: kv[1].get('orden', 100))
+    for key, tpl in orden:
         result.append({
             'key': key,
             'nombre': tpl['nombre'],

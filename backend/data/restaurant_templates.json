@@ -1,6 +1,6 @@
 {
   "barbacoa": {
-    "nombre": "Barbacoa y Carnitas",
+    "nombre": "Barbacoa y Carnitas (genérica)",
     "descripcion": "Barbacoa, carnitas, consomé, quesadillas y tlacoyos",
     "icon": "beef",
     "estaciones": ["Taquero", "Comal", "Bebidas"],
@@ -782,8 +782,9 @@
     ]
   },
   "casaleones": {
-    "nombre": "Barbacoa y Carnitas",
-    "descripcion": "Barbacoa por kilo, tacos surtidos, quesadillas, tlacoyos y consomé",
+    "nombre": "Casa Leones",
+    "descripcion": "El menú de Casa Leones: barbacoa y carnitas por kilo, tacos, quesadillas, tlacoyos y consomé. Las bebidas las sirve el mesero",
+    "orden": 0,
     "icon": "beef",
     "estaciones": [
       "Taquero",

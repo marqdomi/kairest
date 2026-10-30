@@ -35,7 +35,7 @@
           <label class="cl-form-label" for="rfc_input">RFC</label>
           <input type="text" class="cl-form-input" id="rfc_input" name="rfc" maxlength="13"
                  data-rfc-validate
-                 value="{{ cliente.rfc if cliente else '' }}"
+                 value="{{ (cliente.rfc or '') if cliente else '' }}"
                  placeholder="Ej: XAXX010101000">
           <small class="cl-form-hint">13 chars persona física, 12 persona moral</small>
         </div>

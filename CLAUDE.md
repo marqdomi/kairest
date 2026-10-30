@@ -1112,3 +1112,15 @@ disparejas) en 360×640 y 768×1024 sobre mesero, KDS, admin y pantallas de entr
   pie se deslizan en celular; reloj oculto bajo 480px; "Socket.IO conectado" → "En línea"
 - Badges de estado del admin (`ordenes_activas`) de 10 → 12px como en la vista del mesero
 - Vincular aparato: el campo de nombre tenía la sangría del icono sin icono
+
+## Wizard: la plantilla de Casa Leones primero (v6.9)
+- Había **dos tarjetas "Barbacoa y Carnitas"**: `barbacoa` (versión vieja del CSV, unidad
+  "orden") y `casaleones` (categorías finas, unidades reales kg/pieza/litro, Bebidas que
+  sirve el mesero). La preseleccionada era la vieja
+- Campo opcional `"orden"` en `restaurant_templates.json`; `get_template_list` ordena por
+  él (sin `orden` = 100, conserva el orden del archivo). `casaleones` → "Casa Leones",
+  primera y preseleccionada; la otra se rotula "(genérica)"
+- La tarjeta marca con "Bebidas · mesero" la estación que no tiene pantalla
+- Paso 2: al faltar el correo el form regresaba con **"None"** escrito en el campo
+  (`leer_correo` devuelve None). `{{ x or '' }}`; mismo arreglo en el RFC de clientes
+- Plurales en los avisos del wizard ("1 persona dada de alta")

@@ -120,6 +120,20 @@ class TestSetupWizard:
             assert response.status_code == 200
             assert 'no coinciden' in response.data.decode()
 
+    def test_paso2_sin_correo_no_pinta_none(self, client, app, db):
+        # Al faltar el correo el form regresaba con "None" escrito en el campo
+        with app.app_context():
+            ConfiguracionSistema.set('nombre_negocio', 'Test')
+            db.session.add(Sucursal(nombre='Test'))
+            db.session.commit()
+            response = client.post('/setup/paso/2', data={
+                'nombre': 'Test', 'usuario': 'test', 'email': '',
+                'password': 'TestPass123!', 'password2': 'TestPass123!',
+            })
+            html = response.data.decode()
+            assert 'Ingresa tu correo' in html
+            assert 'value="None"' not in html
+
     def test_paso3_renders(self, client, app, db):
         with app.app_context():
             # Create prerequisite: sucursal + superadmin
